@@ -1,0 +1,1001 @@
+<?php
+
+/**
+* Markup Blog Module for ProcessWire.
+*
+* This module gives you Methods to easily output your Blog contents.
+* The markup is almost entirely left up to you, the user.
+*
+* @author Kongondo <kongondo@gmail.com>
+* @author Ryan Cramer 
+* 
+* Almost 100% original code from Ryan Cramer's Blog Profile. 
+* Compiled by Kongondo from the functions in Ryan Cramer's Blog Profile to Methods in this Class and where necessary adjusted/added some code.
+*
+* https://github.com/kongondo/Blog
+* Created April 2014
+* 
+* ProcessWire 2.x
+* Copyright (C) 2011 by Ryan Cramer
+* Licensed under GNU/GPL v2, see LICENSE.TXT
+*
+* http://www.processwire.com
+*
+*/
+
+class MarkupBlog  extends WireData implements Module {
+	
+	/**
+	 * Return information about this module (required).
+	 *
+	 *	@access public
+	 *	@return array module info
+	 *
+	 */
+	public static function getModuleInfo() {
+	
+		return array(
+			'title' => 'Markup Blog',
+			'summary' => 'Markup module to output a Blog based on the Blog Profile by Ryan Cramer',
+			'author' => 'Kongondo',
+			'version' => 100,
+			'href' => 'http://processwire.com/talk/topic/xxxx',
+			'singular' => true, 
+			'autoload' => false,
+			'requires' => 'ProcessBlog' 
+		);
+
+	}
+	
+	/**
+	 *	Initialise the module.
+	 *  
+	 *  This is an optional initialisation method called before any execute methods. It will be automatically loaded by ProcessWire.
+	 *
+	 *	@access public
+	 *	
+	 */
+	public function init() {
+
+		//required
+
+		
+	}
+	
+	/**
+	 * Render a list of tags.
+	 *
+	 * Each of the tags has a numPosts property containing the number of posts used by the tag.
+	 * Also renders an alphabetical jumplist of tags.
+	 * As seen on the frontend page: /blog/tags/
+	 *
+	 * @access public
+	 * @param PageArray $tags
+	 * @return string $jump . $out
+	 *
+	 */
+	public function renderTags(PageArray $tags) {
+
+		//count the number of posts using each tag
+		foreach($tags as $tag) {
+			$tag->numPosts = wire('pages')->count("template=blog-post, blog_tags=$tag");
+		}
+
+		$lastLetter = '';
+		$out = '';
+		$letters = array();
+
+		foreach($tags as $tag) {
+				
+				$letter = strtoupper(substr($tag->title, 0, 1));//Grab the first letter of the tag title, make it uppercase
+				if($letter != $lastLetter) {//if this letter is not equal to the last letter
+					if($lastLetter) $out .= "</ul>";
+					$out .= "<h3 id='letter_$letter'>$letter</h3>"; 
+					$out .= "<ul class='tags posts-group'>";
+					$letters[] = $letter;//add to the letters array 
+				}
+				$lastLetter = $letter; 
+
+				$numPosts = sprintf(_n('%d post', '%d posts', $tag->numPosts), $tag->numPosts);
+
+				$out .= "<li><a href='{$tag->url}'>{$tag->title}</a> <span class='num-posts'>$numPosts</span></li>";
+		}
+
+		$out .= "</ul>";
+
+		//$jump is for the alphabetical jumplist that will be output at the top of the tags page
+		$jump = '';
+		$jump .= "<p class='jumplinks'>";
+
+		foreach($letters as $letter) {
+				$jump .= "<a href='./#letter_$letter'>$letter</a> ";
+		}
+		
+		$jump .= "</p>";
+
+		//return the jumplist and the markup of tags
+		return $jump . $out; 
+
+
+	}
+
+	/**
+	 * Render previous and next posts links.
+	 *
+	 * As seen on the frontend page: /blog/post/ = where 'post' = name of the post
+	 *
+	 * @access public
+	 * @param Page $page
+	 * @return string $out
+	 *
+	 */
+	public function renderNextPrevPosts($page) {
+		
+		$date = $page->getUnformatted('blog_date');
+		
+		//first sibling of this post whose date is newer than this ones. Note: blog_date is custom field in Blog pages
+		$nextPost = $page->parent->child("blog_date>$date, sort=blog_date");
+		
+		//first sibling of this post whose date is older than this ones.
+		$prevPost = $page->parent->child("blog_date<$date, sort=-blog_date");
+
+		$out = "<div class='next-prev-posts'>"; 
+		
+		if($prevPost->id > 0) $out .= "<p class='prev-post'><span>&lt;</span> <a href='{$prevPost->url}'>{$prevPost->title}</a></p>";
+		if($nextPost->id > 0) $out .= "<p class='next-post'><a href='{$nextPost->url}'>{$nextPost->title}</a> <span>&gt;</span></p>";
+		
+		$out .= "</div>";
+		
+		return $out; 
+	}
+
+	/**
+	 * Render a limited number of comments RSS.
+	 *
+	 * As seen on the frontend page: /blog/comments/rss/
+	 *
+	 * @access public
+	 * @param int $limit
+	 *
+	 */
+
+	public function renderCommentsRSS($limit) {
+
+		//selector to locate the comments we want
+		$start = 0;
+		$selector = "limit=$limit, start=$start, sort=-created, status>=" . Comment::statusApproved;
+
+	    //find the comments we want to output
+	    $comments = $this->findComments($selector);
+
+		$commentPages = new PageArray();
+
+		foreach($comments as $comment) {
+
+			$p = wire('pages')->get($comment->pages_id);
+			if(!$p->id) continue; 
+
+			$p = clone $p;
+			$p->comment_title = htmlentities($comment->cite, ENT_QUOTES, "UTF-8") . " reply to: " . $p->title;	
+			$p->comment_body = htmlentities($comment->text, ENT_QUOTES, "UTF-8"); 
+			$p->comment_date = $comment->created; 
+
+			$commentPages->add($p);
+		}
+
+		$rss = wire('modules')->get('MarkupRSS');
+		$rss->title = wire('pages')->get('/')->headline . ' - ' . wire('page')->get('headline|title'); 
+		$rss->itemTitleField = 'comment_title';
+		$rss->itemDescriptionField = 'comment_body';
+		$rss->itemDescriptionLength = 0; 
+		$rss->itemDateField = 'comment_date';
+		$rss->render($commentPages);
+
+	}
+
+	/**
+	 * Render a list of categories, optionally showing a few posts from each.
+	 *
+	 * @access public
+	 * @param PageArray $categories
+	 * @param int $showNumPosts Number of posts to show from each category (default=0)
+	 * @return $out string
+	 *
+	 */
+	public function renderCategories(PageArray $categories, $showNumPosts = 0) {
+		
+		foreach($categories as $category) {
+					$category->posts = wire('pages')->find("template=blog-post, blog_categories=$category, limit=$showNumPosts, sort=-blog_date"); 
+		}
+		
+		$out = '';
+		
+		if(count($categories)){ 
+
+				foreach($categories as $category) {
+
+							$out .= "<div class='category'>
+										<h3><a href='$category->url'>$category->title</a></h3>";
+
+							$n = $category->posts->getTotal();
+							
+							$out .= "<span class='num-posts'>" . sprintf(_n('%d post', '%d posts', $n), $n);
+							$out .= "<a class='rss' href='$category->url" . "rss'>" . $this->_('RSS') . "</a></span>";
+							
+							if($n){
+									$out .= "<ul class='category-posts posts-group'>";
+
+									 foreach($category->posts as $post){
+												$out .= "<li><a href='$post->url'>$post->title</a></li>";
+									}
+
+									//if more posts available than the limit we have set, show "view more" link
+									if($n > count($category->posts)){
+												$out .= "<li><a class='more' href='$category->url'>" . $this->_('View More') . "</a></li>";
+									}
+									
+									$out .= "</ul>";
+
+							}//end if($n);
+
+							$out .= "</div>";
+
+				}//end foreach $categories
+
+		}//end if count $categories
+		
+		else {
+				$out .= "<p class='no-categories'>" . $this->_('No categories to display') . "</p>";
+			
+		}
+		
+		return $out;
+	}
+	
+	/**
+	 * Get an array of archives, optionally by year and optionally including a few posts.
+	 *
+	 * @access public
+	 * @param int $year Retrieve archives for a specific year (default=retrieve all years)
+	 * @param int $limit Max number of posts to show for each month, default=0 which means don't show any
+	 * @return $years array() in this format:
+	 *
+	 * array(
+	 * 	2012 => array( // year 2012
+	 *		1 => array( // month 1: January
+	 * 			'name' => 'January', 
+	 *			'url' => '/archives/2012/01/',
+	 *			'posts' => PageArray, // containing first few posts
+	 *			'total' => 5 // total # of posts in month
+	 *		),
+	 *		2 => array( // Month 2: February
+	 *			'name' => 'February',
+	 *			...and so on
+	 *		),
+	 *		...and so on
+	 * 	),
+	 * 
+	 * 	2011 => array( ... ), // year 2011
+	 *	...and so on
+	 * );
+	 *
+	 */
+	public function getArchives($year = 0, $limit = 0) {
+
+		if($year) {
+			
+					$firstYear = $year;
+					$lastYear = $year;
+		} 
+
+		else {
+					$oldest = wire('pages')->get("template=blog-post, blog_date>0, sort=blog_date");
+					$newest = wire('pages')->get("template=blog-post, blog_date>0, sort=-blog_date");
+			
+					if(!$newest->id) return '';
+					$firstYear = date('Y', $oldest->getUnformatted('blog_date'));
+					$lastYear = date('Y', $newest->getUnformatted('blog_date'));
+		}
+
+		$_limit = $limit > 1 ? (int) $limit : 2; 
+		$years = array();
+
+		for($y = $lastYear; $y >= $firstYear; $y--) {
+
+			$months = array();
+			$numPostsYear = 0;
+
+			for($month = 1; $month <= 12; $month++) {
+
+				$firstDay = strtotime("$y-$month-01");
+				$lastDay = strtotime("+1 month", $firstDay)-1;
+
+				$posts = wire('pages')->find("template=blog-post, blog_date>=$firstDay, blog_date<=$lastDay, limit=$_limit, sort=-blog_date");
+				$numPosts = $posts->getTotal();
+				if(!$numPosts) continue; 
+				$numPostsYear += $numPosts;
+
+				$months[$month] = array(
+					'url' => wire('config')->urls->root . "blog/archives/$y/$month/",//note our Blog pages live under the page 'blog'
+					'name' => strftime('%B', $firstDay),
+					'posts' => $limit > 0 ? $posts : array(),
+					'total' => $numPosts
+					);
+			}
+
+			if(!$numPostsYear) continue; 
+
+			$years[$y] = array(
+				'url' => wire('config')->urls->root . "blog/archives/$y/", //note our Blog pages live under the page 'blog'
+				'name' => $y,
+				'total' => $numPostsYear,
+				'months' => $months
+				);
+		}
+
+		return $years; 
+	}
+
+	/**
+	 * Render blog archives for a given year.
+	 *
+	 * Used by the /site/templates/archives.php template.
+	 * Render archives returned by the getArchives() method.
+	 * Archives links include a year headline followed by a list of months in that year with posts,
+	 * and the number of posts in each month. 
+	 *
+	 * @access public
+	 * @param array $years as returned by the getArchives() method
+	 * @return $out string
+	 *
+	 */
+	public function renderArchives(array $years) {
+
+		$out = '';
+
+		foreach($years as $year=>$y) {
+			
+				$year 	=  $y['name'];
+				$total 	=  $y['total']; 
+				$months =  $y['months']; 
+				$url 	=  $y['url']; 
+
+				$out .= "<div class='archive'>
+						<h3><a href='$url'>$year</a></h3>
+						<span class='num-posts'>" . sprintf(_n('%d post', '%d posts', $total), $total) . "</span>";
+
+				$out .= "<ul class='posts-group'>";
+
+				foreach($months as $monthNum => $month){
+
+							$out .= "<li><a href='" . $month['url'] . "'>" . $month['name'] . "</a>";
+							$out .=  "<span class='num-posts'>" . sprintf(_n('%d post', '%d posts', $month['total']), $month['total']) . "</span>";
+
+
+
+							if(count($month['posts'])) {// posts will be empty if $blog->archives() call specified 0 for limit;
+
+									$out .= "<ul>";
+
+									foreach($month['posts'] as $item){
+											
+											$out .= "<li><a href='$item->url'>$item->title</a></li>";
+									}
+
+									if($month['total'] > count($month['posts'])){
+											
+											$out .= "<li><a class='more' href='" . $month['url'] . "'>" . $this->_('View All') . "</a></li>";
+									}
+
+									$out .=  "</ul>";
+
+							}
+
+							$out .=  "</li>";
+
+				}//end foreach $months as $monthNum
+
+				$out .= "</ul></div>";
+
+
+		}//end foreach $years as $year
+
+		return $out; 
+	}
+
+	/**
+	 * Renders a list of Blog authors.
+	 *
+	 * @access public
+	 * @param PageArray $authors
+	 * @return $out string
+	 *
+	 */
+	public function renderAuthors(PageArray $authors) {
+		
+		$out = "<ul class='authors posts-group'>";
+
+		foreach($authors as $author) {
+					$numPosts = wire('pages')->count("template=blog-post, created_users_id=$author, limit=2");
+					$numPostsStr = sprintf(_n('%d post', '%d posts', $author->numPosts), $author->numPosts);
+					
+					//Note: $author->url2 is the blog-generated version, since $author->url is in the admin.
+					$out .= "<li><a href='{$author->url2}'>" . $author->get('title|name') . "</a> <span class='num-posts'>$numPosts</span></li>";
+		}
+
+		$out .= "</ul>";
+		
+		return $out; 
+
+	}
+
+	/**
+	 * Find comments from the given selector string
+	 *
+	 * @access public
+	 * @param string $selector
+	 * @return $comments CommentArray
+	 *
+	 */
+	public function findComments($selector) {
+		
+		$comments = FieldtypeComments::findComments('blog_comments', $selector);//parameter 1 = our comments field 
+		
+		foreach($comments as $comment) {
+				
+				//if this comment is not viewable for current user, remove it from the array
+				if(!$comment->page->viewable()) $comments->remove($comment);
+		}
+		
+		return $comments; 
+
+	}
+
+	/**
+	 * Find a limited number of recent comments.
+	 *
+	 * @access public
+	 * @param int $limit Number of recent comments to find
+	 * @param int $start Where to start, like 0 (default: null = automatic, based on page number)
+	 * @param bool $admin Include non-approved and spam comments? (default: null = determine automatically)
+	 * @return CommentArray
+	 *
+	 */
+	public function findRecentComments($limit = 3, $start = null, $admin = null) {
+
+		$limit = (int) $limit; 
+		$_limit = is_null($start) ? $limit : $limit+1;
+		$out = '';
+		$pageNum = wire('input')->pageNum; 
+
+		//auto-determine $start if not specified
+		if(is_null($start)) {
+			if($pageNum > 1) $start = $pageNum * $limit; 
+				else $start = 0;
+		}
+
+		//we show pending and spam comments when page is editable
+		if(is_null($admin)) $admin = wire('page')->editable();
+
+		//build selector to locate comments
+		$selector = "limit=$_limit, start=$start, sort=-created, ";
+
+		if($admin) $selector .= "status>=" . Comment::statusSpam . ", ";
+			else $selector .= "status>=" . Comment::statusApproved . ", ";
+
+		//find the comments we want to output
+		$comments = $this->findComments($selector);
+
+		return $comments;
+
+	}
+
+	/**
+	 * Given a PageArray of blog entries generate and return the output.
+	 *
+	 * @access public
+	 * @param PageArray|Page $posts The entries to generate output for
+	 * @param bool $small Set to true if you want summarized versions of posts (default = false)
+	 * @return $out string The generated output
+	 *
+	 */
+	public function renderPosts($posts, $small = false) {
+
+		if(!$posts instanceof PageArray) {
+
+					if($posts instanceof Page) {
+							// single page
+							$post = $posts; 
+							$posts = new PageArray();
+							$posts->add($post); 
+
+					} 
+
+					elseif(is_string($posts)) {
+
+							// selector string
+							$selector = $posts; 
+
+							$posts = wire('pages')->find("template=blog-post, sort=-blog_date, $selector"); 
+							
+					} 
+
+					else {
+						
+							throw new WireException('renderPosts requires a PageArray, Page or selector string'); 
+					}
+		
+		}//end if(!$posts instanceof PageArray)
+
+
+		foreach($posts as $page) {
+
+		
+					//Note:we don't have a summary field for 'post' pages but left code here just in case we need it in future
+					if(empty($page->summary)) {
+								// summary is blank so we auto-generate a summary from the body [note: blog body field is 'blog_body']
+								$summary = strip_tags(substr($page->blog_body, 0, 450));
+							
+								$page->summary = substr($summary, 0, strrpos($summary, ' '));
+								
+					
+					}//end if(empty($page->summary))
+
+					// set a couple new fields that our output will use
+					$page->set('authorName', $page->createdUser->get('title|name')); 
+					$page->set('authorURL', wire('config')->urls->root . 'blog/authors/' . $page->createdUser->name . '/'); //set the correct authorURL! Blog pages are under the page 'blog'
+		
+			}//end foreach($posts as $page)
+
+		$out = '';
+
+		//Small means show truncated body text. Large just means show the whole body text
+		if($small) {
+					
+					// display a headline indicating quantities
+					$start = $posts->getStart()+1;
+					$end = $start + count($posts)-1;
+					$total = $posts->getTotal();
+
+					if($total) $out .= "<h3>" . sprintf(__('Posts %1$d to %2$d of %3$d'), $start, $end, $total) . "</h3>";
+		
+		}//end if($small)
+
+
+		$out .= $small ? "<div class='posts posts-small'>" : "<div class='posts'>" ;
+
+		foreach($posts as $page) {
+			
+					$numComments = $page->blog_comments->count();
+
+					//if we found comments
+					if($numComments > 0) $numCommentsStr = sprintf(_n('%d Comment', '%d Comments', $numComments), $numComments);
+					
+					else $numCommentsStr = __('No comments yet'); 
+
+					$out .= "<div class='post' id='{$page->id}'>
+								<div class='post-head'>
+								<a class='num-comments-icon' href='{$page->url}#comments' title='$numCommentsStr'>$numComments</a>";
+							
+					//headline size
+					$h = $small ? "h4" : "h2";
+					
+					$out .= "<$h class='post-headline'><a href='{$page->url}'>{$page->title}</a></$h>
+							 	<p class='post-byline'>";
+
+					// meta/byline
+					$out .= "<span class='author'>" . sprintf(__('Posted by %s'), "<a href='{$page->authorURL}'>{$page->authorName}</a></span>, ");
+					$out .= "<span class='date'>{$page->blog_date}</span>";
+					
+					//if page is editable (i.e., appropriate person logged in), let's show an edit link to the post
+					if($page->editable()) $out .= "<span class='edit'>(<a href='" . wire('config')->urls->admin . "page/edit/?id={$page->id}'>" . __('edit') . "</a>)</span>";
+							
+					$out .=	"</p></div><div class='post-body'>";
+
+					if($small) {
+
+								$out .= "<p>" . $page->summary . "&hellip; <a class='more' href='{$page->url}'>" . __('View More') . "</a></p>";
+					} 
+
+					else {
+								$out .= $page->blog_body; 
+						
+						// if the post has images and no <img> tags in the body, then make it a gallery
+						//Note: Left here from old code. We are not including a gallery in this version
+						//if(count($page->images) && strpos($page->body, '<img ') === false) include("./gallery.php");
+					}
+					
+					$out .= "</div><div class='post-foot'>";
+
+							
+					//When $small = false, i.e. we want 'LARGE' POSTS [not-truncated]
+					if(!$small) {
+								
+								// display categories & tags when doing large posts
+								if(count($page->blog_categories)) {
+									
+												$out .= "<p class='categories'><span>" . __('Categories:') . "</span>";
+									
+												foreach($page->blog_categories as $category) {
+													
+															$out .= "<a href='{$category->url}'>{$category->title}</a>, ";	
+												}
+									
+												$out = rtrim($out, ", ") . "</p>";
+											
+
+								}//end if(count($page->categories))
+
+								if(count($page->blog_tags)) {
+									
+												$out .= "<p class='tags'><span>" . __('Tags:') . "</span>"; 
+
+												foreach($page->blog_tags as $tag) {
+
+															$out .= "<a href='{$tag->url}'>{$tag->title}</a>, ";
+
+												}
+
+												$out = rtrim($out, ", ") . "</p>";//
+
+
+								} //end if(count($page->tags))
+
+								
+								$out .= "<p class='num-comments'><span>" . __('Comments:') . "</span> <a href='{$page->url}#comments'>$numCommentsStr</a></p>";
+
+					}//END if(!$small) 
+
+							
+					$out .= "</div></div>";
+				 
+
+		}//end 	foreach($posts as $page)
+			
+		if(!count($posts)) $out .= "<h5>" . __("No posts found.") . "</h5>"; //<!--/.posts-->
+		
+		$out .= "</div>";
+
+		// if there are more posts than the specified limit, then output pagination
+		if($posts->getLimit() < $posts->getTotal()) $out .= $posts->renderPager(); 
+		
+		return $out;	
+
+	
+	}
+
+	/**
+	 * Render a list of comments.
+	 *
+	 * If page is editable, then non-approved comments will be included (and identified) in the list.
+	 *
+	 * @access public
+	 * @param CommentArray $comments
+	 * @param int $limit Optional limit of maximum comments to show
+	 * @return $out string
+	 *
+	 */
+	public function renderComments(CommentArray $comments, $limit = 0) {
+
+		$out = '';
+		$page = wire('page');//Page being viewed (Page)
+		$admin = $page->editable(); 
+		$cnt = 0;
+		$pageNum = wire('input')->pageNum;
+		$commentArray = new CommentArray();
+		$prevURL = '';//URL for previous pagination, if applicable (string)
+		$nextURL = '';//URL for next pagination, if applicable (string)
+
+		//check if we should introduce pagination
+		if($limit && (count($comments) > $limit || $pageNum > 1)) {
+
+			if($pageNum > 2) $prevURL = $page->url . 'page' . ($pageNum-1);
+			
+			elseif($pageNum > 1) $prevURL = $page->url;
+			
+			else $prevURL = '';
+
+			if(count($comments) > $limit) $nextURL = $page->url . 'page' . ($pageNum+1);
+			
+			else $nextURL = '';
+		}
+
+		//setup comments for output, copying all comments we will display into $commentArray
+		foreach($comments as $comment) { 
+					if(!$admin && $comment->status != Comment::statusApproved) continue; 
+					$comment->date = $this->formatDate($comment->created); 
+					$commentArray->add($comment); 
+					$cnt++;
+					if($limit && $cnt >= $limit) break;
+		} 
+
+		if($page->template == 'blog-post') {
+			
+				//if we are viewing a post page, then start with a headline
+				$out .= "<div id='comments'>"; //for jumplinks
+
+				$n = count($comments); 
+
+				if($n) {
+
+					$out .= "<span class='num-comments-icon'>$n</span>"; 	
+					$out .= "<h4>" . sprintf(_n('Comment', 'Comments', $n), $n) . "</h4>";
+				}
+		}
+
+		if(count($comments)) {
+			
+				//output the individual comments
+				$out .= "<ul class='comments CommentList'>";
+
+				foreach($comments as $comment) {
+
+							$out .= "<li class='comment CommentListItem' id='comment" . $comment->id . "'>
+										<p class='comment-head CommentHeader'>";
+
+							$cite = htmlentities($comment->cite, ENT_QUOTES, "UTF-8"); 
+							$website = htmlentities($comment->website, ENT_QUOTES, "UTF-8");
+
+							if($website) $cite = "<a href='$website' rel='nofollow' target='_blank'>$cite</a>";
+
+							if($page->template == 'blog-post') {
+
+									$out .= sprintf(__('Comment by %1$s on %2$s'), $cite, $comment->date); 
+							} 
+
+							else {
+
+									$out .= "<a href='{$comment->page->url}#comment{$comment->id}'>";
+									$out .= sprintf(__('%1$s replied to %2$s on %3$s'), $cite, $comment->page->title, $comment->date); 
+									$out .= "</a>";
+							}
+
+							if($comment->status == Comment::statusPending) {
+
+									$out .= " <span class='comment-status-pending'>" . __('PENDING') . "</span>";
+							} 
+
+							elseif($comment->status == Comment::statusSpam) {
+								
+									$out .= " <span class='comment-status-spam'>" . __('SPAM') . "</span>";
+							
+							}
+						
+			
+							$out .= "</p>
+										<div class='comment-body CommentText'>";
+
+							$text = htmlentities($comment->text, ENT_QUOTES, "UTF-8"); 
+							$text = str_replace("\n\n", "</p><p>", $text);
+							$text = str_replace("\n", "<br />", $text);
+							
+							$out .=  "<p>$text</p>
+									</div></li>";
+
+				}//end foreach the include '/site/templates/markup/comment.php'
+
+				$out .= "</ul>";
+		
+
+		}//end if(count($comments)) 
+
+		//@@kongondo
+		elseif ($page->template=='blog-comments') {
+
+				$out .= $this->_('No comments yet');
+			
+		}
+
+		if($page->template == 'blog-post') {
+
+				//if we are viewing a post page, then output a comments form
+				$out .= $page->blog_comments->renderForm(array(
+					'headline' => '<h4>' . __('Post a comment') . '</h4>', // Post comment headline
+					'attrs' => array(),
+					'successMessage' => "<div class='alert-box success'>" . __('Thank you, your submission has been saved.') . "</div>",
+					'errorMessage' => "<div class='alert-box error'>" . __('Your submission was not saved due to one or more errors. Try again.') . "</div>",
+					'redirectAfterPost' => true
+					));
+
+				$out .=  "</div><!--/#comments-->";
+		}
+
+		//output pagination if necessary
+		if($prevURL || $nextURL) {
+			
+				$out .= "<p class='comments-pagination'>";
+
+				if($prevURL) $out .= "<a class='button button-prev' href='$prevURL'>" . __('Back') . "</a> "; 
+				if($nextURL) $out .= "<a class='button button-next' href='$nextURL'>" . __('Next') . "</a> ";
+
+				$out .= "</p>";
+		}
+
+	
+		return $out;
+
+	}
+
+	/**
+	 * Return a date formatted as specified in the Blog post's 'blog_date' field.
+	 *
+	 * @access public
+	 * @param int|string $date If given a timestamp, it will be automatically formatted according to the 'date' field in PW
+	 *	If given a string, then whatever format it is in will be kept. 
+	 * @return $date string
+	 *
+	 */
+	public function formatDate($date) {
+
+		if(is_int($date)) {
+			//get date format from our 'date' field, for consistency
+			$dateFormat = wire('fields')->get('blog_date')->dateOutputFormat; 
+			$date = FieldtypeDatetime::formatDate($date, $dateFormat);
+		}
+
+		return $date;
+
+	}
+
+	/**
+	 * Render an RSS feed of the given pages.
+	 *
+	 * Note that you should not output anything further after calling this, as it outputs the RSS directly.
+	 *
+	 * @access public
+	 * @param PageArray $items Pages to include in the feed
+	 * @param string $title Title of the feed. If not provided, pulled from current page.
+	 * @param string $description Description of the feed. If not provided, pulled from current page.
+	 *
+	 */
+	public function renderRSS(PageArray $items, $title = '', $description = '') {
+
+		$page = wire('page');
+		if(empty($title)) $title = $page->get('headline|title') . ' - ' . wire('pages')->get('/')->headline;
+		if(empty($description)) $description = $page->get('summary|meta_description');
+
+		$rss = wire('modules')->get('MarkupRSS');
+		$rss->title = $title;
+		$rss->description = $description;
+		$rss->itemDescriptionField = 'body';
+		$rss->itemDescriptionLength = 0; // no maxlength
+		$rss->itemDateField = 'date';
+		$rss->render($items);
+	}
+
+	/**
+	 * Render a secondary navigation.
+	 *
+	 * When the $mobile option is set, make the ul.nav disappear when at mobile width 
+	 * and instead show only the form <select> navigation instead. 
+	 * This happens because the css media query recognizes the 'no-mobile' class 
+	 * and hides any thing carrying that class. Likewise, anything with the 'mobile'
+	 * class is only shown when at mobile width.
+	 *
+	 * @access public
+	 * @param string $headline Headline to display above nav
+	 * @param array|PageArray $items May be an array of Page objects or array of ($url => $label)
+	 * @param Page|string $currentURL Current item that should be highlighted, may be Page or $url
+	 * @param bool $mobileSelect Replace the nav with a <select> when at mobile width?
+	 * @return $out string
+	 *
+	 */
+	public function renderNav($headline, $items, $currentURL = '', $mobile = true) {
+
+		if(!count($items)) return '';
+
+		if($currentURL instanceof Page) {
+
+				$currentPage = $currentURL;
+				$currentURL = $currentPage->url;
+		} 
+
+		else {
+				$currentPage = null;
+		}
+
+		$nav = array();
+
+		//we add this for use in selector below [code amendment to suit this Blog's Page Tree]
+		$blogParentId = wire('pages')->get('/blog/')->id;
+
+		foreach($items as $url => $title) {
+				
+				if($title instanceof Page) {
+
+						$page = $title;
+						$title = $page->title;
+						$url = $page->url;
+
+						// if nav item is root-level and $currentPage shares this root parent, then 
+						// make it the currentURL so that it is still highlighted in the nav
+						
+						/* ORIG CODE in Blog Profile. My Page Tree is different, hence amended below */
+						//if($page->parent_id == 1 && $currentPage && $currentPage->rootParent === $page) $currentURL = $currentPage->rootParent->url;
+
+						/* @@kongondo above amendment */
+						if($page->parent_id == $blogParentId && $currentPage && $currentPage->parent === $page) $currentURL = $currentPage->parent->url;
+				} 
+
+				$nav[$url] = $title;
+		
+		}
+
+		$out = '';
+
+		if($headline) $out .= "<h4 class='nav-headline'>$headline</h4>"; 
+
+		$class = 'nav links';
+
+		if($mobile) $class .= ' no-mobile'; // hides the ul.nav when mobile width
+
+		$out .= "<ul class='$class'>"; 
+		
+		//$nav is the array we populated earlier with the $url and $title of each $item
+		foreach($nav as $url => $title) {
+		
+					if($url == $currentURL) {
+
+							$out .= "<li class='on'><a class='on' href='$url'>$title</a></li>";
+					} 
+
+					else {
+						
+							$out .= "<li><a href='$url'>$title</a></li>";
+					}
+		}
+
+		$out .= "</ul>";
+
+		/*
+		 * here's where we display the mobile select navigation. The form we put here
+		 * has the class 'mobile' so it is only visible when at mobile width. 
+		 *
+		 */
+		if($mobile)
+
+				$out .= "<form class='mobile'>
+							<select class='nav'><option value='./'></option>";
+			
+				//$nav is the array we populated earlier with the $url and $title of each $item
+				foreach($nav as $url => $title) {
+							$selected = $url == $currentURL ? " selected='selected'" : '';
+							$out .=  "<option$selected value='$url'>$title</option>";
+				}
+				
+				$out .= "</select>
+						</form>";
+
+		return $out;
+
+
+	}
+
+	/**
+	 * 	Called only when the module is installed.
+	 *
+	 *	@access public
+	 *
+	 */	
+	public function ___install() {
+
+		//Don't need to add anything here...
+		
+	}
+
+	/**
+	 *	Called only when the module is uninstalled.
+	 *
+	 *	This should return the site to the same state it was in before the module was installed.
+	 *
+	 *	@access public
+	 *
+	 */
+	 public function ___uninstall() {
+		
+		// Don't need to add anything here...
+			
+	}	
+
+		
+}

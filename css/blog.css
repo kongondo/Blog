@@ -1,0 +1,370 @@
+/**
+* @author Kongondo <kongondo@gmail.com>
+* @credits some code borrowed from Ryan Cramer's Blog Profile
+*
+*/
+
+/* html */
+html {overflow-y:scroll;}/* no jumpy jacks!*/
+
+
+/* body */
+body {
+	margin: 0 auto;
+	font-family: 'Archivo Narrow', sans-serif;
+	font-size: 90%;
+	line-height: 20px;
+	color:#666;
+}
+
+/* headings */
+h1, h2, h3, h4 {
+	font-family: 'Archivo Narrow', sans-serif;
+	font-weight: 400;
+}
+
+h2 {
+	font-size: 2em;
+	line-height: 32px;
+}
+
+h3 {
+	font-size: 1.5em;
+	line-height: 28px;
+}
+
+h4 {
+	font-size: 1.275em;
+	line-height: 22px;
+}
+
+h2, h3, h4, ul.links {margin-top: 0;}
+
+h4 {margin-bottom: 0;}
+
+div#main h3 {
+	color: #1D8ACB;
+	background-color: #ECF7FD; /* baby blue background on e.g. 'posts 1 to 3 of 5'*/
+	border-bottom: 1px dotted #1D8ACB;/* blue like menu */
+}
+
+/* other elements */
+em {color: #D05;}
+
+/* navigation */
+ul#navbar {
+	font-size: 2.85em;
+	list-style: none;
+	padding: 0 0 15px 0; 
+	font-family: 'Shadows Into Light', cursive;
+}
+
+ul#navbar li {
+	float:left;
+	list-style: none;
+	padding-right: 21px;
+}
+
+/*=== Navigation bar and pagination ON/Active state ===*/ 
+#nav li.on, #nav li.on a, .MarkupPagerNav li.MarkupPagerNavOn a,.MarkupPagerNav li a:hover {color: #E59342;}
+
+ul#navbar a:hover {background-color: #FFF1F0;}/* pale pink */
+
+div#top-nav li a{
+	padding-right: 40px;
+	background-color: #FFF1F0;
+}
+
+div#nav a:hover, div#main a:hover, div#sidebar a:hover {color: #D05;}
+
+ul.MarkupPagerNav {
+	clear: both;
+	margin: 14px 0 0 0;
+	padding: 0 0 50px 0;
+}
+
+.MarkupPagerNav li {
+	display: inline;
+	list-style: none;
+	margin: 0;
+}
+
+.MarkupPagerNav li a, .MarkupPagerNav li.MarkupPagerNavSeparator {
+	display: block;
+	float: left;
+	padding: 5px 11px;                
+	margin-right: 3px;
+	font-weight: bold;
+	color: #1D8ACB;
+	border: 1px solid #1D8ACB;
+}
+
+.MarkupPagerNav li.MarkupPagerNavOn a,.MarkupPagerNav li a:hover {
+	text-decoration: none !important;
+	color: #1D8ACB;
+	background: #ECF7FD;
+}
+
+/* general links */
+a {
+	color: #1D8ACB;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+/* input */
+textarea {
+	overflow: auto;
+	vertical-align: top;
+}
+
+button, input, optgroup, select, textarea {
+	color: inherit;
+	font: inherit;
+	margin: 0;
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+/* divs: header, nav, main, sidebar, etc. */
+div#header {padding-left: 14px;}
+
+div#nav h4, div#sidebar h4{padding: 7px 14px 3px;}
+
+div#nav ul, div#sidebar ul {
+	list-style: none;
+	padding: 0 14px;
+}
+
+div#nav p, div#sidebar p {padding: 0 14px;}
+
+div#main {
+	padding: 0 30px;
+	min-height: 700px;
+}
+
+div#recent-posts {background-color: #F2FAE3;}
+div#recent-posts h4 {color: #659F13;}
+
+div#recent-comments {background-color: #FFF1F0;}
+div#recent-comments h4 {color: #D85233;}
+
+div#recent-posts, div#recent-comments {position: relative;} /* need to properly postion the rss icons */
+
+div#blogroll {background-color: #FFFCEB;}
+div#blogroll h4{color:#E28327;}
+
+/* posts */
+div.post {
+	border-bottom: 1px dotted #1D8ACB;
+	margin-bottom: 15px;
+}
+
+div.post-foot {margin-bottom: 15px;}
+
+span.edit {margin-left: 3px;}
+
+.post-foot p {
+	margin: 0;
+	font-weight: bold;
+}
+
+.post-foot a, .posts-group a, a.more, #sidebar a.more {font-weight: normal;}
+
+.post-foot span {margin-right: 3px;}
+
+.prev-post {
+	float: left;
+	width: 45%;
+	margin-right: 5%;
+	text-align: left;
+}
+
+.next-post {
+	float: right;
+	width: 45%;
+	text-align: right;
+	position: relative;
+	left: -14px;
+}
+
+.next-post span, .prev-post span {color: #1D8ACB;}
+
+/* tags */
+ul.posts-group {
+	list-style: none;/* alphabetical list of tags */
+	padding-left: 0;
+}
+
+/* comments + comments form */
+#comments .num-comments-icon {
+	float: left; 
+	position: relative;
+	top: 0;
+}
+
+/*.CommentForm_text {clear: left;}*/
+
+.num-comments-icon {
+	background: #ECF7FD;
+	color: #1D8ACB;
+	display: inline-block;
+	position: relative;
+	font-size: 0.857em;
+	line-height: 22px;
+	height: 20px;
+	width: 30px;
+	text-align: center;
+	z-index: 1;
+	font-weight: bold;
+	margin-right: 7px;
+}
+
+.post-head .num-comments-icon {
+	float: right;
+	right: -5px;
+	margin-left: 5px;
+}
+
+p.num-comments {display: none;}/* hide the text showing post's number of comments; using icons instead */
+
+ul.CommentList {
+	list-style: none;
+	padding-left: 0;
+}
+
+p.comment-head, p.post-byline {font-weight: bold;}
+
+div#CommentForm {
+	background-color: #ECF7FD;
+	padding: 15px;
+	border: 1px dashed #1D8ACB;
+}
+
+div#CommentForm label {
+	font-weight: bold;
+	padding-bottom: 3px;
+}
+
+form#CommentForm_form input:focus, form#CommentForm_form textarea:focus {
+	outline: none;
+	border:1px dotted #E28327; /* orange */
+	padding: 3px;
+}
+
+.CommentForm_cite input, .CommentForm_email input, .CommentForm_website input, .CommentForm_text textarea {
+	width: 100%;
+	margin-top: 0;
+	border: 1px solid #A9A9A9;/* pale grey */
+	padding: 3px;
+}
+
+/* archives */
+.archive h3 + .num-posts, .category h3 + .num-posts {
+	float: right;
+	position: relative;
+	top: -45px;
+	right: 10px;
+}
+
+.posts-group span {margin-left: 3px;}/* also for tags and authors */
+
+/* authors */
+.author-photo {
+	float: left;
+	margin: 0 14px 14px 0;
+}
+
+.clearfix:after {/* clear author photo's float */
+	content: '\0020'; 
+	visibility: hidden; 
+	display: block; 
+	height: 0; 
+	clear: both;
+}
+
+/* rss */
+div#recent-posts a.rss, div#recent-comments a.rss {
+	position: absolute;
+	top: 10px;
+	right:14px;
+}
+
+a.rss {
+	background: url(images/rss-black.png) top left no-repeat;
+	height: 14px;
+	width: 14px;
+	overflow: hidden;
+	display: inline-block;
+	text-indent: -9999px;
+}
+
+div.category .num-posts a.rss {
+	position: relative;
+	top: 2px;
+	margin-left: 4px;
+}
+
+/* footer */
+div#footer {
+	margin-top: 20px;
+	height: 50px;
+	text-align: center;
+	vertical-align: middle;
+}
+
+small {font-size: 85%;}
+
+#footer_note, #processwire {display: block;}
+
+/* Responsive Styles */
+.mobile {display: none;}
+
+/*=== Tablet ===*/
+@media (max-width: 767px) {
+	div#header, div#main, div#sidebar {padding: 0 30px;}
+	div#main {min-height: 0px; margin-top: 15px;}
+	div#nav, div#sidebar {padding: 0 20px;}
+	div#top-nav form.mobile {margin-left: 14px;}
+	div#sub-nav h4 {padding-left: 0;}
+	div#recent-posts {margin-top: 15px;}
+	ul#navbar {font-size: 2.5em;}
+	.mobile {display: block;}
+	.no-mobile {display: none;}
+}
+
+/*=== Desktop ===*/
+@media (min-width: 768px) {
+	body {width: 708px;}
+	#nav {width: 17%;}
+	#main {width: 60%;}
+	#sidebar {width: 23%;}
+}
+
+/* ===Other Desktop ===*/
+@media (min-width: 900px) {
+	body {width: 840px;}
+}
+
+/* ===Large Desktop ===*/
+@media (min-width: 1200px) {
+	body {width: 1140px;}
+}
+
+/* === Even Larger Screens ===*/
+@media (min-width: 1366px) {
+	body {width: 1200px;}
+}
+
+/*=== main menu ===*/
+@media (max-width: 480px) {
+	ul#navbar {font-size: 1.65em;}
+}
+
+/*=== headings ===*/
+@media (max-width: 900px) {
+	h4 {font-size: 1.145em;}
+}
+
+
