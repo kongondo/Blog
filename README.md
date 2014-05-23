@@ -60,7 +60,7 @@ The CSS is up to you, of course.
 
 
 ##Resources
-*	[Support Forum](http://processwire.com/talk/topic/xxxx/)
+*	[Support Forum](https://processwire.com/talk/topic/6465-module-blog/)
 *	Video [ProcessBlog demo](http://youtu.be/64XMGLuniqU)
 *	Video [MarkupBlog demo](http://youtu.be/k7aSeL29JPE)
 
