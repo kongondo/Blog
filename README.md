@@ -49,8 +49,11 @@ In comparison to the Blog Profile, there are differences in the Blog Pages' stru
 
 ````php
 
-$blog = $modules->get('MarkupBlog');//Load the module. You then have access to its methods and properties. 
-echo $blog->renderPosts("limit=5");//render 5 latests posts. See the example Template Files code for more examples.
+//Load the module. You then have access to its methods and properties. 
+$blog = $modules->get('MarkupBlog');
+
+//render 5 latests posts. See the example Template Files code for more examples.
+echo $blog->renderPosts("limit=5");
 ````
 
 The CSS is up to you, of course.
