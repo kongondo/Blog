@@ -177,8 +177,8 @@ class ProcessBlog extends Process implements Module {
 
 			foreach($p->blog_comments as $comment) {
 				if($comment->isApproved()) $numApproved++; 
-				else if($comment->status == Comment::statusPending) $numPending++;
-				else if($comment->status == Comment::statusSpam) $numSpam++; 
+				elseif($comment->status == Comment::statusPending) $numPending++;
+				elseif($comment->status == Comment::statusSpam) $numSpam++; 
 			}
 		
 		}
@@ -907,6 +907,7 @@ class ProcessBlog extends Process implements Module {
 			$this->_('Author'),
 			$this->_(''),
 			$this->_('Posts'),
+			$this->_('Pending'),
 			
 		));
 
@@ -916,11 +917,13 @@ class ProcessBlog extends Process implements Module {
 		foreach ( $authors as $author) {
 					
 					$authorPhoto = count($author->blog_images) ? "<img src ='" . $author->blog_images->first->size(75, 75)->url ."'>"  : "<span class='red' >No photo</span>";
-					$authorCnt = count(wire('pages')->find("template=blog-post, created_users_id={$author->id}"));//count number of posts by this author
+					$authorPublishedCnt = count(wire('pages')->find("template=blog-post, created_users_id={$author->id}"));//count number of posts by this author
+					$authorPendingCnt = count(wire('pages')->find("template=blog-post, status=unpublished, created_users_id={$author->id}"));//count number of posts by this author
 					$t->row(array(
 						$authorPhoto,
 						$authorTitle = $author->title ? $author->title : $author->name . " <span class='red'>(please enter your first and last names in your profile).</span>",
-						$authorCnt
+						$authorPublishedCnt,
+						$authorPendingCnt
 					));
 		}
 				
