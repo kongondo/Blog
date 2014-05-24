@@ -18,7 +18,10 @@
 		$('.editBlog, .addBlog').fancybox({
 			type : 'iframe',
 			frameWidth : w,
-			frameHeight : h
+			frameHeight : h,
+			callbackOnClose:function () {
+							window.location.reload(true);//force parent page refresh on modal close [note: option for version 1.2 fancybox]
+			},
 		});
 
 		/** Toggle all checkboxes in th for 'posts', 'categories' and 'tags' tables **/
