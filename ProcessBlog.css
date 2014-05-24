@@ -96,7 +96,7 @@
 	/*** authors' table ***/
 	table.authorsTable td {height:85px;}
 	table.authorsTable td:nth-child(1) {width: 8%;}/* blog author image column */
-	table.authorsTable td:nth-child(3) {width: 10%;}/* posts - last/3rd column */
+	table.authorsTable td:nth-child(3), table.authorsTable td:nth-child(4) {width: 10%;}/* posts [published and pending(unpublished)]- /3rd & 4th(last) columns */
 
 	/*** settings table ***/
 	table.settingsTable th:nth-child(1) {width:22%;}
