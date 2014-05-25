@@ -58,7 +58,7 @@ $blog = $modules->get('MarkupBlog');
 echo $blog->renderPosts("limit=5");
 ````
 
-The CSS is up to you, of course.
+The CSS and most of the HTML is up to you, of course.
 
 
 ##Resources
