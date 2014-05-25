@@ -32,14 +32,14 @@ class ProcessBlog extends Process implements Module {
 	
 		//@ User role needs 'blog' permission
 		//@ $permission = 'blog';
-		//@ User can optionally install MarkupBlog - for frontend rendering of their Blog
+		//@ Installs MarkupBlog - for frontend rendering of the Blog
 
 		return array(
 			'title' => 'Blog',
 			'summary' => 'Blog Manager module inspired by the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
 			'version' => 100,
-			'href' => 'http://processwire.com/talk/topic/xxxx',
+			'href' => 'https://processwire.com/talk/topic/6465-module-blog/',
 			'singular' => true, 
 			'autoload' => false, 
 			'permission' => 'blog',

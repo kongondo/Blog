@@ -39,7 +39,7 @@ class MarkupBlog  extends WireData implements Module {
 			'summary' => 'Markup module to output a Blog based on the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
 			'version' => 100,
-			'href' => 'http://processwire.com/talk/topic/xxxx',
+			'href' => 'https://processwire.com/talk/topic/6465-module-blog/',
 			'singular' => true, 
 			'autoload' => false,
 			'requires' => 'ProcessBlog' 
