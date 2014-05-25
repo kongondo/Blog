@@ -3,20 +3,17 @@
 /**
  * recent-tweets template
  * Example template file. Show a short list of recent tweets in a Blog Widget
+ * See all options and usage info here: http://modules.processwire.com/modules/markup-twitter-feed/
  *
  */
 
-	//note: in these examples, the code below has now been moved to /site/templates/includes/blog/side-bar.inc
-	//we leave this here as an example...
-	$limit = $page->blog_quantity;
-	$twitterName = $page->note;
+	$twitterName = $page->blog_note;
 
-	$t = wire('modules')->get('MarkupTwitterFeed');
-	$t->limit = $page->quantity;
+	$t = $modules->get('MarkupTwitterFeed');
+	$t->limit = $page->blog_quantity;
 	$t->cacheSeconds = 3600;
 	$t->dateFormat = wire('fields')->get('blog_date')->dateOutputFormat;
 	$t->showHashTags = true; 
-	$t->showName = false;
 	$t->showDate = 'before';
 	$t->listOpen = "<ul class='MarkupTwitterFeed links'>";
 	$t->listItemDateOpen = "<span class='date'>";
