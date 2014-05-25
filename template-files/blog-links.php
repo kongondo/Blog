@@ -6,7 +6,7 @@
  *
  */
 
-	//note: in these examples, the code below has now been moved to /site/templates/includes/blog/side-bar.inc
+	//note: in these examples, the code below has now been moved to /site/templates/blog-side-bar.inc
 	//we leave this here as an example...
 	echo "<h4>{$page->title}</h4>";
 
