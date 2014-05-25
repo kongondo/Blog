@@ -1083,7 +1083,8 @@ class ProcessBlog extends Process implements Module {
 			$this->_('Unavailable'),
 		));
 
-		$widgets = wire('pages')->find('parent.title=widgets, include=all, parent!=7');
+		//$widgets = wire('pages')->find('parent.title=widgets, include=all, parent!=7');
+		$widgets = wire('pages')->get('/blog/widgets/')->children('include=all');
 
 		foreach ($widgets as $widget) {
 						
