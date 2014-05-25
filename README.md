@@ -33,6 +33,7 @@ In comparison to the Blog Profile, there are differences in the Blog Pages' stru
 * The module also adds 3 fields (biography, image and title) to the user template. These are needed for the Blog Author biography.
 * **On uninstall, all installed Fields, Templates, Template Files and Blog Pages are left untouched. If you need to remove them, you have to do it manually (or using the API)**. This is in order to protect existing data.
 * Role 'author' and permission 'blog' are created on install.
+* In order to use the Recent Tweets Widget, you will need to separately install and setup the module 'MarkupTwitterFeed' (see resources below).
 
 
 ##How to Install
@@ -64,6 +65,7 @@ The CSS is up to you, of course.
 *	[Support Forum](https://processwire.com/talk/topic/6465-module-blog/)
 *	Video [ProcessBlog demo](http://youtu.be/64XMGLuniqU)
 *	Video [MarkupBlog demo](http://youtu.be/k7aSeL29JPE)
+*	MarkupTwitterFeed [MarkupTwitterFeed](http://mods.pw/d)
 
 ##License
 GPL2
