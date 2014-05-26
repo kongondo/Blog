@@ -28,8 +28,9 @@ This module enables you to create and manage a Blog in a unified interface. It i
 In comparison to the Blog Profile, there are differences in the Blog Pages' structure and names, Fields, Templates and Template Files names.  
 
 * MarkupBlog replicates the Blog Profile. Hence, the 'items' Fields, Templates, Template Files and a couple of Pages are installed where such, with similar names, do not already exist, i.e., installation is non-destructive. 
-* **Note that if even one item with a similar name (and path for Page items) already exists on your site, NONE of the items will be installed**. 
+* **With the exception of Template Files, note that if even one item with a similar name (and path for Page items) already exists on your site, NONE of the items will be installed**. 
 * In that case, however, ProcessBlog 'Dashboard' will still install but will not be very usable. You will have to manually uninstall it. 
+* For Template Files, these are only copied over to **/site/templates/** where no template with an identical name already exists. This means that no Template File gets overwritten. 
 * The root parent page of the Blog is named 'blog'. To use the module, make sure you have no such page directly under root, i.e. **/blog/**.
 * Fields and Templates are prefixed with **blog_** and **blog-** respectively. They are also tagged **'blog'** for grouping in the ProcessWire Admin.
 * The module also adds 3 fields (biography, image and title) to the user template. These are needed for the Blog Author biography.
