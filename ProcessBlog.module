@@ -192,30 +192,30 @@ class ProcessBlog extends Process implements Module {
 		<table id='posts_overview'>
 
 			<tr>
-				<td>Posts</td>
+				<td>{$this->_('Posts')}</td>
 				<td class='large'>{$qn['blog-post']}</td>
-				<td>Comments</td>
+				<td>{$this->_('Comments')}</td>
 				<td class='large'>{$numTotal}</td>
 			</tr>
 
 			<tr>
-				<td>Unpublished</td>
+				<td>{$this->_('Unpublished')}</td>
 				<td class='large'>{$qn['unpublished']}</td>
-				<td>Approved</td>
+				<td>{$this->_('Approved')}</td>
 				<td class='large'>{$numApproved}</td>
 			</tr>
 
 			<tr>
-				<td>Categories</td>
+				<td>{$this->_('Categories')}</td>
 				<td class='large'><span>{$qn['blog-category']}</span></td>
-				<td>Pending</td>
+				<td>{$this->_('Pending')}</td>
 				<td class='large'>{$numPending}</td>
 			</tr>
 
 			<tr>
-				<td>Tags</td>
+				<td>{$this->_('Tags')}</td>
 				<td class='large'>{$qn['blog-tag']}</td>
-				<td>Spam</td>
+				<td>{$this->_('Spam')}</td>
 				<td class='large'>{$numSpam}</td>
 			</tr>
 
