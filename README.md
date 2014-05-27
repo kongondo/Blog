@@ -41,7 +41,7 @@ In comparison to the Blog Profile, there are differences in the Blog Pages' stru
 
 ##How to Install
 
-1.	Download the module and copy the file contents to **/site/modules/Blog/**.
+1.	Download the module and copy the file contents to **/site/modules/ProcessBlog/**.
 2.	In Admin, click Modules > check for new modules.
 3.	Click install **ProcessBlog**. The module will automatically install **MarkupBlog**.
 4.  Copy both the folders **/js/** and **/css/** and their contents to **/site/templates/**. These are needed for the example Blog output. Edit them as you wish.
