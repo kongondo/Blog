@@ -76,7 +76,7 @@ class ProcessBlog extends Process implements Module {
 		//$menu .= "<li><a class='$on' href='./'>Dashboard</a></li>";
 
 		//had to revert to below [absolute url]; see URL segment + trailing slash issue
-		$menu .= "<li><a class='$on' href='" . wire('page')->url . "'>" .$this->_('Overview'). "</a></li>";
+		$menu .= "<li><a class='$on' href='" . wire('page')->url . "'>" .$this->_('Dashboard'). "</a></li>";
 
 		$menuItemsOther = array(
 
