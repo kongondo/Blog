@@ -38,7 +38,7 @@ class ProcessBlog extends Process implements Module {
 			'title' => 'Blog',
 			'summary' => 'Blog Manager module inspired by the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 100,
+			'version' => 101,
 			'href' => 'https://processwire.com/talk/topic/6465-module-blog/',
 			'singular' => true, 
 			'autoload' => false, 
@@ -76,7 +76,7 @@ class ProcessBlog extends Process implements Module {
 		//$menu .= "<li><a class='$on' href='./'>Dashboard</a></li>";
 
 		//had to revert to below [absolute url]; see URL segment + trailing slash issue
-		$menu .= "<li><a class='$on' href='" . wire('page')->url . "'>" .$this->_('Dashboard'). "</a></li>";
+		$menu .= "<li><a class='$on' href='" . wire('page')->url . "'>" . $this->_('Dashboard'). "</a></li>";
 
 		$menuItemsOther = array(
 
