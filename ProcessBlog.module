@@ -38,7 +38,7 @@ class ProcessBlog extends Process implements Module {
 			'title' => 'Blog',
 			'summary' => 'Blog Manager module inspired by the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 101,
+			'version' => 110,
 			'href' => 'https://processwire.com/talk/topic/6465-module-blog/',
 			'singular' => true, 
 			'autoload' => false, 
@@ -475,7 +475,8 @@ class ProcessBlog extends Process implements Module {
 		));
 
 		//grab all posts; will output + their info later in a table
-		$posts = wire('pages')->find('template=blog-post, include=all, sort=-blog_date, parent!=7, limit=10');//PAGINATE!
+		$posts = wire('pages')->find('template=blog-post, include=all, sort=-blog_date, parent!=7, limit=10');
+		//$posts = wire('pages')->find('template=blog-post, include=all, sort=-created, parent!=7, limit=10');//IN PREPARATION FOR AUTO-PUBLISH DATE COMING SOON!
 
 		foreach ($posts as $p) {
 
@@ -510,6 +511,7 @@ class ProcessBlog extends Process implements Module {
 					$p->createdUser->get('title|name'),//post author
 					$status,//post published or not
 					date('d-m-Y', $p->blog_date),//this is the date entered in the post's 'date' field [blog_date]
+					//$p->blog_date ? date('d-m-Y', $p->blog_date) : "<span class='red'>Pending</span>",//this is the date entered in the post's 'date' field [blog_date]
 			));
 
 		}//end foreach $posts as $p
@@ -991,6 +993,7 @@ class ProcessBlog extends Process implements Module {
 		));
 				
 		$blog = wire('pages')->get("/blog/");
+		$posts = wire('pages')->get("/blog/posts/");
 		$comments = wire('pages')->get("/blog/comments/");
 		$recentPosts = wire('pages')->get("/blog/widgets/recent-posts/, include=all");
 		$recentComments = wire('pages')->get("/blog/widgets/recent-comments/, include=all");
@@ -1010,6 +1013,10 @@ class ProcessBlog extends Process implements Module {
 		$postsBlogPage = $this->modules->get('InputfieldInteger');//in the Blog homepage, total posts to show
 		$postsBlogPage->attr('name', 'bloghome_posts_qnty');
 		$postsBlogPage->attr('value', $blog->blog_quantity);
+
+		$postsLength = $this->modules->get('InputfieldInteger');//length of truncated posts (i.e. post excerpt when 'small=true')
+		$postsLength->attr('name', 'posts_trunc_qnty');
+		$postsLength->attr('value', $posts->blog_quantity);
 
 		$commentsPerPage = $this->modules->get('InputfieldInteger');//in the comments page, total comments per page
 		$commentsPerPage->attr('name', 'comments_page_qnty');
@@ -1035,10 +1042,11 @@ class ProcessBlog extends Process implements Module {
 							'Blog Title' => $blogTitle, 
 							'Tagline' => $blogTagline, 
 							'Blog Homepage: Total Posts' => $postsBlogPage, 
+							'Truncated Post length (default=450)' => $postsLength,
 							'Comments Page: Total per page' => $commentsPerPage,
 							'Widget: Recent Posts to show' => $recentPostsNumber, 
 							'Widget: Recent Comments to show' => $recentCommentsNumber, 
-							'Widget: Recent tweets to show' => $recentTweetsNumber,
+							'Widget: Recent Tweets to show' => $recentTweetsNumber,
 							'Twitter screen name' => $twitterScreenName
 		);
 
@@ -1279,7 +1287,7 @@ class ProcessBlog extends Process implements Module {
 
 				//@todo - SHOULD THIS BE A RICH TEXT AREA?
 				$p->blog_body = $this->sanitizer->textarea($this->input->post->quickpost_body);
-				$p->blog_date = time();//we set the time the post was created
+				$p->blog_date = time();//we set the time the post was created: @@TODO - will change when we update to auto-publish post date method
 				
 				//categories for new post
 				$categories = $this->input->post->quickpost_categories_add;//array of page IDs to add to page field categories. We sanitize each below (as int)
@@ -1439,6 +1447,7 @@ class ProcessBlog extends Process implements Module {
 				$blogTitle = $this->sanitizer->text($this->input->post->blog_title);
 				$blogTagline = $this->sanitizer->textarea($this->input->post->blog_tagline);
 				$postsBlogPage = (int) $this->input->post->bloghome_posts_qnty;
+				$postsLength  = (int) $this->input->post->posts_trunc_qnty;
 				$commentsPerPage = (int) $this->input->post->comments_page_qnty;
 				$recentPostsNumber = (int) $this->input->post->recent_posts_qnty;
 				$recentCommentsNumber = (int) $this->input->post->recent_comments_qnty;
@@ -1453,7 +1462,8 @@ class ProcessBlog extends Process implements Module {
 									array('/blog/', 'blog_summary', $blogTagline),//tagline
 									array('/blog/', 'blog_quantity', $postsBlogPage),//number of posts to show on Blog Homepage
 
-									//comments page + widget pages
+									//posts, comments page + widget pages
+									array('/blog/posts/', 'blog_quantity', $postsLength),//posts truncate length
 									array('/blog/comments/', 'blog_quantity', $commentsPerPage),//comments per page when viewing comments page
 									array('/blog/widgets/recent-posts/', 'blog_quantity', $recentPostsNumber),//number of recent posts to show
 									array('/blog/widgets/recent-comments/', 'blog_quantity', $recentCommentsNumber),//number of recent comments to show
