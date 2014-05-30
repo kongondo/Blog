@@ -11,7 +11,8 @@
 * If installer proceeds, 'template-files' are only copied if they do not exist at destination, i.e. '/site/templates/'. We don't want to overwrite users files!
 *
 * @author Kongondo
-* 
+* @version 1.1 - 30 May 2014
+*
 * https://github.com/kongondo/Blog
 * Created February 2014
 *
@@ -70,6 +71,7 @@
 						'blog-tag'	,
 						'blog-tags',
 						'blog-widgets',
+						'blog-widget-basic',
 						'repeater_blog-links',
 	);
 
@@ -259,13 +261,14 @@
 			'blog-comments' => array('Blog Comments (List)', 0, 1, 1, 1, 1, 0, 'fields' => array($title, $headline, $quantity)),
 			'blog-links' => array('Blog Widget: Links', 0, 1, '', 0, 0, 0, 'fields' => array($title, $links, $summary)),
 			'blog-post' 	=> array('Blog Post', 1, 1, '', 0, 0, 1, 'fields' => array($date, $title, $body, $images, $files, $categories, $tags, $comments) ),
-			'blog-posts' => array('Blog Posts', 0, '', 1, 1, 1, 0, 'fields' => array($title, $headline)),
+			'blog-posts' => array('Blog Posts', 0, '', 1, 1, 1, 0, 'fields' => array($title, $headline, $quantity)),
 			'blog-recent-comments' => array('Blog Widget: Recent Comments', 0, 1, 1, 0, 0, 0, 'fields' => array($title, $summary, $quantity)),
 			'blog-recent-posts' => array('Blog Widget: Recent Posts', 0, 1, '', 0, 0, 0 , 'fields' => array($title, $summary, $quantity)),
 			'blog-recent-tweets' => array('Blog Widget: Recent Tweets', 0, 1, 1, 0, 0, 0 , 'fields' => array($title, $note, $summary, $quantity)),
 			'blog-tag' => array('Blog Tag', 0, 1, '', 1, 1, 0 , 'fields' => array($title)),
 			'blog-tags' => array('Blog Tags', 1, '', 1, 0, 0, 0 , 'fields' => array($title)),
 			'blog-widgets' => array('Blog Widgets', 1, '', 1, 0, 0, 0, 'fields' => array($title)),
+			'blog-widget-basic' => array('Blog Widget: Basic', 0, 1, '', 0, 0, 0, 'fields' => array($title, $summary)),
 			'repeater_blog-links' => array('', 0, 1, 1, 0, 0, 0, 'fields' => array($headline, $href)),
 
 	);
@@ -364,6 +367,7 @@
 						array('blog', 'blog_summary', 'Blog Tagline', 'An optional sentence or two of text that you can use as your blog\'s tagline.'),
 						array('blog', 'blog_note', 'Footer', 'You can use this for footer messages (e.g. copyright notice).'),
 						array('blog', 'blog_quantity', 'Quantity of posts to show on Blog homepage'),
+						array('blog-posts', 'blog_quantity', 'Posts truncate length'),
 						
 						//comments + widget pages
 						array('blog-comments', 'blog_quantity', 'Comments per page in Comments page'),						
@@ -397,7 +401,7 @@
 	}
 
 	//Labels only: only for 'blog_summary' field for widgets templates
-	$templates = array('blog-links', 'blog-recent-comments', 'blog-recent-posts', 'blog-recent-tweets');
+	$templates = array('blog-links', 'blog-recent-comments', 'blog-recent-posts', 'blog-recent-tweets', 'blog-widget-basic');
 
 	foreach ($templates as $template) {
 		
@@ -529,6 +533,7 @@
 						'Recent Comments' =>  array('blog-recent-comments', 'widgets'),
 						'Blogroll' =>  array('blog-links', 'widgets'),
 						'Recent Tweets' =>  array('blog-recent-tweets', 'widgets'),
+						'Post Author' =>  array('blog-widget-basic', 'widgets'),
 	);
 
 
@@ -558,6 +563,7 @@
 				Recent Comments
 				Blogroll
 				Recent Tweets
+				Post Author
 			Authors
 			Archives
 
@@ -588,6 +594,7 @@
 							array('recent-tweets', 'blog_summary', 'Shows a limited list of your most recent tweets. Set this number in General Settings.'),
 							array('recent-tweets', 'blog_quantity', 3),
 							array('blogroll', 'blog_summary', 'Shows links to other blogs that you like.'),
+							array('post-author', 'blog_summary', 'Renders Post\'s author biography.'),
 
 	);
 
@@ -653,7 +660,7 @@
 							'blog-recent-posts.php', 'blog-recent-tweets.php', 'blog-tag.php', 'blog-tags.php', 'blog-side-bar.inc',
 	);
 
-	$sourcepath = dirname(__FILE__) . '/template-files/';//source of the template files to copy over [this is 'Blog/template-files/']
+	$sourcepath = dirname(__FILE__) . '/template-files/';//source of the template files to copy over [this is 'ProcessBlog/template-files/']
 	
 	$destinationpath = wire('config')->paths->templates;//destination: '/site/templates/'
 
