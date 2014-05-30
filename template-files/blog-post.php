@@ -33,10 +33,17 @@
 
     $subNav .= $blogOut->renderNav(__('See Also'), $subNavItems);
 
-    //main content
+    //if 'post author widget' is disabled, we want to style the end of the post using the css class 'no-author' (see further below in CENTRE COLUMN output)
+    $noAuthor = $pages->get('template=blog-widget-basic, name=post-author, include=all')->is(Page::statusUnpublished) ? ' no-author' : '';
+
+
+     //main content
     
     //render a single full post including title, comments, comment form + next/prev posts links, etc
-    $content = $blogOut->renderPosts($page) . $blogOut->renderComments($page->blog_comments) . $blogOut->renderNextPrevPosts($page);
+    //$blogOut->postAuthor(): if available, add 'post author widget' at the end (or at the top if desired) of each post
+   // $content = $blogOut->renderPosts($page) . $blogOut->renderComments($page->blog_comments) . $blogOut->renderNextPrevPosts($page);//without post author
+
+    $content = $blogOut->renderPosts($page) . $blogOut->postAuthor() . $blogOut->renderComments($page->blog_comments) . $blogOut->renderNextPrevPosts($page);//with post author
     	
 ?>
 	 
@@ -84,7 +91,7 @@
             	</div><!-- end #nav -->
             			
                 <!-- CENTRE COLUMN - MAIN -->				
-                <div id="main" class="block"><?php echo $content?></div> <!-- #main -->
+                <div id="main" class="block<?php echo $noAuthor?>"><?php echo $content?></div> <!-- #main -->
                   
             	<!-- RIGHT COLUMN - SIDEBAR --> 
             	<div id="sidebar" class="block"><?php include_once("blog-side-bar.inc"); ?></div><!-- #sidebar -->
