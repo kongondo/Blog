@@ -38,7 +38,7 @@ class MarkupBlog  extends WireData implements Module {
 			'title' => 'Markup Blog',
 			'summary' => 'Markup module to output a Blog based on the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 101,
+			'version' => 110,
 			'href' => 'https://processwire.com/talk/topic/6465-module-blog/',
 			'singular' => true, 
 			'autoload' => false,
@@ -528,13 +528,19 @@ class MarkupBlog  extends WireData implements Module {
 		}//end if(!$posts instanceof PageArray)
 
 
+		//excerpt/post truncated length
+
+		$limit = wire('pages')->get('/blog/posts/')->blog_quantity; 
+
+		$summaryLimit = $limit ? $limit : 450;
+
 		foreach($posts as $page) {
 
 		
 					//Note:we don't have a summary field for 'post' pages but left code here just in case we need it in future
 					if(empty($page->summary)) {
 								// summary is blank so we auto-generate a summary from the body [note: blog body field is 'blog_body']
-								$summary = strip_tags(substr($page->blog_body, 0, 450));
+								$summary = strip_tags(substr($page->blog_body, 0, $summaryLimit));
 							
 								$page->summary = substr($summary, 0, strrpos($summary, ' '));
 								
@@ -560,7 +566,6 @@ class MarkupBlog  extends WireData implements Module {
 					if($total) $out .= "<h3>" . sprintf(__('Posts %1$d to %2$d of %3$d'), $start, $end, $total) . "</h3>";
 		
 		}//end if($small)
-
 
 		$out .= $small ? "<div class='posts posts-small'>" : "<div class='posts'>" ;
 
@@ -815,6 +820,49 @@ class MarkupBlog  extends WireData implements Module {
 		return $out;
 
 	}
+
+	/**
+	 * Render a Blog post's author widget.
+	 *
+	 * @access public
+	 * @return $out string
+	 *
+	 */
+	public function postAuthor() {
+
+		$postAuthor = wire('pages')->get('template=blog-widget-basic, name=post-author, include=all');
+
+		$out = '';
+
+		//if widget is available [i.e. published]...
+	    if (!$postAuthor->is(Page::statusUnpublished)) {
+
+	                $author = wire('page')->createdUser;
+	                $authorName = $author->get('title|name'); 
+
+	                $image = $author->blog_images->first();
+
+	                if($image) {
+	                            $thumb = $image->width(100);    
+	                            $photo =  "<a title='$authorName'>
+	                                       	<img class='author-photo' src='{$thumb->url}' alt='{$thumb->description}' width='100' height='{$thumb->height}' />
+	                                   	  </a>";
+	                } 
+
+	                else {
+	                            $photo = '';
+	                }
+
+	                $out .= "<div id='post-author' class='clearfix'>" . $photo . 
+	                			"<h4 class='post-author-name'>" . $authorName . "<small> " . $this->_('Author') . "</small></h4>" . $author->blog_body . 
+	                		"</div>";
+
+	    }
+
+		return $out;
+
+	}
+
 
 	/**
 	 * Return a date formatted as specified in the Blog post's 'blog_date' field.
