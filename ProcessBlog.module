@@ -38,7 +38,7 @@ class ProcessBlog extends Process implements Module {
 			'title' => 'Blog',
 			'summary' => 'Blog Manager module inspired by the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 110,
+			'version' => 120,
 			'href' => 'https://processwire.com/talk/topic/6465-module-blog/',
 			'singular' => true, 
 			'autoload' => false, 
@@ -462,9 +462,10 @@ class ProcessBlog extends Process implements Module {
 			$this->_('Title'),
 			//$this->_('Categories'),
 			//$this->_('Tags'),
-			$this->_('Comments'),
-			$this->_('Pending comments'),
-			$this->_('Spam comments'),
+			$this->_('C/Visibility'),
+			$this->_('C/Approved'),
+			$this->_('C/Pending'),
+			$this->_('C/Spam'),
 			$this->_('Images'),
 			$this->_('Files'),
 			$this->_('Author'),
@@ -482,6 +483,14 @@ class ProcessBlog extends Process implements Module {
 
 			if (!$posts) continue;//if no posts found, continue
 		
+			//post's comments' visibility
+			$commentsVisibility = '';
+
+			if ($p->blog_comments_view == '') $commentsVisibility = 'Default';
+			elseif ($p->blog_comments_view->name == 'always-show-comments') $commentsVisibility = 'Always Show';
+			elseif ($p->blog_comments_view->name == 'disable-new-comments') $commentsVisibility = 'Disable New';
+			elseif ($p->blog_comments_view->name == 'disable-comments') $commentsVisibility = 'Disabled';
+
 			//each post page could have 0 or more comments. If comments present, that's an array, hence need to loop through them + check their status
 			foreach($p->blog_comments as $comment) {
 
@@ -501,8 +510,9 @@ class ProcessBlog extends Process implements Module {
 
 			//render the table rows with variables set above
 			$t->row(array(
-					"<input type='checkbox' name='posts_delete[]' value='{$p->id}' class='toggle'>",//disabled sorting on this in .js file
+					"<input type='checkbox' name='posts_action[]' value='{$p->id}' class='toggle'>",//disabled sorting on this in .js file
 					"<a href='{$this->config->urls->admin}page/edit/?id={$p->id}' class='editBlog iframe'>$p->title</a>",
+					$commentsVisibility,//total approved comments
 					$approvedTotal,//total approved comments
 					$pendingTotal,//total pending comments
 					$spamTotal,//total spam comments
@@ -516,14 +526,10 @@ class ProcessBlog extends Process implements Module {
 
 		}//end foreach $posts as $p
 		
+		//$m->description = $posts->count==0 ? $this->_('No posts found.') : $this->_('Click on a title to edit the post.<p>C=Comments.</p>');
 		$m->description = $posts->count==0 ? $this->_('No posts found.') : $this->_('Click on a title to edit the post.');
+		$m->notes = $this->_('C/=Comments.');
 
-		$s = $this->modules->get('InputfieldSubmit'); 
-		/*$s->class .= ' head_button_clone';*/
-		$s->attr('id+name', 'posts_delete_btn');
-		$s->class .= " posts_delete";//add a custom class to this submit button
-		$s->attr('value', $this->_('Delete')); 
-		
 		//$m->attr('value', $t->render() . $s->render());//button inside markup wrapper
 		//$m->attr('value', $t->render());
 
@@ -538,7 +544,7 @@ class ProcessBlog extends Process implements Module {
 		$currentUrl = wire('page')->url . wire('input')->urlSegmentsStr."/";//get the url segment string. In this case it is "posts"
 		$pagination = $posts->renderPager(array('baseUrl' => $currentUrl));
 
-		$m->attr('value', $pagination . $t->render() . $pagination . $s->render());//wrap our table with pagination
+		$m->attr('value', $pagination . $t->render() . $pagination);//wrap our table with pagination
 
 		//$w->add($m);	
 		//$w->add($s); //button inside wrapper
@@ -546,6 +552,41 @@ class ProcessBlog extends Process implements Module {
 		$fs2->add($m);
 		//$w->add($m);
 
+		//the posts bulk actions panel
+
+		$actions = array(
+							'publish' => $this->_('Publish'),
+							'unpublish' => $this->_('Unpublish'),
+							'defaultCommentsView' => $this->_('Default Comments View'),
+							'alwaysShowComments' => $this->_('Always Show Comments'),
+							'disableNewComments' => $this->_('Disable New Comments'),
+							'disableComments' => $this->_('Disable Comments'),
+							'trash' => $this->_('Trash'),
+							'delete' => $this->_('Delete'),
+
+		);
+
+		$m = $this->modules->get('InputfieldMarkup');
+		$m->label = $this->_('Actions');
+		$m->collapsed = 1;
+		$m->description = $this->_('Choose an Action to be applied to the selected posts.');
+		
+		$is = $this->modules->get('InputfieldSelect');
+		$is->label = $this->_('Action');
+		$is->attr('name+id', 'posts_action_select');
+		$is->addOptions($actions);
+		
+		$s = $this->modules->get('InputfieldSubmit'); 
+		/*$s->class .= ' head_button_clone';*/
+		$s->attr('id+name', 'posts_action_btn');
+		$s->class .= " posts_action";//add a custom class to this submit button
+		$s->attr('value', $this->_('Apply')); 
+		
+		$m->add($is);//add the input select
+		$m->add($s);//add the apply button
+
+		$fs2->add($m);
+	
 		$w->add($fs2);//second fieldset added to wrapper
 
 		$form->add($w);	
@@ -555,7 +596,7 @@ class ProcessBlog extends Process implements Module {
 		$post = $this->input->post; 
 
 		//send input->post values to the Method save();
-		if($post->posts_delete_btn || $post->quickpost_save_unpublished_btn || $post->quickpost_publish_btn) $this->save($form);
+		if($post->posts_action_btn || $post->quickpost_save_unpublished_btn || $post->quickpost_publish_btn) $this->save($form);
 		
 		//render the final form
 		return $form->render();
@@ -1022,9 +1063,25 @@ class ProcessBlog extends Process implements Module {
 		$commentsPerPage->attr('name', 'comments_page_qnty');
 		$commentsPerPage->attr('value', $comments->blog_quantity);
 
+		$commentsMaxPerPost = $this->modules->get('InputfieldInteger');//maximum comments per post afterwhich no more comments allowed
+		$commentsMaxPerPost->attr('name', 'comments_post_qnty');
+		$commentsMaxPerPost->attr('value', $comments->blog_comments_max);
+
+		$options = array();//for comments visibility options below
+		foreach ($comments->children as $child) {
+				if($child->name =='always-show-comments') continue;//this is not an option for global comments visibility
+				$options[$child->id] = $child->title;//will be rendered in the format <option value="1234">page title</option>
+		}
+
+		$selected = $comments->blog_comments_view;//currently selected visibility option in the global setting (/blog/comments/)
+		$commentsVisibility = $this->modules->get('InputfieldSelect');
+		$commentsVisibility->attr('name', 'comments_view');
+		$commentsVisibility->addOptions($options);
+		$commentsVisibility->attr('value', $selected);//apply selected to this input field select
+
 		$recentPostsNumber = $this->modules->get('InputfieldInteger');
 		$recentPostsNumber->attr('name', 'recent_posts_qnty');
-		$recentPostsNumber->attr('value', $recentPosts->blog_quantity); 
+		$recentPostsNumber->attr('value', $recentPosts->blog_quantity);
 
 		$recentCommentsNumber = $this->modules->get('InputfieldInteger');
 		$recentCommentsNumber->attr('name', 'recent_comments_qnty');
@@ -1042,8 +1099,10 @@ class ProcessBlog extends Process implements Module {
 							'Blog Title' => $blogTitle, 
 							'Tagline' => $blogTagline, 
 							'Blog Homepage: Total Posts' => $postsBlogPage, 
-							'Truncated Post length (default=450)' => $postsLength,
-							'Comments Page: Total per page' => $commentsPerPage,
+							'Posts: Summary length (default=450)' => $postsLength,
+							'Comments: Per comments page' => $commentsPerPage,
+							'Comments: Maximum per Post' => $commentsMaxPerPost,
+							'Comments: Visibility' => $commentsVisibility,
 							'Widget: Recent Posts to show' => $recentPostsNumber, 
 							'Widget: Recent Comments to show' => $recentCommentsNumber, 
 							'Widget: Recent Tweets to show' => $recentTweetsNumber,
@@ -1088,9 +1147,9 @@ class ProcessBlog extends Process implements Module {
 		
 		//set header rows
 		$t->headerRow(array(
-			$this->_('Name'),
-			$this->_('Description'),
-			$this->_('Unavailable'),
+				$this->_('Name'),
+				$this->_('Description'),
+				$this->_('Unavailable'),
 		));
 
 		//$widgets = wire('pages')->find('parent.title=widgets, include=all, parent!=7');
@@ -1148,7 +1207,6 @@ class ProcessBlog extends Process implements Module {
 		$form->processInput($this->input->post); 
 				
 		//delete Actions
-		$deletePostsBtn = $this->input->post->posts_delete_btn;//the button
 		$deleteCatsBtn = $this->input->post->categories_delete_btn;
 		$deleteTagsBtn = $this->input->post->tags_delete_btn;
 		
@@ -1158,43 +1216,138 @@ class ProcessBlog extends Process implements Module {
 		$addCatsBtn = $this->input->post->categories_add_btn;
 		$addTagsBtn = $this->input->post->tags_add_btn;
 		
+		//posts bulk actions button
+		$actionsPostsBtn = $this->input->post->posts_action_btn;//the button
+		$action = $this->input->post->posts_action_select;
+		
+
 		//other save actions
 		$saveBlogSettingsBtn = $this->input->post->general_settings_save_btn;
 		$saveWidgetsStatusBtn = $this->input->post->widgets_save_status_btn;
 		
 		
 		/* ########## EXECUTE CREATE/EDIT/DELETE ACTIONS ########## */
-		
-		//delete posts
-		if($deletePostsBtn && $deletePostsBtn == 'Delete') {//was the right button pressed
-				
-				$deletePosts = $this->input->post->posts_delete;//checkbox array name
 
-				//check if posts to delete were selected. 
-				if ($deletePosts) {
+		//posts bulk actions
+		if($actionsPostsBtn && $actionsPostsBtn == 'Apply') {//was the right button pressed
+				
+				if (!$action) {
+					$this->error($this->_("You need to select an action."));
+					return false;
+				}
+				
+				$actionPosts = $this->input->post->posts_action;//checkbox array name
+
+				//check if posts were selected. 
+				if ($actionPosts) {
 
 						//prepare sent post IDs to find and TRASH the post pages	
-						$postIds = implode('|', $deletePosts);//split array elements, joining them with pipe (I) to use in selector
+						$postIds = implode('|', $actionPosts);//split array elements, joining them with pipe (I) to use in selector
 						
 						$posts = wire('pages')->find("id={$postIds}, include=all");
 
 						$i = 0;
-						foreach ($posts as $p) {
+						
+						if ($action=='publish') {
+								foreach ($posts as $p) {
+											$p->removeStatus(Page::statusUnpublished);
+											$p->save();
+											$i++;
+								}
+
+								$msg = sprintf(_n("Published %d Post.", "Published %d Posts.", $i), $i);
+
+						}//end publish posts
+
+						elseif ($action == 'unpublish') {
+								foreach ($posts as $p) {
+											$p->addStatus(Page::statusUnpublished);
+											$p->save();
+											$i++;
+								}
+						
+								$msg = sprintf(_n("Unpublished %d Post.", "Unpublished %d Posts.", $i), $i);
+
+						}//end unpublish posts
+
+						elseif ($action == 'defaultCommentsView') {
+								foreach ($posts as $p) {
+											$p->blog_comments_view = '';//we remove page selection
+											$p->save();
+											$i++;
+								}
+						
+								$msg = sprintf(_n("Default comments view applied to %d Post.", "Default comments view applied to %d Posts.", $i), $i);						
+
+						}//end default comments view for posts (i.e. enabled by default)
+
+						elseif ($action == 'alwaysShowComments') {
+								$asc = wire('pages')->get('/blog/comments/always-show-comments/');
+								foreach ($posts as $p) {
+											if ($asc) $p->blog_comments_view = $asc;//if page found, add it to the blog_comments_view page field
+											$p->save();
+											$i++;
+								}
+						
+								$msg = sprintf(_n("Always show comments applied to %d Post.", "Always show comments applied to %d Posts.", $i), $i);						
+
+						}//end always show posts comments (i.e. enforce show to override any global setting)
+
+						elseif ($action == 'disableNewComments') {
+								$dnc = wire('pages')->get('/blog/comments/disable-new-comments/');
+								foreach ($posts as $p) {
+											if ($dnc) $p->blog_comments_view = $dnc;//if page found, add it to the blog_comments_view page field
+											$p->save();
+											$i++;
+								}
+						
+								$msg = sprintf(_n("New comments disabled for %d Post.", "New comments disabled for %d Posts.", $i), $i);
+
+						}//end disable new comments for posts
+
+						elseif ($action == 'disableComments') {
+								$dc = wire('pages')->get('/blog/comments/disable-comments/');
+								foreach ($posts as $p) {
+											if ($dc) $p->blog_comments_view = $dc;//if page found, add it to the blog_comments_view page field
+											$p->save();
+											$i++;
+								}
+						
+								$msg = sprintf(_n("Comments disabled for %d Post.", "Comments disabled for %d Posts.", $i), $i);
+									
+						}//end disable comments for posts
+
+						elseif ($action == 'trash') {
+								foreach ($posts as $p) {
 									$p->trash();
 									$i++;
-						}
+								}
+								
+								$msg = sprintf(_n("Trashed %d Post.", "Trashed %d Posts.", $i), $i);
 
-						$this->message($this->_("Trashed {$i} Posts"));//tell user how many posts were deleted
+						}//end trash posts
+						
+						elseif ($action == 'delete') {
+								foreach ($posts as $p) {
+									$p->delete();
+									$i++;
+								}
+								
+								$msg = sprintf(_n("Deleted %d Post.", "Deleted %d Posts.", $i), $i);
+
+						}//end delete posts
+
+						$this->message($msg);//tell user how many posts were 'actioned'
 						$this->session->redirect(wire('page')->url . "posts/");//redirect to page where we were
 
 				}
 
 				else {
-						//show error message if delete button clicked without first selecting posts to be deleted
-						$this->error($this->_("You need to select posts to delete."));
+						//show error message if apply action button clicked without first selecting posts
+						$this->error($this->_("You need to select at least one post before applying an action."));
 				}
 		
-		}//end delete posts
+		}//end posts bulk actions
 
 
 		//delete categories
@@ -1215,7 +1368,7 @@ class ProcessBlog extends Process implements Module {
 								$i++;
 						}
 
-						$this->message($this->_("Trashed {$i} Categories"));//tell user how many categories were deleted
+						$this->message(sprintf(_n("Trashed %d Category.", "Trashed %d Categories.", $i), $i));//tell user how many categories were deleted
 						$this->session->redirect(wire('page')->url . "categories/");//redirect to page where we were
 
 				}
@@ -1246,7 +1399,7 @@ class ProcessBlog extends Process implements Module {
 								$i++;
 						}
 
-						$this->message($this->_("Trashed {$i} Tags"));//tell user how many tags were deleted
+						$this->message(sprintf(_n("Trashed %d Tag.", "Trashed %d Tags.", $i), $i));//tell user how many tags were deleted
 						$this->session->redirect(wire('page')->url . "tags/");//redirect to page where we were
 
 				}
@@ -1263,7 +1416,7 @@ class ProcessBlog extends Process implements Module {
 		elseif (($addUnpublishedPostsBtn && $addUnpublishedPostsBtn == 'Save Unpublished') || ($addPostsBtn && $addPostsBtn == 'Publish') ){
 
 				$p = new Page();
-				//$p->of(false);//not needed since new page?
+				//$p->of(false);//not needed since new page
 				$p->parent = wire('pages')->get("/blog/posts/"); 
 				$p->template = wire('templates')->get("blog-post");
 				$p->title = $this->sanitizer->text($this->input->post->quickpost_title);
@@ -1329,7 +1482,7 @@ class ProcessBlog extends Process implements Module {
 				//if user selected to quick post as unpublished
 				if($addUnpublishedPostsBtn) $p->addStatus(Page::statusUnpublished);
 				$p->save();
-				//$p->of(true);//not needed? since new page
+				//$p->of(true);//not needed since new page
 				$this->message($this->_("Added new post {$p->title}."));//tell user quick post successfully added
 				$this->session->redirect(wire('page')->url . "posts/");//redirect to page where we were
 		
@@ -1374,7 +1527,7 @@ class ProcessBlog extends Process implements Module {
 						//create a string of "failed" category titles to add to error message
 						$failedTitles = implode(', ', $failed); 
 
-						if($i > 0) $this->message($this->_("Added {$i} new Categories"));//tell user how many tags were added
+						if($i > 0) $this->message(sprintf(_n("Added %d new Category.", "Added %d new Categories.", $i), $i));//tell user how many tags were added
 						if($failedTitles) $this->error($this->_("Some categories not added because names already in use. These are: {$failedTitles}."));
 						$this->session->redirect(wire('page')->url . "categories/");//redirect to page where we were
 
@@ -1426,7 +1579,7 @@ class ProcessBlog extends Process implements Module {
 						//create a string of "failed" tag titles to add to error message
 						$failedTitles = implode(', ', $failed); 
 					
-						if($i > 0) $this->message($this->_("Added {$i} new Tags"));//tell user how many tags were added
+						if($i > 0) $this->message(sprintf(_n("Added %d new Tag.", "Added %d new Tags.", $i), $i));//tell user how many tags were added
 						if($failedTitles) $this->error($this->_("Some tags not added because names already in use. These are: {$failedTitles}."));
 						$this->session->redirect(wire('page')->url . "tags/");//redirect to page where we were
 
@@ -1449,6 +1602,8 @@ class ProcessBlog extends Process implements Module {
 				$postsBlogPage = (int) $this->input->post->bloghome_posts_qnty;
 				$postsLength  = (int) $this->input->post->posts_trunc_qnty;
 				$commentsPerPage = (int) $this->input->post->comments_page_qnty;
+				$commentsMaxPerPost = (int) $this->input->post->comments_post_qnty;
+				$commentsVisibility = (int) $this->input->post->comments_view;
 				$recentPostsNumber = (int) $this->input->post->recent_posts_qnty;
 				$recentCommentsNumber = (int) $this->input->post->recent_comments_qnty;
 				$recentTweetsNumber =  (int) $this->input->post->recent_tweets_qnty;
@@ -1465,6 +1620,7 @@ class ProcessBlog extends Process implements Module {
 									//posts, comments page + widget pages
 									array('/blog/posts/', 'blog_quantity', $postsLength),//posts truncate length
 									array('/blog/comments/', 'blog_quantity', $commentsPerPage),//comments per page when viewing comments page
+									array('/blog/comments/', 'blog_comments_max', $commentsMaxPerPost),//maximum comments per post
 									array('/blog/widgets/recent-posts/', 'blog_quantity', $recentPostsNumber),//number of recent posts to show
 									array('/blog/widgets/recent-comments/', 'blog_quantity', $recentCommentsNumber),//number of recent comments to show
 									array('/blog/widgets/recent-tweets/', 'blog_quantity', $recentTweetsNumber),//number of recent tweets to show
@@ -1478,6 +1634,23 @@ class ProcessBlog extends Process implements Module {
 						$p->$v[1] = $v[2];
 						$p->save();
 				}
+
+				//additional save comments visibility
+				if ($commentsVisibility) {//if there is a visibility selection, let's add it to the comments page blog_comments_view (single page) field
+														
+								$p = wire('pages')->get('/blog/comments/');
+								$cv = wire('pages')->get($commentsVisibility);
+								if ($cv) $p->blog_comments_view = $cv;//if page found, add it to the blog_comments_view page field				
+								$p->save();
+				}
+
+				elseif (!$commentsVisibility) {//if no value was sent, it means it was emptied; so we remove old value	
+								$p = wire('pages')->get('/blog/comments/');
+								$p->blog_comments_view = '';			
+								$p->save();
+				}
+
+
 
 				$this->message($this->_("Blog settings saved"));//tell user settings were saved
 				$this->session->redirect(wire('page')->url . "settings/");//redirect to page where we were
@@ -1522,8 +1695,8 @@ class ProcessBlog extends Process implements Module {
 				}
 
 				//tell the user how many widgets were changed or show error if user saves without making changes first
-				if ($a > 0) $this->message($this->_("{$a} Widgets made unavailable (unpublished)."));
-				if ($b > 0) $this->message($this->_("{$b} Widgets made available (published)."));
+				if($a > 0) $this->message(sprintf(_n("%d Widget made unavailable (unpublished).", "%d Widgets made unavailable (unpublished).", $a), $a));
+				if($b > 0) $this->message(sprintf(_n("%d Widget made available (published).", "%d Widgets made available (published).", $b), $b));
 				if ($a + $b == 0) $this->error($this->_("You need to make changes before saving."));//if user clicked save button without making any changes
 				$this->session->redirect(wire('page')->url . "settings/");//redirect to page where we were
 		
