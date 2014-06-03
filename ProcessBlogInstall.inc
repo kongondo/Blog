@@ -11,7 +11,7 @@
 * If installer proceeds, 'template-files' are only copied if they do not exist at destination, i.e. '/site/templates/'. We don't want to overwrite users files!
 *
 * @author Kongondo
-* @version 1.1 - 30 May 2014
+* @version 1.2 - 02 June 2014
 *
 * https://github.com/kongondo/Blog
 * Created February 2014
@@ -31,6 +31,8 @@
 					'blog_body',
 					'blog_categories',
 					'blog_comments',
+					'blog_comments_view',
+					'blog_comments_max',
 					'blog_quantity',
 					'blog_date',
 					'blog_files',
@@ -72,6 +74,7 @@
 						'blog-tags',
 						'blog-widgets',
 						'blog-widget-basic',
+						'blog-basic',
 						'repeater_blog-links',
 	);
 
@@ -147,6 +150,8 @@
 			'body' => array('name'=>'blog_body', 'type'=> 'FieldtypeTextarea', 'label'=>'Body'),
 			'categories' => array('name'=>'blog_categories', 'type'=> 'FieldtypePage', 'label'=>'Categories', 'description'=>'Select one or more categories below and drag to sort them in order of relevance. If you want a category that doesn\'t already exist, create a new one.'),
 			'comments' => array('name'=>'blog_comments', 'type'=> 'FieldtypeComments', 'label'=>'Comments', 'collapsed'=>2),
+			'comments view' => array('name'=>'blog_comments_view', 'type'=> 'FieldtypePage', 'label'=>'Comments visibility'),
+			'comments max' => array('name'=>'blog_comments_max', 'type'=> 'FieldtypeInteger', 'label'=>'Maximum comments allowed per post', 'autojoin'=>1),
 			'quantity' => array('name'=>'blog_quantity', 'type'=> 'FieldtypeInteger', 'label'=>'Quantity of items to show', 'autojoin'=>1),
 			'date' => array('name'=>'blog_date', 'type'=> 'FieldtypeDatetime', 'label'=>'Date', 'autojoin'=>1 ),
 			'files' => array('name'=>'blog_files', 'type'=> 'FieldtypeFile', 'label'=>'Files',  'collapsed'=>2, 'entityencodedesc'=>1),
@@ -219,6 +224,8 @@
 	$body = $f->get('blog_body');
 	$categories = $f->get('blog_categories');
 	$comments = $f->get('blog_comments');
+	$commentsView = $f->get('blog_comments_view');
+	$commentsMax = $f->get('blog_comments_max');
 	$quantity = $f->get('blog_quantity');
 	$date = $f->get('blog_date');
 	$files = $f->get('blog_files');
@@ -231,7 +238,7 @@
 	$tags = $f->get('blog_tags');
 	
 	
-	//4. ###### We create the templates need by the Blog ######
+	//4. ###### We create the templates needed by the Blog ######
 
 	/* 
 		The template properties (indices) for the $templates array below
@@ -256,11 +263,12 @@
 			'blog' => array('Blog', 0, '', 1, 1, 0, 0, 'fields' => array($title, $headline, $summary, $note, $quantity, $body)),
 			'blog-archives' => array('Blog Archives', 0, 1, 1, 1, 1, 0, 'fields' => array($title)),
 			'blog-authors' => array('Blog Authors', 0, 1, 1, 1, 1, 0, 'fields' => array($title)),
+			'blog-basic' => array('Blog Basic', 0, '', '', 0, 0, 0, 'fields' => array($title)),
 			'blog-categories' => array('Blog Categories', 1, '', 1, 0, 0, 0, 'fields' => array($title)),
 			'blog-category' => array('Blog Category', 1, 1, '', 1, 1, 0, 'fields' => array($title, $body)),
-			'blog-comments' => array('Blog Comments (List)', 0, 1, 1, 1, 1, 0, 'fields' => array($title, $headline, $quantity)),
+			'blog-comments' => array('Blog Comments (List)', 0, 1, 1, 1, 1, 0, 'fields' => array($title, $headline, $quantity, $commentsView, $commentsMax)),
 			'blog-links' => array('Blog Widget: Links', 0, 1, '', 0, 0, 0, 'fields' => array($title, $links, $summary)),
-			'blog-post' 	=> array('Blog Post', 1, 1, '', 0, 0, 1, 'fields' => array($date, $title, $body, $images, $files, $categories, $tags, $comments) ),
+			'blog-post' 	=> array('Blog Post', 1, 1, '', 0, 0, 1, 'fields' => array($date, $title, $body, $images, $files, $categories, $tags, $commentsView, $comments) ),
 			'blog-posts' => array('Blog Posts', 0, '', 1, 1, 1, 0, 'fields' => array($title, $headline, $quantity)),
 			'blog-recent-comments' => array('Blog Widget: Recent Comments', 0, 1, 1, 0, 0, 0, 'fields' => array($title, $summary, $quantity)),
 			'blog-recent-posts' => array('Blog Widget: Recent Posts', 0, 1, '', 0, 0, 0 , 'fields' => array($title, $summary, $quantity)),
@@ -366,11 +374,13 @@
 						array('blog', 'blog_headline', 'Blog Title', 'You can use this (e.g. in the masthead) as a title for your blog.'),
 						array('blog', 'blog_summary', 'Blog Tagline', 'An optional sentence or two of text that you can use as your blog\'s tagline.'),
 						array('blog', 'blog_note', 'Footer', 'You can use this for footer messages (e.g. copyright notice).'),
-						array('blog', 'blog_quantity', 'Quantity of posts to show on Blog homepage'),
-						array('blog-posts', 'blog_quantity', 'Posts truncate length'),
+						array('blog', 'blog_quantity', 'Quantity of posts to show on Blog homepage.'),
+						array('blog-posts', 'blog_quantity', 'Posts truncate length.'),
+						array('blog-post', 'blog_comments_view', '', 'Comments are visible by default. This setting overrides the global setting.'),
 						
 						//comments + widget pages
-						array('blog-comments', 'blog_quantity', 'Comments per page in Comments page'),						
+						array('blog-comments', 'blog_quantity', 'Comments per page in Comments page'),
+						array('blog-comments', 'blog_comments_view', '', 'Comments are visible by default. Individual post\'s setting overrides what you specify here.'),
 						array('blog-recent-comments', 'blog_quantity', 'Total Comments to show in widget'),	
 						array('blog-recent-posts', 'blog_quantity', 'Total Posts to show in widget'),	
 						array('blog-recent-tweets', 'blog_note', 'Twitter Screen Name'),	
@@ -385,7 +395,7 @@
 			
 			$t = wire('templates')->get($v[0]);
 			$f = $t->fieldgroup->getField($v[1], true);
-			$f->label = $v[2];
+			if (!empty($v[2])) $f->label = $v[2];
 			if (isset($v[3])) $f->description = $v[3];
 
 			//for the repeater template we also set some field widths
@@ -529,6 +539,9 @@
 						'Example Post' =>  array('blog-post', 'posts'),
 						'Example Category' =>  array('blog-category', 'categories'),
 						'Example Tag' =>  array('blog-tag', 'tags'),
+						'Always Show Comments' =>  array('blog-basic', 'comments'),
+						'Disable New Comments' =>  array('blog-basic', 'comments'),
+						'Disable Comments' =>  array('blog-basic', 'comments'),
 						'Recent Posts' =>  array('blog-recent-posts', 'widgets'),
 						'Recent Comments' =>  array('blog-recent-comments', 'widgets'),
 						'Blogroll' =>  array('blog-links', 'widgets'),
@@ -541,7 +554,7 @@
 				
 				$p = new Page();
 				$p->template = wire('templates')->get($v[0]);
-				$p->parent = wire('pages')->get("name=$v[1], parent=$parent");
+				$p->parent = wire('pages')->get("name=$v[1], parent=$parent");//$parent=blog
 				$p->title = $k;
 				//for 'Example Post' page, we need to add the date properly
 				if($k == 'Example Post') $p->blog_date = date('j F Y g:i a');// e.g '8 April 2012 11:15 am'
@@ -558,6 +571,9 @@
 			Tags
 				Example Tag
 			Comments
+				Always Show Comments
+				Disable New Comments
+				Disable Comments
 			Widgets
 				Recent Posts
 				Recent Comments
@@ -610,7 +626,7 @@
 				} 
 
 				//else we use has_parent selector. 
-				//We know this will work since there is only 1 page under root named 'blog'. We also know at this it doesn't have any children except the ones we installed
+				//We know this will work since there is only 1 page under root named 'blog'. We also know it doesn't have any children except the ones we installed
 				else {
 
 						$selector = $s;
@@ -623,9 +639,9 @@
 
 	}
 
-	//additional settings for the two Page fields created earlier [blog_categories and blog_tags]
+	//additional settings for the two Page fields created earlier [blog_categories,blog_tags & blog_comments_view]
 	//these can only be done here since we first need blog templates, fields and pages created and saved!
-	//we are setting: selectable parent, selectable templates, create new, AsmSelect and PageAutomplete
+	//we are setting: selectable parent, selectable templates, create new, AsmSelect, PageAutomplete, etc
 	
 	//blog_categories
 	$f = wire('fields')->get('blog_categories');//
@@ -633,7 +649,8 @@
 	$f->template_id = wire('templates')->get('blog-category')->id;//template of pages that are selectable: 'category'
 	$f->labelFieldName = 'title';
 	$f->addable = 1;//allow new pages to be created from field
-	$f->derefAsPage = 0;//multiple pages (PageArray)
+	$f->derefAsPage = 0;//multiple pages (PageArray) - i.e. FieldtypePage::derefAsPageArray;
+	//$f->derefAsPage = FieldtypePage::derefAsPageArray;
 	$f->inputfield = 'InputfieldAsmSelect';
 	$f->save();
 
@@ -642,13 +659,22 @@
 	$f->parent_id = wire('pages')->get('name=tags, parent.name=blog')->id;//parent of pages that are selectable: 'tags'
 	$f->template_id = wire('templates')->get('blog-tag')->id;//template of pages that are selectable: 'tag'
 	$f->addable = 1;//allow new pages to be created from field
-	$f->derefAsPage = 0;//multiple pages (PageArray)
+	$f->derefAsPage = 0;//multiple pages (PageArray) - i.e. FieldtypePage::derefAsPageArray;
+	//$f->derefAsPage = FieldtypePage::derefAsPageArray;
 	$f->labelFieldName = 'title';
 	$f->operator = "%=";
 	$f->searchFields = 'title';
 	$f->inputfield = 'InputfieldPageAutocomplete';
 	$f->save();	
 
+	//blog_comments_view
+	$f = wire('fields')->get('blog_comments_view');//
+	$f->derefAsPage = 1;//single page (PageArray) or boolean false when none selected - i.e. FieldtypePage::derefAsPageOrFalse
+	//$f->derefAsPage = FieldtypePage::derefAsPageOrFalse;
+	$f->findPagesCode = 'return $page->path == "/blog/comments/" ? $pages->get("/blog/comments/")->children("name!=always-show-comments") : $pages->get("/blog/comments/")->children();';
+	$f->labelFieldName = 'title';
+	$f->inputfield = 'InputfieldSelect';
+	$f->save();	
 	
 	//7. ###### Copy the 14 'template files' for Blog templates that need them [note: these are almost empty files for user to later populate with markup] ######
 	//the 'template files' contain example MarkupBlog code for various aspects of the blog, e.g. Show 'Tags', 'Posts', etc.
