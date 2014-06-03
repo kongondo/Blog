@@ -38,7 +38,7 @@ class MarkupBlog  extends WireData implements Module {
 			'title' => 'Markup Blog',
 			'summary' => 'Markup module to output a Blog based on the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 110,
+			'version' => 120,
 			'href' => 'https://processwire.com/talk/topic/6465-module-blog/',
 			'singular' => true, 
 			'autoload' => false,
@@ -691,6 +691,28 @@ class MarkupBlog  extends WireData implements Module {
 		$prevURL = '';//URL for previous pagination, if applicable (string)
 		$nextURL = '';//URL for next pagination, if applicable (string)
 
+		//global AND post's comments/comments form visibility state. Note: post's comments/comments form SELECTED visibility status overrides global setting
+		$noCommentsForm = false;
+		$noNewComments = '';
+		$blogComments = wire('pages')->get('/blog/comments/');
+		$gComments = $blogComments->blog_comments_view;//global comments/comments form visibility setting [only kicks in when selected AND post setting='']
+		$gCmntsCnt = $blogComments->blog_comments_max;//global: maximum comments allowed per post [form will be hidden if this limit exceeded]. Note: this overrides post's 'always show comments' form
+		$pComments = $page->blog_comments_view;//post comments/comments form visibility setting [only kicks in when SELECTED]
+		$pCmntsCnt = count($page->blog_comments);
+
+
+		if (($pComments && $pComments->name=='disable-new-comments') || ($gComments && $gComments->name=='disable-new-comments' && !$pComments) || ($gCmntsCnt && $pCmntsCnt > $gCmntsCnt)) {
+
+				$noCommentsForm = true;//will use later to disable showing commenys form
+				$noNewComments =  '<h4 id="comments-closed">' . $this->_('Comments closed for this post.') . '</h4></div><!--/#comments-->';//save to a variable; will use later below
+		}
+
+		elseif (($pComments && $pComments->name=='disable-comments') || ($gComments && $gComments->name=='disable-comments' && !$pComments)) {
+
+				return '<div id="comments"><h4 id="comments-disallowed">' . $this->_('Comments not allowed for this post.') . '</h4></div><!--/#comments-->';//@@todo - put in a div?
+		}
+
+
 		//check if we should introduce pagination
 		if($limit && (count($comments) > $limit || $pageNum > 1)) {
 
@@ -791,7 +813,7 @@ class MarkupBlog  extends WireData implements Module {
 			
 		}
 
-		if($page->template == 'blog-post') {
+		if($page->template == 'blog-post' && $noCommentsForm == false) {
 
 				//if we are viewing a post page, then output a comments form
 				$out .= $page->blog_comments->renderForm(array(
@@ -803,6 +825,11 @@ class MarkupBlog  extends WireData implements Module {
 					));
 
 				$out .=  "</div><!--/#comments-->";
+		}
+
+		else {
+
+				$out .= $noNewComments;
 		}
 
 		//output pagination if necessary
