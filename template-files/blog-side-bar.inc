@@ -2,37 +2,58 @@
 
 	//side-bar.inc - <!-- RIGHT COLUMN - SIDEBAR --> 
 ?>
-        <div id="recent-posts"><!-- #recent-posts -->
+        
 
         <?php
-                $p = $pages->get("/blog/widgets/recent-posts/");
-                $limit = $p->blog_quantity;
-                $posts = $pages->find("template=blog-post, sort=-blog_date, start=0, limit=$limit");    
-                $parent = null;
-                $out = '';
 
-                foreach($posts as $item) {
-                            $date = $blogOut->formatDate($item->date);
-                            $out .= "<li><span class='date'>$date</span> <a href='{$item->url}'>{$item->title}</a></li>";
-                            $parent = $item->parent; 
+                if ($page->name !=='blog') {
+                    
+                                    //$out = '<div id="recent-posts"><!-- #recent-posts -->';
+                                    
+                                    $p = $pages->get("/blog/widgets/recent-posts/");
+                                    $limit = $p->blog_quantity;
+                                    $posts = $pages->find("template=blog-post, sort=-blog_date, start=0, limit=$limit");    
+                                    $parent = null;
+                                    $t = '';
+
+                                    foreach($posts as $item) {
+                                                $date = $blogOut->formatDate($item->blog_date);
+                                                $t .= "<li><span class='date'>" . $date. "</span><br> <a href='{$item->url}'>{$item->title}</a></li>";
+                                                $parent = $item->parent; 
+                                    }
+
+                                    if($t) {
+                                                $out =  "<div id='recent-posts'><!-- #recent-posts --><h4>{$p->title}</h4>" . 
+                                                "<ul class='recent-posts links'>$t</ul>" . 
+                                                "<p>" . 
+                                                    "<a class='more' href='{$parent->url}'>" . __('More') . "</a> " . 
+                                                    "<a class='rss' href='{$parent->url}rss/'>" . __('RSS') . "</a>" . 
+                                                "</p></div><!-- end #recent-posts -->";
+                                                
+                                    } 
+
+                                    else {
+                                                $out = "<div id='recent-posts'><!-- #recent-posts --><h4>{$p->title}</h4><p>No recent posts</p></div><!-- end #recent-posts -->";
+                                    }
+                
+
+                        
+
                 }
-
-                if($out) {
-                            $out =  "<h4>{$p->title}</h4>" . 
-                            "<ul class='recent-posts links'>$out</ul>" . 
-                            "<p>" . 
-                                "<a class='more' href='{$parent->url}'>" . __('More') . "</a> " . 
-                                "<a class='rss' href='{$parent->url}rss/'>" . __('RSS') . "</a>" . 
-                            "</p>";
-                            echo $out; 
-                } 
 
                 else {
-                            echo "<p>No recent posts</p>";
+
+                    $out = '';
                 }
+
+                echo $out; 
+
+                
+
+
         ?>
 
-    </div><!-- end #recent-posts -->
+    
 
     <div id="recent-comments"><!-- #recent comments -->
 
