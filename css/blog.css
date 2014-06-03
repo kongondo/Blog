@@ -89,7 +89,7 @@ ul.MarkupPagerNav {
 	margin: 0;
 }
 
-.MarkupPagerNav li a, .MarkupPagerNav li.MarkupPagerNavSeparator {
+.MarkupPagerNav li a, .MarkupPagerNav li.MarkupPagerNavSeparator, a.button-prev, a.button-next {
 	display: block;
 	float: left;
 	padding: 5px 11px;                
@@ -99,7 +99,7 @@ ul.MarkupPagerNav {
 	border: 1px solid #1D8ACB;
 }
 
-.MarkupPagerNav li.MarkupPagerNavOn a,.MarkupPagerNav li a:hover {
+.MarkupPagerNav li.MarkupPagerNavOn a,.MarkupPagerNav li a:hover, a.button-prev:hover, a.button-next:hover {
 	text-decoration: none !important;
 	color: #1D8ACB;
 	background: #ECF7FD;
@@ -227,6 +227,8 @@ div#comments {
 	margin-top: 30px;
 	/*border-top: 1px dotted #1D8ACB;*/
 }
+
+h4#comments-disallowed, h4#comments-closed {color: #D05}
 
 #comments .num-comments-icon {
 	float: left; 
