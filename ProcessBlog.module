@@ -38,7 +38,7 @@ class ProcessBlog extends Process implements Module {
 			'title' => 'Blog',
 			'summary' => 'Blog Manager module inspired by the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 120,
+			'version' => 121,
 			'href' => 'https://processwire.com/talk/topic/6465-module-blog/',
 			'singular' => true, 
 			'autoload' => false, 
@@ -66,7 +66,7 @@ class ProcessBlog extends Process implements Module {
 
 		$menu = "<ul class='blog_menu'>";
 		
-		$on = !wire('input')->urlSegment1 ? 'blog onblog' : 'blog';
+		$on = !wire('input')->urlSegment1 ? 'blog_menu_item onblog' : 'blog_menu_item';
 		
 		/*
 		NEED ABSOLUTE URLS TO DEAL WITH ISSUE OF TRAILING SLASH.
@@ -92,7 +92,7 @@ class ProcessBlog extends Process implements Module {
 
 		foreach ($menuItemsOther as $key => $value) {
 			
-					$on = wire('input')->urlSegment1 == $key ? 'blog onblog' : 'blog' ;
+					$on = wire('input')->urlSegment1 == $key ? 'blog_menu_item onblog' : 'blog_menu_item' ;
 		
 					//$menu .= "<li><a class='$on' href='./$key'>$value</a></li>";
 					/*
@@ -1026,11 +1026,8 @@ class ProcessBlog extends Process implements Module {
 		
 		//set header rows
 		$t->headerRow(array(
-			$this->_(''),
-			$this->_(''),
-			//$this->_('Recent posts to show'),
-			//$this->_('Recent comments to show'),
-			//$this->_('Recent tweets to show'),
+			'',
+			'',
 		));
 				
 		$blog = wire('pages')->get("/blog/");
@@ -1112,7 +1109,7 @@ class ProcessBlog extends Process implements Module {
 		foreach ($setting as $key => $value) {
 					$t->row(array(
 							$key,
-							$value->render()
+							$value->render(),
 					));
 		}
 
@@ -1527,7 +1524,7 @@ class ProcessBlog extends Process implements Module {
 						//create a string of "failed" category titles to add to error message
 						$failedTitles = implode(', ', $failed); 
 
-						if($i > 0) $this->message(sprintf(_n("Added %d new Category.", "Added %d new Categories.", $i), $i));//tell user how many tags were added
+						if($i > 0) $this->message(sprintf(_n("Added %d new Category.", "Added %d new Categories.", $i), $i));//tell user how many categories were added
 						if($failedTitles) $this->error($this->_("Some categories not added because names already in use. These are: {$failedTitles}."));
 						$this->session->redirect(wire('page')->url . "categories/");//redirect to page where we were
 
