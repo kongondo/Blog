@@ -21,7 +21,7 @@
 
 	foreach($posts as $item) {
 
-				$date = $blogOut->formatDate($item->date);
+				$date = $blogOut->formatDate($item->blog_date);
 				$out .= "<li><span class='date'>$date</span> <a href='{$item->url}'>{$item->title}</a></li>";
 				$parent = $item->parent; 
 	}
