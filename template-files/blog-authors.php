@@ -66,6 +66,7 @@
                 //output subnav if viewing a single author's page
                 $subNav .= '<div id="sub-nav">' . $blogOut->renderNav($page->title, $authorLinks, $page->url . $author->name . '/') . '</div><!-- #sub-nav -->';
 
+
     } 
 
     else {
