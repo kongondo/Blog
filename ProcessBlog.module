@@ -38,7 +38,7 @@ class ProcessBlog extends Process implements Module {
 			'title' => 'Blog',
 			'summary' => 'Blog Manager module inspired by the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 121,
+			'version' => 122,
 			'href' => 'https://processwire.com/talk/topic/6465-module-blog/',
 			'singular' => true, 
 			'autoload' => false, 
