@@ -36,7 +36,6 @@
     //if 'post author widget' is disabled, we want to style the end of the post using the css class 'no-author' (see further below in CENTRE COLUMN output)
     $noAuthor = $pages->get('template=blog-widget-basic, name=post-author, include=all')->is(Page::statusUnpublished) ? ' no-author' : '';
 
-
      //main content
     
     //render a single full post including title, comments, comment form + next/prev posts links, etc
