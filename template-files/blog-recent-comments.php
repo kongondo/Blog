@@ -18,7 +18,7 @@
 
 	$limit = $page->blog_quantity;
 
-	$comments = $blogOut->findRecentComments($limit, 0, false);
+	$comments = $blogOut->findRecentComments($limit, 0, false);//false = in the sidebar, do not show pending or spam comments whether admin is logged in or not
 
 	if(count($comments)) {
 
