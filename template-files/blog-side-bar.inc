@@ -34,9 +34,7 @@
 
                                     else {
                                                 $out = "<div id='recent-posts'><!-- #recent-posts --><h4>{$p->title}</h4><p>No recent posts</p></div><!-- end #recent-posts -->";
-                                    }
-                
-
+                                    }        
                         
 
                 }
@@ -46,9 +44,7 @@
                     $out = '';
                 }
 
-                echo $out; 
-
-                
+                echo $out;                
 
 
         ?>
@@ -62,7 +58,7 @@
                 $url = $config->urls->root . 'blog/comments/';
                 $out =  "<h4>" . $c->title . "</h4>";
                 $limit = $c->blog_quantity;
-                $comments = $blogOut->findRecentComments($limit, 0, false);
+                $comments = $blogOut->findRecentComments($limit, 0, false);//false = in the sidebar, do not show pending or spam comments whether admin is logged in or not
                 if(count($comments)) {
                         $out .= "<ul class='links'>";
                         foreach($comments as $comment) {
