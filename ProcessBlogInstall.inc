@@ -11,7 +11,7 @@
 * If installer proceeds, 'template-files' are only copied if they do not exist at destination, i.e. '/site/templates/'. We don't want to overwrite users files!
 *
 * @author Kongondo
-* @version 1.2 - 02 June 2014
+* @version 1.3 - 31 August 2014
 *
 * https://github.com/kongondo/Blog
 * Created February 2014
@@ -153,7 +153,7 @@
 			'comments view' => array('name'=>'blog_comments_view', 'type'=> 'FieldtypePage', 'label'=>'Comments visibility'),
 			'comments max' => array('name'=>'blog_comments_max', 'type'=> 'FieldtypeInteger', 'label'=>'Maximum comments allowed per post', 'autojoin'=>1),
 			'quantity' => array('name'=>'blog_quantity', 'type'=> 'FieldtypeInteger', 'label'=>'Quantity of items to show', 'autojoin'=>1),
-			'date' => array('name'=>'blog_date', 'type'=> 'FieldtypeDatetime', 'label'=>'Date', 'autojoin'=>1 ),
+			'date' => array('name'=>'blog_date', 'type'=> 'FieldtypeDatetime', 'label'=>'Date', 'description'=>'This field will be automatically filled with the current time and date when your post is published. Unpublishing your post will not change the date. You can do so manually.', 'autojoin'=>1 ),
 			'files' => array('name'=>'blog_files', 'type'=> 'FieldtypeFile', 'label'=>'Files',  'collapsed'=>2, 'entityencodedesc'=>1),
 			'headline' => array('name'=>'blog_headline', 'type'=> 'FieldtypeText', 'label'=>'Headline', 'textformatters'=>'TextformatterEntities', 'collapsed'=>2, 'maxlength'=>1024),
 			'href' => array('name'=>'blog_href', 'type'=> 'FieldtypeURL', 'label'=>'Website URL', 'autojoin'=>1, 'maxlength'=>1024),
@@ -197,7 +197,7 @@
 				$f->timeInputFormat = 'g:i a';
 				$f->datepicker = 3;//Date/Time picker on field focus
 				$f->size = 30;
-				$f->defaultToday = 1;
+				$f->defaultToday = 0;
 		}
 
 		//additional settings for the blog_summary
