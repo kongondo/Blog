@@ -83,6 +83,10 @@
 		font-size: 1.15em;
 	}
 
+	table.postsTable span.date-sorter {display: none;}
+
+	span.limit-select {float: right;}
+
 	/*** tags table ***/
 	/* checkboxes column */
 	table.tagsTable th:nth-child(1), table.categoriesTable th:nth-child(1) {width:3%;}
