@@ -21,6 +21,19 @@
 
 class ProcessBlog extends Process implements Module {
 	
+	
+	/**
+	 * string name of the cookie used to save limit of posts to show per page in posts dashboard.
+	 *
+	 */
+	private $cookieName;
+
+	/**
+	 * int value of number of posts/categories/tags to show per page respective dashboard page.
+	 *
+	 */
+	private $showLimit;
+
 	/**
 	 * Return information about this module (required).
 	 *
@@ -33,17 +46,19 @@ class ProcessBlog extends Process implements Module {
 		//@ User role needs 'blog' permission
 		//@ $permission = 'blog';
 		//@ Installs MarkupBlog - for frontend rendering of the Blog
+		//@ Installs BlogPublishDate - for auto-saving Blog Post published date
 
 		return array(
 			'title' => 'Blog',
 			'summary' => 'Blog Manager module inspired by the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 122,
-			'href' => 'https://processwire.com/talk/topic/6465-module-blog/',
+			'version' => 130,
+			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false, 
 			'permission' => 'blog',
-			'installs' => 'MarkupBlog'
+			//'installs' => 'MarkupBlog'
+			'installs' => array('MarkupBlog','BlogPublishDate')
 		);
 
 	}
@@ -113,8 +128,8 @@ class ProcessBlog extends Process implements Module {
 	/**
 	 *	Initialise the module.
 	 *  
-	 * Check if user has the permission 'blog' to view this module.
-	 * This is an optional initialisation method called before any execute methods. It will be automatically loaded by ProcessWire.
+	 *  Check if user has the permission 'blog' to view this module.
+	 *  This is an optional initialisation method called before any execute methods. It will be automatically loaded by ProcessWire.
 	 *	Include jQueryFancybox.
 	 *
 	 *	@access public
@@ -126,8 +141,33 @@ class ProcessBlog extends Process implements Module {
 		parent::init();
 
 		$this->modules->get('JqueryFancybox');
+
+		//cookie per user and per relevant blog dashboard (posts, categories or tags) context
+		$this->cookieName = $this->user->id . '-processBlog-' . wire('input')->urlSegment1;
+
+		//default number of posts/categories/tags to show per respective dashboard if no custom limit set (via post/session cookie).
+		$this->showLimit = 10;
+
 		
 	}
+
+	/**
+	 * ready() is called when both PW's API is ready and $page object is initialized (for autoload modules!).
+	 *
+	 */
+	/*public function ready() {
+
+		//cookie per user and per relevant blog dashboard (posts, categories or tags) context
+		$this->cookieName = $this->user->id . '-processBlog-' . wire('input')->urlSegment1;
+
+
+		//action from the cookie, default to original behaviour (edit)
+		$this->showLimit = (int) $this->input->cookie[$this->cookieName];
+		if(!$this->showLimit) $this->showLimit = 1;
+
+		$this->showLimit = $this->input->cookie[$this->cookieName] ? (int) $this->input->cookie[$this->cookieName] : 1;
+
+	}*/
 	
 	/**
 	 *	Display Blog Dashboard (summary of Posts informaton) and Blod Archives.
@@ -167,7 +207,7 @@ class ProcessBlog extends Process implements Module {
 		//add count of unpublished posts to array
 		$qn ['unpublished'] = count(wire('pages')->find("template=blog-post, status=unpublished, parent!=7"));
 
-		//################ - Comments count for Dashborad - ####################
+		//################ - Comments count for Blog Dashborad - ####################
 		
 		$posts = wire('pages')->find('template=blog-post, include=all, sort=-blog_date, parent!=7');//@@todo - will need to limit here eventually!
 		
@@ -475,9 +515,23 @@ class ProcessBlog extends Process implements Module {
 
 		));
 
-		//grab all posts; will output + their info later in a table
-		$posts = wire('pages')->find('template=blog-post, include=all, sort=-blog_date, parent!=7, limit=10');
-		//$posts = wire('pages')->find('template=blog-post, include=all, sort=-created, parent!=7, limit=10');//IN PREPARATION FOR AUTO-PUBLISH DATE COMING SOON!
+		//Determine number of posts to show per page in posts dashboard. Default = 10 {see $this->showLimit}
+		
+		//if user selects a limit ($input->post->show_limit) we set that as the limit and set a cookie {see $this->cookieName} with that value to save state for session.
+		if ($this->input->post->show_limit) {
+
+					$this->showLimit  = $this->input->post->show_limit;
+					setcookie($this->cookieName, $this->showLimit , 0, '/');
+		}
+
+		//if no custom limit selected but there is a cookie set, we use the cookie value
+		elseif ($this->input->cookie[$this->cookieName]) {
+
+					$this->showLimit  = (int) $this->input->cookie[$this->cookieName];
+		}
+
+		//grab a limited number of posts to show in posts dashboard. Limit is determined as shown above
+		$posts = wire('pages')->find("template=blog-post, include=all, sort=-created, parent!=7, limit={$this->showLimit}");
 
 		foreach ($posts as $p) {
 
@@ -506,7 +560,29 @@ class ProcessBlog extends Process implements Module {
 			$spamTotal = isset($numC[$p->id]['spam']) ? (count($numC[$p->id]['spam'])) : 0;
 			
 			//check if post is published or not
-			$p->is(Page::statusUnpublished) ? $status = "<span class='unpublished'>No</span>" : $status = "Yes";
+			$p->is(Page::statusUnpublished) ? $status = '<span class="unpublished">No</span>' : $status = 'Yes';
+
+			//if post published it also means blog_date IS NOT EMPTY {autoload module will ensure this} display date published (i.e. blog_date)
+			if ($status == 'Yes') {
+				
+					$dateSorter = date('Y-m-d H:i:s', $p->blog_date);//need this (hidden span) in order to correctly sort by date column in MarkupAdminDataTable
+					$dateFormat = wire('fields')->get('blog_date')->dateOutputFormat; 
+					$date = FieldtypeDatetime::formatDate($p->blog_date, $dateFormat);//Return a date formatted as specified in the Blog post's 'blog_date' field.
+			}
+
+			//if post unpublished AND blog_date IS EMPTY [meaning never been published as opposed to published then post expired/unpublished] display text 'Pending'			
+			elseif ($status !='Yes' && !$p->blog_date) {
+				
+					$dateSorter = '';
+					$date =  '<span class="unpublished">Pending</span>';
+			}
+
+			//if post unpublished AND blog_date is NOT EMPTY [meaning has been published BUT now unpublished, i.e. EXPIRED, display text 'Expired'			
+			else {
+
+					$dateSorter = date('Y-m-d H:i:s', $p->blog_date);//need this (hidden span) in order to correctly sort by date column in MarkupAdminDataTable
+					$date =  '<span class="unpublished">Expired</span>';
+			}
 
 			//render the table rows with variables set above
 			$t->row(array(
@@ -520,15 +596,35 @@ class ProcessBlog extends Process implements Module {
 					$p->blog_files->count(),//number of files in post
 					$p->createdUser->get('title|name'),//post author
 					$status,//post published or not
-					date('d-m-Y', $p->blog_date),//this is the date entered in the post's 'date' field [blog_date]
-					//$p->blog_date ? date('d-m-Y', $p->blog_date) : "<span class='red'>Pending</span>",//this is the date entered in the post's 'date' field [blog_date]
+					//$date,//if post published this will is the date entered in the post's 'blog_date' OTHERWISE 'pending' or 'expired' will be displayed as relevant					
+					'<span class="date-sorter">'. $dateSorter . '</span>'. $date,//if post published this will is the date entered in the post's 'blog_date' OTHERWISE 'pending' or 'expired' will be 
 			));
 
 		}//end foreach $posts as $p
 		
-		//$m->description = $posts->count==0 ? $this->_('No posts found.') : $this->_('Click on a title to edit the post.<p>C=Comments.</p>');
-		$m->description = $posts->count==0 ? $this->_('No posts found.') : $this->_('Click on a title to edit the post.');
-		$m->notes = $this->_('C/=Comments.');
+		//prepare values for 'Show XX Posts', i.e. number of posts to show per page in posts dashboard
+		$limitSelect = '';
+		$limitSelect .= '<span class="limit-select">Show <select id="limit" name="show_limit">';
+
+		$limits = array( '', 5, 10, 15, 25, 50, 75, 100);
+
+		foreach ($limits as $limit) {
+					
+					$limitSelect .='<option value="' . $limit . '"' . ($this->showLimit == $limit ? 'selected="selected"':'') . '>' . $limit . '</option>';
+		}
+
+		$limitSelect .= '</select> Posts</span>';
+
+		//display a headline indicating quantities. We'll add this to posts dashboard
+		$start = $posts->getStart()+1;
+		$end = $start + count($posts)-1;
+		$total = $posts->getTotal();
+
+		if($total) $postsCount = "<h4>" . sprintf(__('Posts %1$d to %2$d of %3$d'), $start, $end, $total) . "</h4>";
+
+		//add a description to posts dashboard {postsCount, limitSelect and instruction OR no posts found status}
+		$m->description = $total == 0 ? $this->_('No posts found.') : $postsCount . $this->_('Click on a title to edit the post.' . $limitSelect);
+		$m->notes = $total == 0 ? '' : $this->_('C/=Comments.');
 
 		//$m->attr('value', $t->render() . $s->render());//button inside markup wrapper
 		//$m->attr('value', $t->render());
@@ -683,7 +779,6 @@ class ProcessBlog extends Process implements Module {
 		$m = $this->modules->get('InputfieldMarkup');
 		//$m->columnWidth = 65;
 		//$m->label = $this->_('Edit');
-		$m->description = $this->_('Click on a title to edit the category');
 		//$m->collapsed = Inputfield::collapsedYes; 
 			
 		//CREATE A NEW TABLE
@@ -699,8 +794,24 @@ class ProcessBlog extends Process implements Module {
 			$this->_('Posts'),
 			
 		));
+		
+		//Determine number of categories to show per page in categories dashboard. Default = 10 {see $this->showLimit}
+		
+		//if user selects a limit ($input->post->show_limit) we set that as the limit and set a cookie {see $this->cookieName} with that value to save state for session.
+		if ($this->input->post->show_limit) {
 
-		$categories = wire('pages')->find('template=blog-category, include=all, sort=title, parent!=7, limit=10');
+					$this->showLimit  = $this->input->post->show_limit;
+					setcookie($this->cookieName, $this->showLimit , 0, '/');
+		}
+
+		//if no custom limit selected but there is a cookie set, we use the cookie value
+		elseif ($this->input->cookie[$this->cookieName]) {
+
+					$this->showLimit  = (int) $this->input->cookie[$this->cookieName];
+		}
+
+		//grab a limited number of categories to show in categories dashboard. Limit is determined as shown above
+		$categories = wire('pages')->find("template=blog-category, include=all, sort=title, parent!=7, limit={$this->showLimit}");
 		
 		foreach ($categories as $c) {
 
@@ -718,9 +829,30 @@ class ProcessBlog extends Process implements Module {
 					$numPosts,
 							
 				));
+		}//end foreach $categories as $c
+
+		//prepare values for 'Show XX Categories', i.e. number of categories to show per page in categories dashboard
+		$limitSelect = '';
+		$limitSelect .= '<span class="limit-select">Show <select id="limit" name="show_limit">';
+
+		$limits = array( '', 5, 10, 15, 25, 50, 75, 100);
+
+		foreach ($limits as $limit) {
+					
+					$limitSelect .='<option value="' . $limit . '"' . ($this->showLimit == $limit ? 'selected="selected"':'') . '>' . $limit . '</option>';
 		}
 
-		$m->description = $categories->count==0 ? $this->_('No categories found.') : $this->_('Click on a title to edit the category.');
+		$limitSelect .= '</select> Categories</span>';
+
+		//display a headline indicating quantities. We'll add this to posts dashboard
+		$start = $categories->getStart()+1;
+		$end = $start + count($categories)-1;
+		$total = $categories->getTotal();
+
+		if($total) $categoriesCount = "<h4>" . sprintf(__('Categories %1$d to %2$d of %3$d'), $start, $end, $total) . "</h4>";
+
+		//add a description to categories dashboard {categoriesCount, limitSelect and instruction OR no categories found status}
+		$m->description = $total == 0 ? $this->_('No categories found.') : $categoriesCount . $this->_('Click on a title to edit the category.' . $limitSelect);
 
 		$s = $this->modules->get('InputfieldSubmit'); 
 		/*$s->class .= ' head_button_clone';*/
@@ -859,7 +991,23 @@ class ProcessBlog extends Process implements Module {
 			
 		));
 
-		$tags = wire('pages')->find('template=blog-tag, include=all, sort=title, parent!=7, limit=10');
+		//Determine number of tags to show per page in tags dashboard. Default = 10 {see $this->showLimit}
+		
+		//if user selects a limit ($input->post->show_limit) we set that as the limit and set a cookie {see $this->cookieName} with that value to save state for session.
+		if ($this->input->post->show_limit) {
+
+					$this->showLimit  = $this->input->post->show_limit;
+					setcookie($this->cookieName, $this->showLimit , 0, '/');
+		}
+
+		//if no custom limit selected but there is a cookie set, we use the cookie value
+		elseif ($this->input->cookie[$this->cookieName]) {
+
+					$this->showLimit  = (int) $this->input->cookie[$this->cookieName];
+		}
+
+		//grab a limited number of tags to show in tags dashboard. Limit is determined as shown above
+		$tags = wire('pages')->find("template=blog-tag, include=all, sort=title, parent!=7, limit={$this->showLimit}");
 
 		foreach ($tags as $tag) {
 
@@ -877,9 +1025,30 @@ class ProcessBlog extends Process implements Module {
 					$numPosts,
 							
 				));
+		}//end foreach $tags as $tag
+
+		//prepare values for 'Show XX Tags', i.e. number of tags to show per page in tags dashboard
+		$limitSelect = '';
+		$limitSelect .= '<span class="limit-select">Show <select id="limit" name="show_limit">';
+
+		$limits = array( '', 5, 10, 15, 25, 50, 75, 100);
+
+		foreach ($limits as $limit) {
+					
+					$limitSelect .='<option value="' . $limit . '"' . ($this->showLimit == $limit ? 'selected="selected"':'') . '>' . $limit . '</option>';
 		}
 
-		$m->description = $tags->count==0 ? $this->_('No tags found.') : $this->_('Click on a title to edit the tag.');
+		$limitSelect .= '</select> Tags</span>';
+
+		//display a headline indicating quantities. We'll add this to posts dashboard
+		$start = $tags->getStart()+1;
+		$end = $start + count($tags)-1;
+		$total = $tags->getTotal();
+
+		if($total) $tagsCount = "<h4>" . sprintf(__('Tags %1$d to %2$d of %3$d'), $start, $end, $total) . "</h4>";
+
+		//add a description to tags dashboard {tagsCount, limitSelect and instruction OR no tags found status}
+		$m->description = $total == 0 ? $this->_('No tags found.') : $tagsCount . $this->_('Click on a title to edit the tag.' . $limitSelect);
 		
 		$s = $this->modules->get('InputfieldSubmit'); 
 		/*$s->class .= ' head_button_clone';*/
@@ -1193,7 +1362,7 @@ class ProcessBlog extends Process implements Module {
 	/**
 	 *	Processes Blog Manager form input (CRUD).
 	 *	
-	 *	CRUD Processes all the form input sent from executePosts, -Categories,  -Tags, and -Settings.
+	 *	CRUD - Processes all the form input sent from executePosts, -Categories,  -Tags, and -Settings.
 	 *	
 	 *  @param mixed $form
 	 *	@access private
@@ -1437,8 +1606,7 @@ class ProcessBlog extends Process implements Module {
 
 				//@todo - SHOULD THIS BE A RICH TEXT AREA?
 				$p->blog_body = $this->sanitizer->textarea($this->input->post->quickpost_body);
-				$p->blog_date = time();//we set the time the post was created: @@TODO - will change when we update to auto-publish post date method
-				
+								
 				//categories for new post
 				$categories = $this->input->post->quickpost_categories_add;//array of page IDs to add to page field categories. We sanitize each below (as int)
 				
