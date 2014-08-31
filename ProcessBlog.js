@@ -41,4 +41,10 @@
 				if ($.tablesorter != undefined) $.tablesorter.defaults.headers = {0:{sorter:false}};//works but requires two clicks to kick-in!
 		}
 		
-	});
+		//submit form on select of limit of items to show  - posts, categories, tags
+		$('.limit-select').change(function ()
+		{
+		$(this).closest('form').submit();
+		});
+
+	});//end jquery
