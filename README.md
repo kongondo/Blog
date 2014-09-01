@@ -65,7 +65,7 @@ The CSS and most of the HTML is up to you, of course.
 
 
 ##Resources
-*	[Support Forum](https://processwire.com/talk/topic/6465-module-blog/)
+*	[Support Forum](https://processwire.com/talk/topic/7403-module-blog/)
 *	Video [ProcessBlog demo](http://youtu.be/64XMGLuniqU)
 *	Video [MarkupBlog demo](http://youtu.be/k7aSeL29JPE)
 *	MarkupTwitterFeed [MarkupTwitterFeed](http://mods.pw/d)
