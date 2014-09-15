@@ -68,7 +68,7 @@ class ProcessBlog extends Process implements Module {
 	 *
 	 */	
 
-	const PAGE_NAME = 'blog';//
+	const PAGE_NAME = 'blog';
 
 	/**
 	 * Function to create the Blog Manager menu.
