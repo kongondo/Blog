@@ -1,4 +1,7 @@
 #Blog
+
+###This file will soon be updated for Blog Version 2.0. Some of the below text still apply though.
+
 This module enables you to create and manage a Blog in a unified interface. It is based on the [Blog Profile module](http://mods.pw/2M) by Ryan Cramer. The module consists of two parts:  
 
 **ProcessBlog**: Manage Blog in the backend/Admin.  
