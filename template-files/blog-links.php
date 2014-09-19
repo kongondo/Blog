@@ -2,7 +2,7 @@
 
 /**
  * Blogroll template
- * Example template file. Show a short list of blogroll in a Blog Widget
+ * Demo template file. Show a short list of blogroll in a Blog Widget
  *
  */
 
@@ -11,21 +11,10 @@
 	echo "<h4>{$page->title}</h4>";
 
 	if(count($page->blog_links)) {
-
-		echo "<ul class='links'>";
-
-		foreach($page->blog_links as $link) {
-
-			echo "<li><a target='_blank' href='{$link->blog_href}'>{$link->blog_headline}</a></li>";
-
-		}
-
-		echo "</ul>";
-
+			echo "<ul class='links'>";
+			foreach($page->blog_links as $link) {echo "<li><a target='_blank' href='{$link->blog_href}'>{$link->blog_headline}</a></li>";}
+			echo "</ul>";
 	} 
 
-	else {
+	else {echo "<p>" . __('No links yet.') . "</p>";}
 
-			echo "<p>" . __('No links yet.') . "</p>";
-	
-	}

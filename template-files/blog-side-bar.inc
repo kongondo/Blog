@@ -1,106 +1,124 @@
 <?php
 
-	//side-bar.inc - <!-- RIGHT COLUMN - SIDEBAR --> 
-?>
-        
+    //side-bar.inc - <!-- RIGHT COLUMN - SIDEBAR -->      
 
-        <?php
+    /* #################### - recent posts widget - #################### */
 
-                if ($page->name !=='blog') {
-                    
-                                    //$out = '<div id="recent-posts"><!-- #recent-posts -->';
-                                    
-                                    $p = $pages->get("/blog/widgets/recent-posts/");
-                                    $limit = $p->blog_quantity;
-                                    $posts = $pages->find("template=blog-post, sort=-blog_date, start=0, limit=$limit");    
-                                    $parent = null;
-                                    $t = '';
-
-                                    foreach($posts as $item) {
-                                                $date = $blogOut->formatDate($item->blog_date);
-                                                $t .= "<li><span class='date'>" . $date. "</span><br> <a href='{$item->url}'>{$item->title}</a></li>";
-                                                $parent = $item->parent; 
-                                    }
-
-                                    if($t) {
-                                                $out =  "<div id='recent-posts'><!-- #recent-posts --><h4>{$p->title}</h4>" . 
-                                                "<ul class='recent-posts links'>$t</ul>" . 
-                                                "<p>" . 
-                                                    "<a class='more' href='{$parent->url}'>" . __('More') . "</a> " . 
-                                                    "<a class='rss' href='{$parent->url}rss/'>" . __('RSS') . "</a>" . 
-                                                "</p></div><!-- end #recent-posts -->";
-                                                
-                                    } 
-
-                                    else {
-                                                $out = "<div id='recent-posts'><!-- #recent-posts --><h4>{$p->title}</h4><p>No recent posts</p></div><!-- end #recent-posts -->";
-                                    }        
-                        
-
-                }
-
-                else {
-
-                    $out = '';
-                }
-
-                echo $out;                
-
-
-        ?>
-
+    //adapted selector to blog style
     
+    $out = '';
+    if ($page->template->name !=='blog') {
+        
+        //$out = '<div id="recent-posts"><!-- #recent-posts -->';
+        $p = $pages->get("template=blog-recent-posts");//adapt to blog styles for this demo
 
-    <div id="recent-comments"><!-- #recent comments -->
+        //if widget is enabled output it
+        if($p->id) {
+            
+            $limit = $p->blog_quantity;
+            $posts = $pages->find("template=blog-post, sort=-blog_date, start=0, limit=$limit");    
+            $parent = null;
+            $t = '';
 
-        <?php
-                $c = $pages->get("/blog/widgets/recent-comments/");
-                $url = $config->urls->root . 'blog/comments/';
-                $out =  "<h4>" . $c->title . "</h4>";
-                $limit = $c->blog_quantity;
-                $comments = $blogOut->findRecentComments($limit, 0, false);//false = in the sidebar, do not show pending or spam comments whether admin is logged in or not
-                if(count($comments)) {
-                        $out .= "<ul class='links'>";
-                        foreach($comments as $comment) {
-                                    $cite = htmlentities($comment->cite, ENT_QUOTES, "UTF-8");
-                                    $date = $blogOut->formatDate($comment->created); 
-                                    $out .= "<li><span class='date'>$date</span><br />" . 
-                                                "<a href='{$comment->page->url}#comment{$comment->id}'>$cite &raquo; {$comment->page->title}</a>" . 
-                                            "</li>";
-                        }
+            foreach($posts as $item) {
+                        $date = $blog->formatDate($item->blog_date);
+                        $t .= "<li><span class='date'>" . $date. "</span><br> <a href='{$item->url}'>{$item->title}</a></li>";
+                        $parent = $item->parent; 
+            }
 
-                        $out .= "</ul>";
-                        $out .= "<p>" . 
-                                    "<a class='more' href='$url'>" . __('More') . "</a>  " . 
-                                    "<a class='rss' href='{$url}rss/'>" . __('RSS') . "</a>" . 
-                                "</p>";
-                } 
+            if($t) {
+                        //if blog style is 2 or 4, rss on recent posts will not work since the template blog-posts allows url segments but it is not present on such blog style installs. 
+                        $tpl = wire('templates')->get('blog-posts');
+                        $rss = $tpl ? "<a class='rss' href='{$parent->url}rss/'>" . __('RSS') . "</a>" : '';
 
-                else {
-                        $out .= "<p>" . __('No comments yet') . "</p>";
-                }
+                        $out =  "<div id='recent-posts'><!-- #recent-posts --><h4>{$p->title}</h4>" . 
+                        "<ul class='recent-posts links'>$t</ul>" . 
+                        "<p>" . 
+                            "<a class='more' href='{$parent->url}'>" . __('More') . "</a> " . 
+                           $rss . 
+                        "</p></div><!-- end #recent-posts -->";
+                        
+            } 
 
-                echo $out;
-        ?>
+            else {
+                        $out = "<div id='recent-posts'><!-- #recent-posts --><h4>{$p->title}</h4><p>No recent posts</p></div><!-- end #recent-posts -->";
+            }        
+        
+        }
+    }
 
-    </div><!-- end #recent-comments -->
-               
-    <div id="blogroll"><!-- #blogroll -->
+    echo $out;              
 
-        <?php
-                $br = $pages->get("/blog/widgets/blogroll/");
-                echo "<h4>{$br->title}</h4>";
-                if(count($br->blog_links)) {
-                        echo "<ul class='links'>";
-                        foreach($br->blog_links as $link) {
-                            echo "<li><a target='_blank' href='{$link->blog_href}'>{$link->blog_headline}</a></li>";
-                        }
-                        echo "</ul>";
-                } 
+    /* #################### - recent comments widget - #################### */
 
-                else {
-                        echo "<p>" . __('No links yet.') . "</p>";
-                }
-        ?>
+    /*
+        if comments feature installed, show recent comments widget
+        normally you would use a more specific selector. Here, we do it this way to adapt to the various blog styles
+        selector should work since no other page uses this template
+    */            
+    $c = $pages->get("template=blog-recent-comments");
 
-    </div><!-- end #blogroll -->
+    //if widget is enabled output it
+    if($c->id) {
+
+            $out = '<div id="recent-comments"><!-- #recent comments -->';
+
+            $url = $pages->get('template=blog-comments')->url;//we adapt selector to blog style
+            $out .=  "<h4>" . $c->title . "</h4>";
+            $limit = $c->blog_quantity;
+            $comments = $blog->findRecentComments($limit, 0, false);//false = in the sidebar, do not show pending or spam comments whether admin is logged in or not
+            if(count($comments)) {
+                    $out .= "<ul class='links'>";
+                    foreach($comments as $comment) {
+                                $cite = htmlentities($comment->cite, ENT_QUOTES, "UTF-8");
+                                $date = $blog->formatDate($comment->created); 
+                                $out .= "<li><span class='date'>$date</span><br />" . 
+                                            "<a href='{$comment->page->url}#comment{$comment->id}'>$cite &raquo; {$comment->page->title}</a>" . 
+                                        "</li>";
+                    }
+
+                    $out .= "</ul>";
+                    $out .= "<p>" . 
+                                "<a class='more' href='$url'>" . __('More') . "</a>  " . 
+                                "<a class='rss' href='{$url}rss/'>" . __('RSS') . "</a>" . 
+                            "</p>";
+            } 
+
+            else {
+                    $out .= "<p>" . __('No comments yet') . "</p>";
+            }
+
+            $out .= '</div><!-- end #recent-comments -->';
+
+            echo $out;
+
+    }//end if comments feature enabled
+
+    /* #################### - blog roll widget - #################### */
+
+    $br = $pages->get("template=blog-links");//adapt selector to blog styles for this demo
+
+    //if widget is enabled output it
+    if ($br->id) { 
+            $out = '<div id="blogroll"><!-- #blogroll -->';
+            $out .= "<h4>{$br->title}</h4>";
+
+            if(count($br->blog_links)) {
+                    $out .= "<ul class='links'>";
+
+                    foreach($br->blog_links as $link) {
+                            $out .= "<li><a target='_blank' href='{$link->blog_href}'>{$link->blog_headline}</a></li>";
+                    }
+
+                    $out .= "</ul>";
+            } 
+
+            else {
+                    $out .= "<p>" . __('No links yet.') . "</p>";
+            }
+
+            $out .= '</div><!-- end #blogroll -->';
+
+            echo $out;
+
+    }
