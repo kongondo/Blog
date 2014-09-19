@@ -1,0 +1,47 @@
+/**
+*
+* Some extra CSS styles for ProcessBlog Module Configuration Screen.
+*
+* @author Kongondo <kongondo@gmail.com>
+*
+* https://github.com/kongondo/Blog
+* Created September 2014
+*
+*/
+
+	div.blog-style {
+
+		width: 25%;
+		float: left;
+	
+	}
+
+
+	div.blog-style span {padding-left:1em;}
+
+	div.blog-style span.child-item {padding-left:2em;}	
+	
+	ul.InputfieldRadiosStacked label {
+		
+			/*cursor: pointer;*/
+			float:left;
+			width:25%;			
+	}
+
+	div.blog-style span.example-path {
+
+		font-style: italic;
+		padding:0;
+
+	}
+
+	/* clear blog-style div's float */
+	div#blog-styles:after {
+
+		content: '\0020'; 
+		visibility: hidden; 
+		display: block; 
+		height: 0; 
+		clear: both;
+}
+
