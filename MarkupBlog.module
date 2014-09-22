@@ -38,7 +38,7 @@ class MarkupBlog  extends WireData implements Module {
 			'title' => 'Markup Blog',
 			'summary' => 'Markup module to output a Blog based on the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 200,
+			'version' => 201,
 			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false,
@@ -454,12 +454,22 @@ class MarkupBlog  extends WireData implements Module {
 	 */
 	public function findComments($selector) {
 		
-		$comments = FieldtypeComments::findComments('blog_comments', $selector);//1st argument is our comments field 
+		$comments = FieldtypeComments::findComments('blog_comments', $selector);//1st argument is our comments field
+		$blogComments = $this->comments;
+		$gComments = $blogComments->blog_comments_view;//global comments/comments form visibility setting [only kicks in when selected AND post setting='']
+		$page = wire('page');//Page being viewed (Page)
+		$admin = $page->editable();	
 		
-		foreach($comments as $comment) {
+		foreach($comments as $c) {
 				
 				//if this comment is not viewable for current user, remove it from the array
-				if(!$comment->page->viewable()) $comments->remove($comment);
+				if(!$c->page->viewable()) $comments->remove($c);
+
+				//remove comments whose pages are set to 'disable-comments' if user is not admin
+				if($c->page->blog_comments_view && $c->page->blog_comments_view->id==$this->dc->id && !$admin) $comments->remove($c);
+				
+				//visibility: empty/no selection in post comments && global disable comments set to dc but user not admin
+				if(!$c->page->blog_comments_view && $gComments && $gComments->id==$this->dc->id && !$admin) $comments->remove($c);
 		}
 		
 		return $comments; 
@@ -736,12 +746,13 @@ class MarkupBlog  extends WireData implements Module {
 		if (($pComments && $pComments->id==$this->dnc->id) || ($gComments && $gComments->id==$this->dnc->id && !$pComments) || ($gCmntsCnt && $pCmntsCnt > $gCmntsCnt)) {
 
 				$noCommentsForm = true;//will use later to disable showing comments form
-				$noNewComments =  '<h4 id="comments-closed">' . $options['comments_closed'] . '</h4></div><!--/#comments-->';//save to a variable; will use later below
+				//only need to show this on 'blog-post' pages not in 'blog-comments'!
+				if($page->template == 'blog-post') $noNewComments =  '<h4 id="comments-closed">' . $options['comments_closed'] . '</h4>';//save to a variable; will use later below
 		}
 
 		elseif (($pComments && $pComments->id==$this->dc->id) || ($gComments && $gComments->id==$this->dc->id && !$pComments)) {
 
-				return '<div id="comments"><h4 id="comments-disallowed">' . $options['comments_disallowed'] . '</h4></div><!--/#comments-->';
+				if ($page->template=='blog-post') return '<div id="comments"><h4 id="comments-disallowed">' . $options['comments_disallowed'] . '</h4></div><!--/#comments-->';
 		}
 
 		//check if we should introduce pagination
@@ -759,18 +770,21 @@ class MarkupBlog  extends WireData implements Module {
 		}
 
 		//setup comments for output, copying all comments we will display into $commentArray
-		foreach($comments as $comment) { 
-					if(!$admin && $comment->status != Comment::statusApproved) continue; 
-					$comment->date = $this->formatDate($comment->created); 
-					$commentArray->add($comment); 
+		foreach($comments as $c) { 
+					if(!$admin && $c->status != Comment::statusApproved) continue; 
+					$c->date = $this->formatDate($c->created); 
+					$commentArray->add($c); 
 					$cnt++;
 					if($limit && $cnt >= $limit) break;
 		} 
 
+		
+		$out .= "<div id='comments'>";
+
 		if($page->template == 'blog-post') {
 			
 				//if we are viewing a post page, then start with a headline
-				$out .= "<div id='comments'>"; //for jumplinks
+				
 
 				$n = count($commentArray); 
 
@@ -786,44 +800,37 @@ class MarkupBlog  extends WireData implements Module {
 				//output the individual comments if comments found
 				$out .= "<ul class='comments CommentList'>";
 
-				foreach($commentArray as $comment) {
+				foreach($commentArray as $c) {
 
-							$out .= "<li class='comment CommentListItem' id='comment" . $comment->id . "'>
+							$out .= "<li class='comment CommentListItem' id='comment" . $c->id . "'>
 										<p class='comment-head CommentHeader'>";
 
-							$cite = htmlentities($comment->cite, ENT_QUOTES, "UTF-8"); 
-							$website = htmlentities($comment->website, ENT_QUOTES, "UTF-8");
+							$cite = htmlentities($c->cite, ENT_QUOTES, "UTF-8"); 
+							$website = htmlentities($c->website, ENT_QUOTES, "UTF-8");
 
 							if($website) $cite = "<a href='$website' rel='nofollow' target='_blank'>$cite</a>";
 
 							if($page->template == 'blog-post') {
 
-									$out .= sprintf(__('Comment by %1$s on %2$s'), $cite, $comment->date); 
+									$out .= sprintf(__('Comment by %1$s on %2$s'), $cite, $c->date); 
 							} 
 
 							else {
 
-									$out .= "<a href='{$comment->page->url}#comment{$comment->id}'>";
-									$out .= sprintf(__('%1$s replied to %2$s on %3$s'), $cite, $comment->page->title, $comment->date); 
+									$out .= "<a href='{$c->page->url}#comment{$c->id}'>";
+									$out .= sprintf(__('%1$s replied to %2$s on %3$s'), $cite, $c->page->title, $c->date); 
 									$out .= "</a>";
 							}
-
-							if($comment->status == Comment::statusPending) {
-
-									$out .= " <span class='comment-status-pending'>" . $this->_('PENDING') . "</span>";
-							} 
-
-							elseif($comment->status == Comment::statusSpam) {
-								
-									$out .= " <span class='comment-status-spam'>" . $this->_('SPAM') . "</span>";
 							
-							}
-						
+							if($c->status == Comment::statusPending) {$out .= " <span class='comment-status-pending'>" . $this->_('PENDING') . "</span>";}
+							elseif($c->status == Comment::statusSpam) {$out .= " <span class='comment-status-spam'>" . $this->_('SPAM') . "</span>";}
+							elseif($c->page->blog_comments_view && $c->page->blog_comments_view->id == $this->dc->id || !$c->page->blog_comments_view && $gComments && $gComments->id==$this->dc->id) {
+									$out .= " <span class='comment-status-spam'>" . $this->_('HIDDEN') . "</span>";}						
 			
 							$out .= "</p>
 										<div class='comment-body CommentText'>";
 
-							$text = htmlentities($comment->text, ENT_QUOTES, "UTF-8");//grab the comment text
+							$text = htmlentities($c->text, ENT_QUOTES, "UTF-8");//grab the comment text
 							$text = str_replace("\n\n", "</p><p>", $text);
 							$text = str_replace("\n", "<br />", $text);
 							
@@ -835,16 +842,23 @@ class MarkupBlog  extends WireData implements Module {
 				$out .= "</ul>";
 		
 
-		}//end if(count($commentArray)) 
+		}//end if(count($commentArray))
 
-		elseif ($page->template=='blog-comments' || $page->template=='blog-post') {
+		//if comments count == 0
+		elseif(!count($commentArray)) {
 
-				$out .= '<h4 id="comments-empty">' . $options['comments_empty'] . '</h4>';
+				//prevents output of 'be the first to comment' when comments closed but there are no comments yet
+				if(($page->template=='blog-post' && $pComments && $pComments->id !=$this->dnc->id) || ($page->template=='blog-post' && !$pComments && !$gComments)) {
+							$out .= '<h4 id="comments-empty">' . $options['comments_empty'] . '</h4>';
+				}
+				elseif ($page->template=='blog-comments') $out .= '<h4 id="comments-empty">' .  $this->_('No comments found.') . '</h4>';
+				
+				#$prevURL  = '';@@todo - necessary?
+				#$nextURL = '';
 			
 		}
 
 		if($page->template == 'blog-post' && $noCommentsForm == false) {
-
 				
 				if (($options['comments_login_required'] && wire('user')->isLoggedin()) || (!$options['comments_login_required'])) {
 					
@@ -866,11 +880,11 @@ class MarkupBlog  extends WireData implements Module {
 							$out .=  '<h4 id="comments-login">' . $options['comments_login'] . '</h4></div><!--/#comments-->';
 				}
 
-		}//end if $noCommentsForm == false
+		}//end if $page->template == "blog-post" && $noCommentsForm == false
 
 		else {
-
-				$out .= $noNewComments;
+-
+				$out .= $noNewComments . '</div><!--/#comments-->';
 		}
 
 		//output pagination if necessary
