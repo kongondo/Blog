@@ -228,7 +228,7 @@ div#comments {
 	/*border-top: 1px dotted #1D8ACB;*/
 }
 
-h4#comments-disallowed, h4#comments-closed {color: #D05}
+h4#comments-disallowed, h4#comments-closed, h4#comments-login, h4#comments-empty, h4#no-posts {color: #D05; text-align: center; margin: 45px 0;}
 
 #comments .num-comments-icon {
 	float: left; 
