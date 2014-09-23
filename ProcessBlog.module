@@ -2125,7 +2125,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		//CREATE AN INPUTFIELD MARKUP
 		$m = $this->modules->get('InputfieldMarkup');
 		$m->label = $this->_('Please read carefully');
-		#$m->description = $this->_('Cleanup description.');
+		$m->description = $this->_('The installed Blog Style is #' . $this->blogStyle);
 		#$m->collapsed = Inputfield::collapsedYes;
 
 		//array of blog fields. We'll use this to delete each, one by one as applicable
