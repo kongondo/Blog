@@ -586,7 +586,7 @@ class MarkupBlog  extends WireData implements Module {
 					$end = $start + count($posts)-1;
 					$total = $posts->getTotal();
 
-					if($total) $out .= "<h3>" . sprintf(__('Posts %1$d to %2$d of %3$d'), $start, $end, $total) . "</h3>";
+					if($total) $out .= "<h3 class='posts-count'>" . sprintf(__('Posts %1$d to %2$d of %3$d'), $start, $end, $total) . "</h3>";
 		
 		}//end if($small)
 
