@@ -42,7 +42,7 @@ h2, h3, h4, ul.links {margin-top: 0;}
 
 h4 {margin-bottom: 0;}
 
-div#main h3 {
+div#main h3.posts-count {
 	color: #1D8ACB;
 	background-color: #ECF7FD; /* baby blue background on e.g. 'posts 1 to 3 of 5'*/
 	border-bottom: 1px dotted #1D8ACB;/* blue like menu */
