@@ -92,7 +92,7 @@
                                         "<a class='more' href='$url'>" . __('More') . "</a>  " . 
                                         "<a class='rss' href='{$url}rss/'>" . __('RSS') . "</a>" . 
                                     "</p>";
-                    } 
+                    }//if count comments
 
                     else {
                             $out .= "<p>" . __('No comments yet') . "</p>";
@@ -102,7 +102,7 @@
 
                     echo $out;
 
-        }//end if recent-comments widget is enabled
+            }//end if recent-comments widget is enabled
 
     }//end if comments feature enabled
 
