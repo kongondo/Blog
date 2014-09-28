@@ -39,10 +39,17 @@
    // $content = $blog->renderPosts($page) . $blog->renderComments($page->blog_comments) . $blog->renderNextPrevPosts($page);//without post author
 
     /*
-        for this demo, renderComments has to adapt to whether blog commenting feature was installed or not
+        for this demo, renderComments() has to adapt to whether blog commenting feature was installed or not whilst remaining blog structure/style-agnostic
         in your own blog install, you would know if you enabled the feature so there would be no need for such a check
+		in addition, our 'check' code is not code you would normally use in a template file. 
+		we use such code here to be both foolproof that the commenting feature is installed and blog structure-agnostic 
     */
-    $renderComments = $page->template->hasField('blog_comments') ? $blog->renderComments($page->blog_comments) : '';
+    #not foolproof; user could have post-installed custom commenting feature (e.g. Disqus) with a similar field blog_comments
+	//$renderComments = $page->template->hasField('blog_comments') ? $blog->renderComments($page->blog_comments) : '';
+
+    $blogConfigs = $modules->getModuleConfigData('ProcessBlog');
+
+    $renderComments = $blogConfigs['commentsUse'] == 1 ? $blog->renderComments($page->blog_comments) : '';   
 
     $content = $blog->renderPosts($page) . $blog->postAuthor() . $renderComments . $blog->renderNextPrevPosts($page);//with post author widget 	
     
