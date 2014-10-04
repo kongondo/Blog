@@ -1,8 +1,8 @@
 <?php 
 
 /**
- * recent-posts template
- * Example template file. Show a short list of recent posts in a Blog Widget
+ * Recent Posts template
+ * Demo template file. Show a short list of recent posts in a Blog Widget
  *
  */
 
@@ -10,7 +10,7 @@
 	//we leave this here as an example...
 	
 	//CALL THE MODULE - MarkupBlog
-	$blogOut = $modules->get("MarkupBlog");
+	$blog = $modules->get("MarkupBlog");
 
 	$limit = $page->blog_quantity;
 	
@@ -21,7 +21,7 @@
 
 	foreach($posts as $item) {
 
-				$date = $blogOut->formatDate($item->blog_date);
+				$date = $blog->formatDate($item->blog_date);
 				$out .= "<li><span class='date'>$date</span> <a href='{$item->url}'>{$item->title}</a></li>";
 				$parent = $item->parent; 
 	}
@@ -41,3 +41,4 @@
 	else {
 				echo "<p>No recent posts</p>";
 	}
+

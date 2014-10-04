@@ -38,7 +38,7 @@ class MarkupBlog  extends WireData implements Module {
 			'title' => 'Markup Blog',
 			'summary' => 'Markup module to output a Blog based on the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 130,
+			'version' => 202,
 			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false,
@@ -57,9 +57,21 @@ class MarkupBlog  extends WireData implements Module {
 	 */
 	public function init() {
 
-		//required
+		$blogConfigs = wire('modules')->getModuleConfigData('ProcessBlog');
 
-		
+		//intialise some properties we'll use throught the class. These contain objects made up of the main blog pages and the main children
+		$this->blog	 =		wire('pages')->get($blogConfigs['blog']);
+		$this->posts =      wire('pages')->get($blogConfigs['blog-posts']);
+		$this->comments =   wire('pages')->get($blogConfigs['blog-comments']);
+		$this->authors =    wire('pages')->get($blogConfigs['blog-authors']);
+		$this->archives =   wire('pages')->get($blogConfigs['blog-archives']);
+		$this->settings =   wire('pages')->get($blogConfigs['blog-settings']);
+		$this->dnc =        wire('pages')->get($blogConfigs['blog-dnc']);//disable-new-comments
+		$this->dc =         wire('pages')->get($blogConfigs['blog-dc']);//disable-comments
+		$this->pauthor =    wire('pages')->get($blogConfigs['blog-pauthor']);
+
+		$this->blogStyle = $blogConfigs['blogStyle'];
+		$this->commentsUse = $blogConfigs['commentsUse'];	
 	}
 	
 	/**
@@ -314,8 +326,10 @@ class MarkupBlog  extends WireData implements Module {
 				if(!$numPosts) continue; 
 				$numPostsYear += $numPosts;
 
+				$archivesPath = $this->archives->url;
+
 				$months[$month] = array(
-					'url' => wire('config')->urls->root . "blog/archives/$y/$month/",//note our Blog pages live under the page 'blog'
+					'url' => $archivesPath . "$y/$month/",//note where our blog pages live vary depending on blogStyle
 					'name' => strftime('%B', $firstDay),
 					'posts' => $limit > 0 ? $posts : array(),
 					'total' => $numPosts
@@ -325,7 +339,7 @@ class MarkupBlog  extends WireData implements Module {
 			if(!$numPostsYear) continue; 
 
 			$years[$y] = array(
-				'url' => wire('config')->urls->root . "blog/archives/$y/", //note our Blog pages live under the page 'blog'
+				'url' => $archivesPath . "$y/",//note where our blog pages live vary depending on blogStyle
 				'name' => $y,
 				'total' => $numPostsYear,
 				'months' => $months
@@ -440,12 +454,22 @@ class MarkupBlog  extends WireData implements Module {
 	 */
 	public function findComments($selector) {
 		
-		$comments = FieldtypeComments::findComments('blog_comments', $selector);//1st argument is our comments field 
+		$comments = FieldtypeComments::findComments('blog_comments', $selector);//1st argument is our comments field
+		$blogComments = $this->comments;
+		$gComments = $blogComments->blog_comments_view;//global comments/comments form visibility setting [only kicks in when selected AND post setting='']
+		$page = wire('page');//Page being viewed (Page)
+		$admin = $page->editable();	
 		
-		foreach($comments as $comment) {
+		foreach($comments as $c) {
 				
 				//if this comment is not viewable for current user, remove it from the array
-				if(!$comment->page->viewable()) $comments->remove($comment);
+				if(!$c->page->viewable()) $comments->remove($c);
+
+				//remove comments whose pages are set to 'disable-comments' if user is not admin
+				if($c->page->blog_comments_view && $c->page->blog_comments_view->id==$this->dc->id && !$admin) $comments->remove($c);
+				
+				//visibility: empty/no selection in post comments && global disable comments set to dc but user not admin
+				if(!$c->page->blog_comments_view && $gComments && $gComments->id==$this->dc->id && !$admin) $comments->remove($c);
 		}
 		
 		return $comments; 
@@ -529,7 +553,7 @@ class MarkupBlog  extends WireData implements Module {
 		}//end if(!$posts instanceof PageArray)
 
 		//excerpt/post truncated length
-		$limit = wire('pages')->get('/blog/posts/')->blog_quantity; 
+		$limit = $this->settings->blog_small;
 
 		$summaryLimit = $limit ? $limit : 450;
 
@@ -546,9 +570,9 @@ class MarkupBlog  extends WireData implements Module {
 					
 					}//end if(empty($page->summary))
 
-					// set a couple new fields that our output will use
+					//set a couple new fields that our output will use
 					$page->set('authorName', $page->createdUser->get('title|name')); 
-					$page->set('authorURL', wire('config')->urls->root . 'blog/authors/' . $page->createdUser->name . '/'); //set the correct authorURL! Blog pages are under the page 'blog'
+					$page->set('authorURL', $this->authors->url . $page->createdUser->name . '/');
 		
 			}//end foreach($posts as $page)
 
@@ -562,7 +586,7 @@ class MarkupBlog  extends WireData implements Module {
 					$end = $start + count($posts)-1;
 					$total = $posts->getTotal();
 
-					if($total) $out .= "<h3>" . sprintf(__('Posts %1$d to %2$d of %3$d'), $start, $end, $total) . "</h3>";
+					if($total) $out .= "<h3 class='posts-count'>" . sprintf(__('Posts %1$d to %2$d of %3$d'), $start, $end, $total) . "</h3>";
 		
 		}//end if($small)
 
@@ -570,16 +594,19 @@ class MarkupBlog  extends WireData implements Module {
 
 		foreach($posts as $page) {
 			
-					$numComments = $page->blog_comments->count();
+					//only if commentsUse == 1
+					if ($this->commentsUse == 1) {
 
-					//if we found comments
-					if($numComments > 0) $numCommentsStr = sprintf(_n('%d Comment', '%d Comments', $numComments), $numComments);
-					
-					else $numCommentsStr = $this->_('No comments yet');
+							$numComments = $page->blog_comments->count();
+							//if we found comments
+							if($numComments > 0) $numCommentsStr = sprintf(_n('%d Comment', '%d Comments', $numComments), $numComments);							
+							else $numCommentsStr = $this->_('No comments yet');					
+					}
 
 					$out .= "<div class='post' id='{$page->id}'>
-								<div class='post-head'>
-								<a class='num-comments-icon' href='{$page->url}#comments' title='$numCommentsStr'>$numComments</a>";
+								<div class='post-head'>";
+								
+					if($this->commentsUse == 1)	 $out .= "<a class='num-comments-icon' href='{$page->url}#comments' title='$numCommentsStr'>$numComments</a>";
 							
 					//headline size
 					$h = $small ? "h4" : "h2";
@@ -648,8 +675,9 @@ class MarkupBlog  extends WireData implements Module {
 
 								} //end if(count($page->tags))
 
-								
-								$out .= "<p class='num-comments'><span>" . $this->_('Comments:') . "</span> <a href='{$page->url}#comments'>$numCommentsStr</a></p></div>";
+								if($this->commentsUse == 1) $out .= "<p class='num-comments'><span>" . $this->_('Comments:') . "</span> <a href='{$page->url}#comments'>$numCommentsStr</a></p>";
+
+								$out .= "</div>";//end div.post-foot
 
 					}//END if(!$small) 
 
@@ -697,7 +725,8 @@ class MarkupBlog  extends WireData implements Module {
 		//global AND post's comments/comments form visibility state. Note: post's comments/comments form SELECTED visibility status overrides global setting
 		$noCommentsForm = false;
 		$noNewComments = '';
-		$blogComments = wire('pages')->get('/blog/comments/');
+		$blogComments = $this->comments;
+
 		$gComments = $blogComments->blog_comments_view;//global comments/comments form visibility setting [only kicks in when selected AND post setting='']
 		$gCmntsCnt = $blogComments->blog_comments_max;//global: maximum comments allowed per post [form will be hidden if this limit exceeded]. Note: this overrides post's 'always show comments' form
 		$pComments = $page->blog_comments_view;//post comments/comments form visibility setting [only kicks in when SELECTED]
@@ -711,28 +740,22 @@ class MarkupBlog  extends WireData implements Module {
 		);
 
 		//merge user options with default comments' options
+		if($options != null && is_array($options)){$options = array_merge($defaultOptions, $options);} 
+		else {$options = $defaultOptions;}
 
-		if($options != null && is_array($options)){
-						$options = array_merge($defaultOptions, $options);//@@todo - confirm array_merge is not deleting translation strings!
-		} 
-
-		else {
-						$options = $defaultOptions;
-		}
-
-		//comments visibility controls check
-		if (($pComments && $pComments->name=='disable-new-comments') || ($gComments && $gComments->name=='disable-new-comments' && !$pComments) || ($gCmntsCnt && $pCmntsCnt > $gCmntsCnt)) {
+		if (($pComments && $pComments->id==$this->dnc->id) || ($gComments && $gComments->id==$this->dnc->id && !$pComments) || ($gCmntsCnt && $pCmntsCnt > $gCmntsCnt)) {
 
 				$noCommentsForm = true;//will use later to disable showing comments form
-				$noNewComments =  '<h4 id="comments-closed">' . $options['comments_closed'] . '</h4></div><!--/#comments-->';//save to a variable; will use later below
+				//only need to show this on 'blog-post' pages not in 'blog-comments'!
+				if($page->template == 'blog-post') $noNewComments =  '<h4 id="comments-closed">' . $options['comments_closed'] . '</h4>';//save to a variable; will use later below
 		}
 
-		elseif (($pComments && $pComments->name=='disable-comments') || ($gComments && $gComments->name=='disable-comments' && !$pComments)) {
+		elseif (($pComments && $pComments->id==$this->dc->id) || ($gComments && $gComments->id==$this->dc->id && !$pComments)) {
 
-				return '<div id="comments"><h4 id="comments-disallowed">' . $options['comments_disallowed'] . '</h4></div><!--/#comments-->';
+				if ($page->template=='blog-post') return '<div id="comments"><h4 id="comments-disallowed">' . $options['comments_disallowed'] . '</h4></div><!--/#comments-->';
 		}
 
-		//check if we should introduce pagination @@todo - confirm working properly
+		//check if we should introduce pagination
 		if($limit && (count($comments) > $limit || $pageNum > 1)) {
 
 			if($pageNum > 2) $prevURL = $page->url . 'page' . ($pageNum-1);
@@ -747,18 +770,21 @@ class MarkupBlog  extends WireData implements Module {
 		}
 
 		//setup comments for output, copying all comments we will display into $commentArray
-		foreach($comments as $comment) { 
-					if(!$admin && $comment->status != Comment::statusApproved) continue; 
-					$comment->date = $this->formatDate($comment->created); 
-					$commentArray->add($comment); 
+		foreach($comments as $c) { 
+					if(!$admin && $c->status != Comment::statusApproved) continue; 
+					$c->date = $this->formatDate($c->created); 
+					$commentArray->add($c); 
 					$cnt++;
 					if($limit && $cnt >= $limit) break;
 		} 
 
+		
+		$out .= "<div id='comments'>";
+
 		if($page->template == 'blog-post') {
 			
 				//if we are viewing a post page, then start with a headline
-				$out .= "<div id='comments'>"; //for jumplinks
+				
 
 				$n = count($commentArray); 
 
@@ -774,44 +800,37 @@ class MarkupBlog  extends WireData implements Module {
 				//output the individual comments if comments found
 				$out .= "<ul class='comments CommentList'>";
 
-				foreach($commentArray as $comment) {
+				foreach($commentArray as $c) {
 
-							$out .= "<li class='comment CommentListItem' id='comment" . $comment->id . "'>
+							$out .= "<li class='comment CommentListItem' id='comment" . $c->id . "'>
 										<p class='comment-head CommentHeader'>";
 
-							$cite = htmlentities($comment->cite, ENT_QUOTES, "UTF-8"); 
-							$website = htmlentities($comment->website, ENT_QUOTES, "UTF-8");
+							$cite = htmlentities($c->cite, ENT_QUOTES, "UTF-8"); 
+							$website = htmlentities($c->website, ENT_QUOTES, "UTF-8");
 
 							if($website) $cite = "<a href='$website' rel='nofollow' target='_blank'>$cite</a>";
 
 							if($page->template == 'blog-post') {
 
-									$out .= sprintf(__('Comment by %1$s on %2$s'), $cite, $comment->date); 
+									$out .= sprintf(__('Comment by %1$s on %2$s'), $cite, $c->date); 
 							} 
 
 							else {
 
-									$out .= "<a href='{$comment->page->url}#comment{$comment->id}'>";
-									$out .= sprintf(__('%1$s replied to %2$s on %3$s'), $cite, $comment->page->title, $comment->date); 
+									$out .= "<a href='{$c->page->url}#comment{$c->id}'>";
+									$out .= sprintf(__('%1$s replied to %2$s on %3$s'), $cite, $c->page->title, $c->date); 
 									$out .= "</a>";
 							}
-
-							if($comment->status == Comment::statusPending) {
-
-									$out .= " <span class='comment-status-pending'>" . $this->_('PENDING') . "</span>";
-							} 
-
-							elseif($comment->status == Comment::statusSpam) {
-								
-									$out .= " <span class='comment-status-spam'>" . $this->_('SPAM') . "</span>";
 							
-							}
-						
+							if($c->status == Comment::statusPending) {$out .= " <span class='comment-status-pending'>" . $this->_('PENDING') . "</span>";}
+							elseif($c->status == Comment::statusSpam) {$out .= " <span class='comment-status-spam'>" . $this->_('SPAM') . "</span>";}
+							elseif($c->page->blog_comments_view && $c->page->blog_comments_view->id == $this->dc->id || !$c->page->blog_comments_view && $gComments && $gComments->id==$this->dc->id) {
+									$out .= " <span class='comment-status-spam'>" . $this->_('HIDDEN') . "</span>";}						
 			
 							$out .= "</p>
 										<div class='comment-body CommentText'>";
 
-							$text = htmlentities($comment->text, ENT_QUOTES, "UTF-8");//grab the comment text
+							$text = htmlentities($c->text, ENT_QUOTES, "UTF-8");//grab the comment text
 							$text = str_replace("\n\n", "</p><p>", $text);
 							$text = str_replace("\n", "<br />", $text);
 							
@@ -823,17 +842,23 @@ class MarkupBlog  extends WireData implements Module {
 				$out .= "</ul>";
 		
 
-		}//end if(count($commentArray)) 
+		}//end if(count($commentArray))
 
-		//@@kongondo - if comments count = 0
-		elseif ($page->template=='blog-comments' || $page->template=='blog-post') {
+		//if comments count == 0
+		elseif(!count($commentArray)) {
 
-				$out .= '<h4 id="comments-empty">' . $options['comments_empty'] . '</h4>';
+				//prevents output of 'be the first to comment' when comments closed but there are no comments yet
+				if(($page->template=='blog-post' && $pComments && $pComments->id !=$this->dnc->id) || ($page->template=='blog-post' && !$pComments && !$gComments)) {
+							$out .= '<h4 id="comments-empty">' . $options['comments_empty'] . '</h4>';
+				}
+				elseif ($page->template=='blog-comments') $out .= '<h4 id="comments-empty">' .  $this->_('No comments found.') . '</h4>';
+				
+				#$prevURL  = '';@@todo - necessary?
+				#$nextURL = '';
 			
 		}
 
 		if($page->template == 'blog-post' && $noCommentsForm == false) {
-
 				
 				if (($options['comments_login_required'] && wire('user')->isLoggedin()) || (!$options['comments_login_required'])) {
 					
@@ -855,11 +880,11 @@ class MarkupBlog  extends WireData implements Module {
 							$out .=  '<h4 id="comments-login">' . $options['comments_login'] . '</h4></div><!--/#comments-->';
 				}
 
-		}//end if $noCommentsForm == false
+		}//end if $page->template == "blog-post" && $noCommentsForm == false
 
 		else {
-
-				$out .= $noNewComments;
+-
+				$out .= $noNewComments . '</div><!--/#comments-->';
 		}
 
 		//output pagination if necessary
@@ -887,7 +912,7 @@ class MarkupBlog  extends WireData implements Module {
 	 */
 	public function postAuthor() {
 
-		$postAuthor = wire('pages')->get('template=blog-widget-basic, name=post-author, include=all');
+		$postAuthor = $this->pauthor;
 
 		$out = '';
 
@@ -1001,8 +1026,8 @@ class MarkupBlog  extends WireData implements Module {
 
 		$nav = array();
 
-		//we add this for use in selector below [code amendment to suit this Blog's Page Tree]
-		$blogParentId = wire('pages')->get('/blog/')->id;
+		if ($this->blogStyle == 1 || $this->blogStyle == 2) {$blogParentId = $this->blog->id;}
+		elseif ($this->blogStyle == 3 || $this->blogStyle == 4) {$blogParentId = 1;}
 
 		foreach($items as $url => $title) {
 				

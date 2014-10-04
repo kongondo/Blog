@@ -1,9 +1,10 @@
 #Blog
-This module enables you to create and manage a Blog in a unified interface. It is based on the [Blog Profile module](http://mods.pw/2M) by Ryan Cramer. The module consists of two parts:  
+
+This Blog module enables you to easily create and manage a Blog in ProcessWire. It is based on the [Blog Profile module](http://mods.pw/2M) by Ryan Cramer. The module consists of three separate modules:  
 
 **ProcessBlog**: Manage Blog in the backend/Admin.  
-**MarkupBlog**: Display Blog in the frontend.
-
+**MarkupBlog**: Display Blog in the frontend.  
+**BlogPublishDate**: Automatically sets a publish date when you publish a Blog Post.
 
 ##Features
 
@@ -15,60 +16,75 @@ This module enables you to create and manage a Blog in a unified interface. It i
 *	Edit Blog settings.
 *	Blog Authors' stats.
 * Turn widgets on/off (publish/unpublish).
+* Fully uninstall/cleanup Blog templates, fields, pages and optionally template files.
 
 
 ###MarkupBlog
 *	Easily output your Blog in the frontend, where and how you wish (e,g, only output part of the Blog).
 *	Use any CSS framework (or not!) you wish.
-* PocketGrid CSS included with the Template Files as a demo (fully responsive).
-
-##Notes
-
-#####Currently, this module will not work with existing Blog Profile installs! This may change in the future if there's demand.
-In comparison to the Blog Profile, there are differences in the Blog Pages' structure and names, Fields, Templates and Template Files names.  
-
-* MarkupBlog replicates the Blog Profile. Hence, the 'items' Fields, Templates, Template Files and a couple of Pages are installed where such, with similar names, do not already exist, i.e., installation is non-destructive. 
-* **With the exception of Template Files, note that if even one item with a similar name (and path for Page items) already exists on your site, NONE of the items will be installed**. 
-* In that case, however, ProcessBlog 'Dashboard' will still install but will not be very usable. You will have to manually uninstall it. 
-* For Template Files, these are only copied over to **/site/templates/** where no template with an identical name already exists. This means that no Template File gets overwritten. 
-* The root parent page of the Blog is named 'blog'. To use the module, make sure you have no such page directly under root, i.e. **/blog/**.
-* Fields and Templates are prefixed with **blog_** and **blog-** respectively. They are also tagged **'blog'** for grouping in the ProcessWire Admin.
-* The module also adds 3 fields (biography, image and title) to the user template. These are needed for the Blog Author biography.
-* **On uninstall, all installed Fields, Templates, Template Files and Blog Pages are left untouched. If you need to remove them, you have to do it manually (or using the API)**. This is in order to protect existing data.
-* Role 'author' and permission 'blog' are created on install.
-* In order to use the Recent Tweets Widget, you will need to separately install and setup the module 'MarkupTwitterFeed' (see resources below).
-
+* PocketGrid CSS included with the demo Template Files (fully responsive).
 
 ##How to Install
 
-1.	Download the module and copy the file contents to **/site/modules/ProcessBlog/**.
-2.	In Admin, click Modules > check for new modules.
-3.	Click install **ProcessBlog**. The module will automatically install **MarkupBlog**.
-4.  Copy both the folders **/js/** and **/css/** and their contents to **/site/templates/**. These are needed for the example Blog output. Edit them as you wish.
-5.	Go to Admin > Blog to start managing your Blog.
-6. View the Page 'Blog' to see the included demo of **MarkupBlog**.
+Install via ProcessWire modules' screen. Once installed, there's two steps involved to finalise the install:
+
+#####A. Configure Blog settings in its module's configuration screen. 
+
+Here you will have to choose from 4 Blog styles to match the Blog URL structure you want:
+
+1. Blog style 1: /mysite/blog/posts/example-post/
+2. Blog style 2: /mysite/blog/example-post/
+3. Blog style 3: /mysite/posts/example-post/
+4. Blog style 4: /mysite/example-post/
+
+On this screen, you also select:
+
+*  Whether you want to enable the commenting feature;
+*  The auto-publish/unpublish posts feature (for which you would need the module [SchedulePages](http://mods.pw/1t);
+* Whether to install 'no template files', 'blank template files', or 'demo template files'; and
+* Optionally specify a tag for grouping Blog Templates and Fields in their respective ProcessWire admin pages
+
+#####B. Install Blog Templates, Pages, Fields, Role and optionally Template Files. 
+
+* In this second step, via the Blog dashboard (**admin/blog/**), you will see an overview of the settings you selected in the first step above. Here you install Blog's components. Before you click the button to run the install wizard, nothing will happen yet. You can still go back and change the module configuration settings. Until you run the install wizard in this second step, you will have no Blog Pages, Fields, Templates, etc. 
+
+* On this page, you will also be able to rename your Blog’s main pages before they are created. If you don’t do it at this stage, you can also rename them post-install in the ProcessWire pages' tree. If you are happy with your settings, click the install wizard to proceed. Blog will be fully installed with your settings within a few seconds and you will then be presented with the Blog dashboard. 
+
+* Only Templates, Pages and Fields necessary for your selected 'Blog style' will be installed. For instance, if you did not enable the commenting feature, related Templates, Pages, etc. will not be created. 
+
+* Note that non-enabled features **cannot** be enabled once the second part of the install is complete. However, using the **'Cleanup'** feature (see below) you can return Blog to the first-step of the installer stage and enable a feature you want or even select a different Blog style.
+
+* If you chose to install the demo Template Files, also manually copy over the **/css/** and **/js/** folders present in Blog module's folder to your **/site/templates/** folder.
+
+#####Please note:
+If you need to change some configurations, you can go back to the module settings and do it **BEFORE** you finalise step two of the installation. It is important that once the installation is finalised, in case you had left the ProcessBlog's module configuration's browser window open, **NOT** to press submit again. Otherwise, MarkupBlog may not function as expected. However, if you reload the module configurations screen once the second-part of the installer has finished, you will not be able to change the configuration settings. Instead, you will be presented with an overview of your installed settings.
 
 ##How to Use
 
-**MarkupBlog** is a collection of methods (functions) that help to output your Blog in the frontend using template files. You can use your own JS and CSS as you wish. Example template files are installed by the module. To use **MarkupBlog** in the frontend, you call it as any other ProcessWire module in a template file as follows.
+Full documentation is available [here](http://kongondo.com/tutorials/specific-features/creating-a-blog-in-processwire/).
 
-````php
+##Notes
 
-//Load the module. You then have access to its methods and properties. 
-$blog = $modules->get('MarkupBlog');
+* The module Dashboard **will not work** with Blog Profile installs!  
+* MarkupBlog replicates the Blog Profile. Hence, the 'items' Fields, Templates, Template Files and a couple of Pages are installed where such, with similar names, do not already exist, i.e., installation is non-destructive. 
+* **With the exception of Template Files, note that if even one item with a similar name (and path for Page items) already exists on your site, NONE of the items will be installed**. Instead, step two of the installation will be aborted. 
+* For Template Files, if you did not select the 'no template files' option, these are only copied over to **/site/templates/** where no template with an identical name already exists. This means that no Template File gets overwritten. 
+* Fields and Templates are prefixed with **blog_** and **blog-** respectively.
+* The module also adds 3 Fields (biography [blog_body], image [blog_images] and title) to the user template. These are needed for the Blog Author biography.
+* Role **blog-author** and permission **blog** are created on install.
+* In order to use the Recent Tweets Widget, you will need to separately install and setup the module [MarkupTwitterFeed](http://mods.pw/d).
 
-//render 5 latests posts. See the example Template Files code for more examples.
-echo $blog->renderPosts("limit=5");
-````
-
-The CSS and most of the HTML is up to you, of course.
-
+##Uninstall
+Uninstalling Blog is  a two-step process. If you are logged in as a superuser, you will see a Blog menu item called **Cleanup**. It will lead to a screen with info about all the Fields, Templates, Pages and Role you are about to delete. It will also list the Blog Template Files that, if you wish, you can also delete. This utility is also useful when you want to try out the different Blog styles without uninstalling the whole Blog module. It returns Blog to the state similar to when you first installed the module. Of course, in case you want to remove Blog as well, just go ahead and uninstall in the normal way but **AFTER** you have cleaned-up.
 
 ##Resources
-*	[Support Forum](https://processwire.com/talk/topic/7403-module-blog/)
-*	Video [ProcessBlog demo](http://youtu.be/64XMGLuniqU)
-*	Video [MarkupBlog demo](http://youtu.be/k7aSeL29JPE)
-*	MarkupTwitterFeed [MarkupTwitterFeed](http://mods.pw/d)
+* [Support Forum](https://processwire.com/talk/topic/7403-module-blog/)
+* Full [announcement](https://processwire.com/talk/topic/7403-module-blog/page-7#entry74237) about Blog version 2
+* Video [ProcessBlog demo](http://youtu.be/64XMGLuniqU) (Blog version 1)
+* Video [MarkupBlog demo](http://youtu.be/k7aSeL29JPE) (Blog version 1)
+
+##Upgrading from Blog version 1 to version 2
+Please refer to this [post](https://processwire.com/talk/topic/7403-module-blog/?p=74245) for full instructions and an upgrade script.
 
 ##License
 GPL2

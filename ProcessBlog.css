@@ -54,7 +54,7 @@
 	     -moz-box-sizing: border-box;
 	}
 
-	input#add_and_publish {
+	input#add_and_publish, input#remove_tpl_files {
 		margin-left: 1em;
 		position: relative;
 		top: 0.3em;
@@ -116,11 +116,30 @@
 
 	li.edit_fieldsets {margin-top: 2em !important;}
 
-	label#add_new {
+	label#add_new, label#remove_tf {
 		margin: 0.75em 0 0 0.25em;
 		display: inline-block;
 		vertical-align: top;
 	}
 
 	span.unpublished, span.red {color: red;}/* for highlighting some text */
+
+	div.block {
+
+			width: 20%;
+			float: left;
+
+	}
+
+
+		div#components:after {/* clear blog-style div's float */
+	content: '\0020'; 
+	visibility: hidden; 
+	display: block; 
+	height: 0; 
+	clear: both;
+}
+
+div.block ol li {margin: 0 0 0 20px; padding: 0;}
+
 	
