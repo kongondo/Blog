@@ -30,7 +30,7 @@ Install via ProcessWire modules' screen. Once installed, there's two steps invol
 
 #####A. Configure Blog settings in its module's configuration screen. 
 
-Here you will have to choose from 4 Blog styles in relation to how you want your Blog URL structure to be:
+Here you will have to choose from 4 Blog styles to match the Blog URL structure you want:
 
 1. Blog style 1: /mysite/blog/posts/example-post/
 2. Blog style 2: /mysite/blog/example-post/
@@ -82,6 +82,9 @@ Uninstalling Blog is  a two-step process. If you are logged in as a superuser, y
 * Full [announcement](https://processwire.com/talk/topic/7403-module-blog/page-7#entry74237) about Blog version 2
 * Video [ProcessBlog demo](http://youtu.be/64XMGLuniqU) (Blog version 1)
 * Video [MarkupBlog demo](http://youtu.be/k7aSeL29JPE) (Blog version 1)
+
+##Upgrading from Blog version 1 to version 2
+Please refer to this [post](https://processwire.com/talk/topic/7403-module-blog/?p=74245) for full instructions and an upgrade script.
 
 ##License
 GPL2
