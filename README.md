@@ -116,7 +116,7 @@ Added a 4th **Array $options** argument for customising the texts describing the
 2. Added Posts' Bulk Actions
 
 ####Version 1.1
-1. Added new widget 'Post Author'. The widget allows to add a post's author's biography with each post (above or below the post).
+1. Added new widget **'Post Author'**. The widget allows to add a post's author's biography with each post (above or below the post).
 2. Made 'posts truncate length' configurable
 
 ####Version 1.0.1
