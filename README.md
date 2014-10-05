@@ -80,44 +80,41 @@ Uninstalling Blog is  a two-step process. If you are logged in as a superuser, y
 ##Changelog
 
 ####Version 2.0.2
-1. Minor updates to demo template files
-
+1. Minor updates to demo template files.
 
 ####Version 2.0.1
-1. Fixed a comments' visibility issue
-2. Enhancement to comments' visibility status (added status **HIDDEN**)
+1. Fixed a comments' visibility issue.
+2. Enhancement to comments' visibility status (added status **HIDDEN**).
 
 ####Version 2.0
-1. Four Blog styles (URL structures)
-2. Two-step installer/uninstaller
-3. Configurable module
-4. Cleaner utility (for Blog fields, templates, template files, etc.)
-5. Auto-(un)publish feature
-6. Commenting feature - enable/disable
-7. Other various enhancements
+1. Four Blog styles (URL structures).
+2. Two-step installer/uninstaller.
+3. Configurable module.
+4. Cleaner utility (for Blog fields, templates, template files, etc.).
+5. Auto-(un)publish feature.
+6. Commenting feature - enable/disable.
+7. Other various enhancements.
 
 ####Version 1.3.0
 1. Added new small autoload module BlogPublishDate as part of the Blog module suite, that saves a Blog Post's publication date.
-2. Enhancements to Posts, Categories and Tags Dashboards
-- Customisable number of posts/categories/tags to show per page (via a drop-down select). Selected value is preserved via a cookie per context (i.e. can have different values for posts, categories and tags dashboard) and per user
-3. Date column: shows 'Pending' for unpublished posts (never before published ones), 'Expired' (published then unpublished posts) and published Date for currently published posts
+2. Enhancements to Posts, Categories and Tags Dashboards: Customisable number of posts/categories/tags to show per page (via a drop-down select). Selected value is preserved via a cookie per context (i.e. can have different values for posts, categories and tags dashboard) and per user.
+3. Date column: shows 'Pending' for unpublished posts (never before published ones), 'Expired' (published then unpublished posts) and published Date for currently published posts.
 4. Date shown is formatted according to the format set in **'blog_date'**.
-5. Fixed sorting by date column
+5. Fixed sorting by date column.
 
 ####Version 1.2.2
-1. Changes to **renderComments()**.
-Added a 4th **Array $options** argument for customising the texts describing the various comments' statuses
+1. Changes to **renderComments()**. Added a 4th **Array $options** argument for customising the texts describing the various comments' statuses.
 
 ####Version 1.2.1
-1. Minor styling issues updates
+1. Minor styling issues updates.
 
 ####Version 1.2
-1. Added comments visibility settings at post and global level
-2. Added Posts' Bulk Actions
+1. Added comments visibility settings at post and global level.
+2. Added Posts' Bulk Actions.
 
 ####Version 1.1
 1. Added new widget **'Post Author'**. The widget allows to add a post's author's biography with each post (above or below the post).
-2. Made 'posts truncate length' configurable
+2. Made 'posts truncate length' configurable.
 
 ####Version 1.0.1
 1. Several strings made translatable
