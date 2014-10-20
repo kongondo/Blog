@@ -40,7 +40,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 			'title' => 'Blog',
 			'summary' => 'Blog Manager module inspired by the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 202,
+			'version' => 210,
 			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false, 
@@ -698,7 +698,9 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		//if blogStyle has not been specified we throw an error
 		if(!isset($data['blogStyle']) || $data['blogStyle'] == '') {			
-			$this->error($this->_('You must first select and save a Blog Style in the module config!'));			
+			//$this->error($this->_('You must first select and save a Blog Style in the module config!'));
+			$moduleURL = '<a target="_blank" href="' . $this->config->urls->admin . 'module/edit?name=' . $this . '">' . $this->_('module config!') . '</a>';				 
+			$this->error($this->_('You must first select and save a Blog Style in the ') . $moduleURL, Notice::allowMarkup);
 			return;
 		}
 		//if blog style url has been set but this is a new install, i.e. blogFullyInstalled == 0, we show first welcome
