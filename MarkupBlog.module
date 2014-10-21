@@ -38,7 +38,7 @@ class MarkupBlog  extends WireData implements Module {
 			'title' => 'Markup Blog',
 			'summary' => 'Markup module to output a Blog based on the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 210,
+			'version' => 211,
 			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false,
@@ -610,7 +610,89 @@ class MarkupBlog  extends WireData implements Module {
 							
 					//headline size
 					$h = $small ? "h4" : "h2";
+
+					//determine if to output featured image on small/truncated/summarised posts
+					$featuredImageOut = '';
+					$featuredImagePosition = '';//not really necessary...but...
 					
+					if($small && $featuredImage != null && is_array($featuredImage)) {
+
+								########### if user specified there is a featured image we first attempt to find it in the page's blog_images. ###########
+								########### if that fails, we check for it in the post's first embedded image in blog_body ###########								
+								
+								//default featured image options
+								$defaultOptions = array(
+											'position' => 'below',//output featured image below post-body. if 'position'=>'above', output above  post-headline
+											'width' => '',//no width manipulation if this blank or 0
+											'height' => '',//no height manipulation if this blank or 0. Note, if size is true and both width and height > 0, use size() instead
+											'alt' => 'description',//defaults to $image->description. Otherwise other stated field on the page, e.g. = 'title'
+											'tag' => $this->_('featured'),//string: image tag to look for in blog_images			
+											/*size: 
+												-	image will be resized to exact dimensions -> $img = $image->size($x, $y)
+												-	where $x = 'width' and $y = 'height'*/
+											'size' => false,//if 'size' = true AND both width and height > 0, this kicks in
+								);
+
+								//merge user-specified featured image options
+								$featuredImage = array_merge($defaultOptions, $featuredImage);
+
+								//featured image output default position == below. Determine if this is true
+								$featuredImagePosition = $featuredImage['position'] == 'above' ?  false : true;
+
+								$size = $featuredImage['size'];
+								$width = (int) $featuredImage['width'];
+								$height = (int) $featuredImage['height'];
+
+								//retrieve first image with the tag 'featured' or user-specified 'tag'
+								$image = $page->blog_images->getTag($featuredImage['tag']);
+
+								//if we found the image
+								if($image) {
+																								
+											$alt = $featuredImage['alt'] == 'description' ? $image->description : $page->{$featuredImage['alt']};
+
+											if ($height > 0 && $width > 0 && $size == true) $thumb = $image->size($width, $height);
+											elseif ($width > 0) $thumb = $image->width($width);
+											elseif ($height > 0) $thumb = $image->height($height);
+											else $thumb = $image;
+
+											$featuredImageOut .=  "<img class='post-small-featured-image' src='{$thumb->url}' alt='{$alt}' width='{$thumb->width}' height='{$thumb->height}' />";
+        						
+        						}//end if $image found
+
+        						//if we didn't find an image in $page->blog_images, we check for the first embedded image in blog_body if blog_body is not blank!
+        						elseif($page->blog_body !='') {
+
+											/*for each summarised post, we use PHP's DOMDocument class to find the first image and use that as the featured image*/
+
+											//parse the html string into a DOMDocument
+									        $dom = new DOMDocument();
+									        $dom->loadHTML($page->blog_body);
+
+									        //this grabs just the nth img found. we want the first one so item(0)
+									        //we grab the first img found in blog_body
+									        $image = $dom->getElementsByTagName('img')->item(0);//returns an object
+							        
+									        //if an image found, we grab its 'src' attribute
+									        if ($image !=null) {
+
+									        		$imageURL = $image->getAttribute('src');//string;
+									        		$alt = $page->{$featuredImage['alt']};
+									        		$width = $width > 0 ? "width={$width}" : '';
+									        		$height = $height > 0 ? "height={$height}" : '';
+									        		
+									        		$featuredImageOut .=  "<img class='post-small-featured-image' src='{$imageURL}' alt='{$alt}' {$width} {$height} />";
+
+									        }
+
+        						}//end else grab image from first image embedded in post
+
+											
+					}//end if $small && $featuredImage
+
+					//if featured image to be output above post-headline
+					if($featuredImageOut !='' && $featuredImagePosition == false) $out .= $featuredImageOut;
+
 					$out .= "<$h class='post-headline'><a href='{$page->url}'>{$page->title}</a></$h>
 							 	<p class='post-byline'>";
 
@@ -624,79 +706,9 @@ class MarkupBlog  extends WireData implements Module {
 					$out .=	"</p></div><div class='post-body'>";
 
 					if($small) {
-
-								########### if user specified there is a featured image we first attempt to find it in the page's blog_images. ###########
-								########### if that fails, we check for it in the post's first embedded image in blog_body ###########
 								
-								//merge user featured image options with default featured image options
-								if($featuredImage != null && is_array($featuredImage)){
-
-										//default featured image options
-										$defaultOptions = array(
-													'width' => '',//no width manipulation if this blank or 0
-													'height' => '',//no height manipulation if this blank or 0. Note, if size is true and both width and height > 0, use size() instead
-													'alt' => 'description',//defaults to $image->description. Otherwise other stated field on the page, e.g. = 'title'
-													'tag' => $this->_('featured'),//string: image tag to look for in blog_images			
-													/*size: 
-														-	image will be resized to exact dimensions -> $img = $image->size($x, $y)
-														-	where $x = 'width' and $y = 'height'*/
-													'size' => false,//if 'size' = true AND both width and height > 0, this kicks in
-										);
-
-										$featuredImage = array_merge($defaultOptions, $featuredImage);
-
-										$size = $featuredImage['size'];
-										$width = (int) $featuredImage['width'];
-										$height = (int) $featuredImage['height'];
-
-										//retrieve first image with the tag 'featured' or user-specified 'tag'
-										$image = $page->blog_images->getTag($featuredImage['tag']);
-
-										//if we found the image
-										if($image) {
-																										
-													$alt = $featuredImage['alt'] == 'description' ? $image->description : $page->{$featuredImage['alt']};
-
-													if ($height > 0 && $width > 0 && $size == true) $thumb = $image->size($width, $height);
-													elseif ($width > 0) $thumb = $image->width($width);
-													elseif ($height > 0) $thumb = $image->height($height);
-													else $thumb = $image;
-
-													$out .=  "<img class='post-small-featured-image' src='{$thumb->url}' alt='{$alt}' width='{$thumb->width}' height='{$thumb->height}' />";
-                						
-                						}//end if $image found
-
-                						//if we didn't find an image in $page->blog_images, we check for the first embedded image in blog_body if blog_body is not blank!
-                						elseif($page->blog_body !='') {
-
-													/*for each summarised post, we use PHP's DOMDocument class to find the first image and use that as the featured image*/
-
-													//parse the html string into a DOMDocument
-											        $dom = new DOMDocument();
-											        $dom->loadHTML($page->blog_body);
-
-											        //this grabs just the nth img found. we want the first one so item(0)
-											        //we grab the first img found in blog_body
-											        $image = $dom->getElementsByTagName('img')->item(0);//returns an object
-									        
-											        //if an image found, we grab its 'src' attribute
-											        if ($image !=null) {
-											        		$imageURL = $image->getAttribute('src');//string;
-											        		$alt = $page->{$featuredImage['alt']};
-											        		$width = $width > 0 ? "width={$width}" : '';
-											        		$height = $height > 0 ? "height={$height}" : '';
-											        		
-											        		$out .=  "<img class='post-small-featured-image' src='{$imageURL}' alt='{$alt}' {$width} {$height} />";
-
-											        }
-
-
-
-                						}//end else grab image from first image embedded in post
-
-
-								}//end if $featuredImage
-
+								//if featured image to be output below post-body
+								if($featuredImageOut !='' && $featuredImagePosition == true) $out .= $featuredImageOut;
 
 								$out .= "<p>" . $page->summary . "&hellip; <a class='more' href='{$page->url}'>" . $this->_('View More') . "</a></p>";
 					
