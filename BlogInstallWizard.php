@@ -12,7 +12,7 @@
 * We don't want to overwrite users files!
 *
 * @author Kongondo
-* @version 2.1.1 
+* @version 2.2.0 
 *
 * https://github.com/kongondo/Blog
 * Created February 2014
