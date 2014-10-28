@@ -170,8 +170,8 @@ class MarkupBlog  extends WireData implements Module {
 		//default options for next/prev posts
 		$defaultOptions = array(
 
-							'prev_post' =>'&lt;',//tag/text for previous post, e.g. &laquo;, &#171;, etc
-							'next_post' => '',//tag/text for next post, e.g. &rsaquo;, etc
+							'prev_post' => '&lt;',//tag/text for previous post, e.g. &laquo;, &#171;, etc
+							'next_post' => '&gt;',//tag/text for next post, e.g. &rsaquo;, etc
 		);
 
 		//merge user options with default next/prev options
@@ -1170,6 +1170,8 @@ class MarkupBlog  extends WireData implements Module {
 
 	                $image = $author->blog_images->first();
 
+	                $authorText = $options['author_text'] !='' ? "<small> " . $options['author_text'] . "</small>" : '';
+
 	                if($image) {
 	                            
 								$alt = $options['author_thumb_alt'] == 'description' ? $image->description : $author->{$options['author_thumb_alt']};
@@ -1183,14 +1185,13 @@ class MarkupBlog  extends WireData implements Module {
 
 	                            $photo =  "<a title='$authorName'>
 	                                       	<img class='author-photo' src='{$thumb->url}' alt='{$alt}' width='{$thumb->width}' height='{$thumb->height}' >
-	                                   	  </a>";
-								
-								if($options['author_text'] !='') $authorText = "<small> " . $options['author_text'] . "</small>";
+	                                   	  </a>";								
+
 	                } 
 
 	                else {
 	                            $photo = '';
-	                            $authorText = '';
+
 	                }
 
 	                $out .= "<div id='post-author' class='clearfix'>" . $photo . "<h4 class='post-author-name'>" . $authorName . $authorText . "</h4>" . $author->blog_body . "</div>";
