@@ -1146,6 +1146,7 @@ class MarkupBlog  extends WireData implements Module {
 
 		$postAuthor = $this->pauthor;
 
+		//default options for author widget
 		$defaultOptions = array(
 							'author_text' => $this->_('Author'),//text next to author title|name
 							'author_thumb_width' => 100,//no width manipulation of author thumb if this is blank or 0
