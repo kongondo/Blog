@@ -38,7 +38,7 @@ class MarkupBlog  extends WireData implements Module {
 			'title' => 'Markup Blog',
 			'summary' => 'Markup module to output a Blog based on the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 220,
+			'version' => 221,
 			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false,
@@ -658,13 +658,16 @@ class MarkupBlog  extends WireData implements Module {
 							'post_small_allowable_tags' => '',//holds string of HTML tags for strip_tags $allowable_tags. Needs to be in format '<code><p><img>'
 							'post_small_headline_tag' => 'h4',
 							'post_large_headline_tag' => 'h2',
+							
+							//post comments
+							'post_comments' => 1,//show comments info? 0=off,1=comments count top,2=comments count bottom,3=comments count top & bottom
 							'post_zero_comments_text' => $this->_('No comments yet'),
 							'post_comments_text' => $this->_('Comment,Comments'),//title in anchor comments icon + post-foot comments text, e.g. '2 Comments' or '1 Comment'. Must be in 'singular,plural' format
 							'post_comments_label' => $this->_('Comments:'),//this appears in post-foot, e.g. 'Comments': 2 Comments
 							
 							//## featured images ##
 							'post_image_alt' => 'description',//defaults to $image->description. Otherwise other stated field on the page, e.g. = 'title'
-							'post_image_tag' => 'featured',//string: image tag to look for in blog_images//@@todo - need translation here?
+							'post_image_tag' => 'featured',//string: image tag to look for in blog_images
 							
 							//** small/truncated post featured image **
 							'post_small_image' => 0,//display post's featured image: 0=off,1=top(above post-headline),2=bottom(first item in post-body)
@@ -703,7 +706,7 @@ class MarkupBlog  extends WireData implements Module {
 									if(count($page->blog_categories)) {
 
 												$page->categories = "<p class='categories'><span>" . $options['post_categories_text'] . " " . "</span>";											
-												foreach($page->blog_categories as $category) {$page->categories .= "<a href='{$category->url}'>{$category->title}</a>, ";}
+												foreach($page->blog_categories as $category) $page->categories .= "<a href='{$category->url}'>{$category->title}</a>, ";
 												$page->categories = rtrim($page->categories, ", ") . "</p>";
 									}
 							}
@@ -715,7 +718,7 @@ class MarkupBlog  extends WireData implements Module {
 									if(count($page->blog_tags)) {
 
 												$page->tags = "<p class='tags'><span>" . $options['post_tags_text'] . " " . "</span>";
-												foreach($page->blog_tags as $tag) {$page->tags .= "<a href='{$tag->url}'>{$tag->title}</a>, ";}
+												foreach($page->blog_tags as $tag) $page->tags .= "<a href='{$tag->url}'>{$tag->title}</a>, ";
 												$page->tags = rtrim($page->tags, ", ") . "</p>";
 
 									}
@@ -766,18 +769,38 @@ class MarkupBlog  extends WireData implements Module {
 		
 		#------------------------------------------- POSTS WRAPPER ------------------------------------------- #
 
-		$out .= $small ? "<div class='posts posts-small'>" : "<div class='posts'>" ;
+		$out .= $small ? "<div class='posts posts-small'>" : "<div class='posts'>";
 
+		//COMMENTS COUNT: for post comments count
+		$commentsCountTop = false;
+		$commentsCountBottom = false;
+
+		//post comments - only if commentsUse == 1
+		if($this->commentsUse == 1 && $options['post_comments'] !=0) {
+
+					//if we found comments
+					list($singular, $plural) = explode(',', $options['post_comments_text']);//come in the format 'singular,plural'	
+					$comment = '%d ' . $singular;
+					$comments = '%d ' . $plural;
+
+					if($options['post_comments'] == 1 || $options['post_comments'] == 3) $commentsCountTop = true;
+					if($options['post_comments'] == 2 || $options['post_comments'] == 3) $commentsCountBottom = true;
+		}
+
+		//FEATURED IMAGE: determine if to output featured image in posts
+		$showFeaturedImage = false;
+		$featuredImageTop = false;//for positioning featured image (top/bottom)		
+
+		//if featured image is to be output
+		if (($small && $options['post_small_image'] !=0) || (!$small && $options['post_large_image'] !=0)) $showFeaturedImage = true;//we will be outputting a featured image
+
+		//loop through and output posts
 		foreach($posts as $page) {
 			
-					//only if commentsUse == 1
-					if($this->commentsUse == 1) {
+					//post comments - only if commentsUse == 1
+					if($commentsCountTop == true || $commentsCountBottom == true) {
 
 							$numComments = $page->blog_comments->count();
-							//if we found comments
-							list($singular, $plural) = explode(',', $options['post_comments_text']);//come in the format 'singular,plural'	
-							$comment = '%d ' . $singular;
-							$comments = '%d ' . $plural;
 
 							if($numComments > 0) $numCommentsStr = sprintf(_n($comment, $comments, $numComments), $numComments);
 							else $numCommentsStr = $options['post_zero_comments_text'];//used as both title of icon anchor tag when no comments + in post-foot when no comments yet
@@ -789,22 +812,22 @@ class MarkupBlog  extends WireData implements Module {
 					$out .= "<div class='post' id='{$page->id}'>
 								<div class='post-head'>";
 								
-					if ($this->commentsUse == 1) $out .= "<a class='num-comments-icon' href='{$page->url}#comments' title='$numCommentsStr'>$numComments</a>";
+					if ($commentsCountTop == true) $out .= "<a class='num-comments-icon' href='{$page->url}#comments' title='$numCommentsStr'>$numComments</a>";
 							
 					//headline size
 					$h = $small ? $options['post_small_headline_tag'] : $options['post_large_headline_tag'];
 
-					//determine if to output featured image on small/truncated/summarised posts
-					$featuredImage = '';
-					$featuredImageTop = false;
+					############################
 
-					//if featured image is to be output at the 'top' [i.e. above post-headline]
-					if (($small && $options['post_small_image'] !=0) || (!$small && $options['post_large_image'] !=0)) {
+					$featuredImage = '';//will contain featured image string		
+
+					//if featured image is to be output
+					if ($showFeaturedImage == true) {
 
 							########### if user specified they want to show a featured image we first attempt to find it in the page's blog_images. ###########
 							########### if that fails, we check for it in the post's first embedded image in blog_body ###########
 
-							//** featured image ** 
+							//** featured image dimensions ** 
 							$size 	= $small ? $options['post_small_image_size'] : $options['post_large_image_size'];
 							$width 	= $small ? (int) $options['post_small_image_width'] : (int) $options['post_large_image_width'];
 							$height = $small ? (int) $options['post_small_image_height'] : (int) $options['post_large_image_height'];
@@ -912,8 +935,9 @@ class MarkupBlog  extends WireData implements Module {
 
 						//if post_categories OR post_tags are to be displayed at the 'bottom' == 2 + number of comments	in 'large' posts
 						$categories = $options['post_categories'] == 2 ? $page->categories : '';
-						$tags = $options['post_tags'] == 2 ? $page->tags : '';
-						$comments = $this->commentsUse == 1 ? "<p class='num-comments'><span>" . $options['post_comments_label'] . "</span> <a href='{$page->url}#comments'>$numCommentsStr</a></p>" : '';
+						$tags = $options['post_tags'] == 2 ? $page->tags : '';						
+	
+						$comments = $commentsCountBottom == true ? "<p class='num-comments'><span>" . $options['post_comments_label'] . "</span> <a href='{$page->url}#comments'>$numCommentsStr</a></p>" : '';
 						if(!empty($author) || !empty($date) || !empty($categories) || !empty($tags) || !empty($comments)) {
 								$out .= "<div class='post-foot'>" . $author . $date . $categories . $tags . $comments . "</div>";//end div.post-foot
 						}
