@@ -259,7 +259,7 @@ h4#comments-disallowed, h4#comments-closed, h4#comments-login, h4#comments-empty
 	margin-left: 5px;
 }
 
-p.num-comments {display: none;}/* hide the text showing post's number of comments; using icons instead */
+/*p.num-comments {display: none;} hide the text showing post's number of comments; using icons instead */
 
 ul.CommentList {
 	list-style: none;

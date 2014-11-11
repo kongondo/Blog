@@ -40,7 +40,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 			'title' => 'Blog',
 			'summary' => 'Blog Manager module inspired by the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 202,
+			'version' => 222,
 			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false, 
@@ -180,7 +180,6 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$blogConfigs = wire('modules')->getModuleConfigData($this);
 
 		//intialise some properties we'll use throught the class. These contain objects made up of the main blog pages and the main children
-		//@@todo ############## - CONFIRM that this is not a memory hog ###################
 		$this->blog	 =		wire('pages')->get($blogConfigs['blog']);
 		$this->posts =      wire('pages')->get($blogConfigs['blog-posts']);
 		$this->categories = wire('pages')->get($blogConfigs['blog-categories']);
@@ -410,8 +409,8 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		    
 		    foreach ($blogPages as $key => $value) {     
 						if ($key == 'blog') {$b1 .= $value . '<br>';}
-						elseif (in_array($value, $blogParents )) {$b1 .= '<span>' . $value . '</span><br>';}
-						else {$b1.= '<span class="child-item">' . $value . '</span><br>';}
+						elseif (in_array($value, $blogParents )) $b1 .= '<span>' . $value . '</span><br>';
+						else $b1.= '<span class="child-item">' . $value . '</span><br>';
 			}
 
 		    $b1 .= '</div>';
@@ -447,8 +446,8 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		    
 			foreach ($blogPages as $key => $value) {
 						if($key == 'blog') continue;
-						if (in_array($value, $blogParents )) {$b3 .= $value . '<br>';}
-						else {$b3 .= '<span>' . $value . '</span><br>';}
+						if (in_array($value, $blogParents )) $b3 .= $value . '<br>';
+						else $b3 .= '<span>' . $value . '</span><br>';
 			}
 
 		    $b3 .= '</div>';
@@ -465,8 +464,8 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		    
 			foreach ($blogPages as $key => $value) {
 						if($key=='blog' || $key == 'posts') continue;
-						if (in_array($value, $blogParents) || $key =='post') {$b4 .= $value . '<br>';}
-						else {$b4 .= '<span>' . $value . '</span><br>';}
+						if (in_array($value, $blogParents) || $key =='post') $b4 .= $value . '<br>';
+						else $b4 .= '<span>' . $value . '</span><br>';
 			}
 
 		    $b4 .= '</div>';
@@ -505,17 +504,17 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		));
 				
 		/*table rows data - for final Blog settings */	
-		if ($data['blogStyle']==1) {$blogStyle = 'Style 1: ' . $domain . '/blog/posts/example-post/';}
-		elseif ($data['blogStyle']==2) {$blogStyle = 'Style 2: ' . $domain . '/blog/example-post/';}
-		elseif ($data['blogStyle']==3) {$blogStyle = 'Style 3: ' . $domain . '/posts/example-post/';}
-		else{$blogStyle = 'Style 4: ' . $domain . '/example-post/';}
+		if ($data['blogStyle']==1) $blogStyle = 'Style 1: ' . $domain . '/blog/posts/example-post/';
+		elseif ($data['blogStyle']==2) $blogStyle = 'Style 2: ' . $domain . '/blog/example-post/';
+		elseif ($data['blogStyle']==3) $blogStyle = 'Style 3: ' . $domain . '/posts/example-post/';
+		else $blogStyle = 'Style 4: ' . $domain . '/example-post/';
 
 		$schedulePages = $data['schedulePages'] ?  'Scheduled auto-publish/unpublish enabled' : 'Scheduled auto-publish/unpublish not enabled';
 		$commentsUse = $data['commentsUse'] ?  'Commenting feature enabled' : 'Commenting feature not enabled';
 	
-		if ($data['templateFilesInstall']==1) {$templateFilesInstall = 'Blank template files';}
-		elseif ($data['templateFilesInstall']==2) {$templateFilesInstall = 'Template files with demo blog content';}
-		else {$templateFilesInstall = 'No template files';}
+		if ($data['templateFilesInstall']==1) $templateFilesInstall = 'Blank template files';
+		elseif ($data['templateFilesInstall']==2) $templateFilesInstall = 'Template files with demo blog content';
+		else $templateFilesInstall = 'No template files';
 
 		$tagTemplatesFields = $data['tagTemplatesFields'] ? $data['tagTemplatesFields'] : 'No tag specified';
 	
@@ -558,7 +557,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 	$blogURL = $this->config->urls->admin . 'module/edit?name=' . $this;
 
 	 	$fistInstallWelcome = '<h2>' . $this->_('Finalise your Blog installation') . '</h2>
-	 						<p>' . $this->_("Please finalise Blog installation by reviewing your settings below and making any necessary changes either here or in the module's <a href={$blogURL}>config screen</a> . Below you can customise the names of your Blog PARENT pages. This is an important final step to customise your Blog. Once the install wizard has run, you will not be able to make changes except renaming your Blog pages.  This wizard will install blog pages, templates, template files, fields and an author role according to your settings. This means some of these components may not be installed. When you are happy with the settings, click the button to proceed with the installation. Once installed, do not DELETE any of the PARENT pages, change their IDs or rename the templates or fields.") . '</p>';
+	 						<p>' . $this->_("Please finalise Blog installation by reviewing your settings below and making any necessary changes either here or in the module's <a href={$blogURL}>config screen</a> . Below you can customise the names of your Blog PARENT pages. This is an important final step to customise your Blog. Once the install wizard has run, you will not be able to make changes except renaming your Blog pages. This wizard will install blog pages, templates, template files, fields and an author role according to your settings. This means some of these components may not be installed. When you are happy with the settings, click the button to proceed with the installation. Once installed, do not DELETE any of the PARENT pages, change their IDs or rename the templates or fields.") . '</p>';
  
 		//CREATE A NEW FORM
 		$form = new InputfieldForm; 
@@ -677,7 +676,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		//send input->post values to the Method blogInstallerWizard();
 		if($post->install_wizard_btn) $this->installWizard($form);
 
-		return $fistInstallWelcome  . $form->render();
+		return $fistInstallWelcome . $form->render();
 
  	}
 
@@ -698,7 +697,9 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		//if blogStyle has not been specified we throw an error
 		if(!isset($data['blogStyle']) || $data['blogStyle'] == '') {			
-			$this->error($this->_('You must first select and save a Blog Style in the module config!'));			
+			//$this->error($this->_('You must first select and save a Blog Style in the module config!'));
+			$moduleURL = '<a target="_blank" href="' . $this->config->urls->admin . 'module/edit?name=' . $this . '">' . $this->_('module config!') . '</a>';				 
+			$this->error($this->_('You must first select and save a Blog Style in the ') . $moduleURL, Notice::allowMarkup);
 			return;
 		}
 		//if blog style url has been set but this is a new install, i.e. blogFullyInstalled == 0, we show first welcome
@@ -742,7 +743,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		//had to revert to below [absolute url]; see URL segment + trailing slash issue
 
-		$menu .= "<li><a class='$on' href='" . wire('page')->url . "'>" . $this->_('Dashboard'). "</a></li>";
+		$menu .= "<li><a class='$on' href='" . wire('page')->url . "'>" . $this->_('Dashboard') . "</a></li>";
 
 		$menuItemsOther = array(
 
@@ -761,7 +762,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		foreach ($menuItemsOther as $key => $value) {
 			
-					$on = wire('input')->urlSegment1 == $key ? 'blog_menu_item onblog' : 'blog_menu_item' ;
+					$on = wire('input')->urlSegment1 == $key ? 'blog_menu_item onblog' : 'blog_menu_item';
 		
 					//$menu .= "<li><a class='$on' href='./$key'>$value</a></li>";
 					/*
@@ -1094,7 +1095,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		//asm select for categories for quick post
 		$as = $this->modules->get('InputfieldAsmSelect');
 		$as->label = sprintf(__('%s'), $this->categories->title);
-		$as->description = "Select one or more " .  sprintf(__('%s'), strtolower($this->categories->title)) .  " below and drag to sort them in order of relevance.";
+		$as->description = "Select one or more " . sprintf(__('%s'), strtolower($this->categories->title)) . " below and drag to sort them in order of relevance.";
 		
 		$as->attr('id+name', 'quickpost_categories_add');//set an id and name[] to this inputfield page select; in our $input->post, we'll loop through the name[] array
 
@@ -1194,14 +1195,14 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		//if user selects a limit ($input->post->show_limit) we set that as the limit and set a cookie {see $this->cookieName} with that value to save state for session.
 		if ($this->input->post->show_limit) {
 
-					$this->showLimit  = $this->input->post->show_limit;
+					$this->showLimit = $this->input->post->show_limit;
 					setcookie($this->cookieName, $this->showLimit , 0, '/');
 		}
 
 		//if no custom limit selected but there is a cookie set, we use the cookie value
 		elseif ($this->input->cookie[$this->cookieName]) {
 
-					$this->showLimit  = (int) $this->input->cookie[$this->cookieName];
+					$this->showLimit = (int) $this->input->cookie[$this->cookieName];
 		}
 
 		//grab a limited number of posts to show in posts dashboard. Limit is determined as shown above
@@ -1221,9 +1222,9 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 			if ($this->commentsUse == 1) {
 
 					if ($p->blog_comments_view == '') $commentsVisibility = 'Default';
-					elseif ($p->blog_comments_view->id == $this->asc->id) $commentsVisibility = 'Always Show';
-					elseif ($p->blog_comments_view->id == $this->dnc->id) $commentsVisibility = 'Disable New';
-					elseif ($p->blog_comments_view->id == $this->dc->id) $commentsVisibility = 'Disabled';
+					elseif($p->blog_comments_view->id == $this->asc->id) $commentsVisibility = 'Always Show';
+					elseif($p->blog_comments_view->id == $this->dnc->id) $commentsVisibility = 'Disable New';
+					elseif($p->blog_comments_view->id == $this->dc->id) $commentsVisibility = 'Disabled';
 
 					//each post page could have 0 or more comments. If comments present, that's an array, hence need to loop through them + check their status
 					foreach($p->blog_comments as $comment) {
@@ -1505,14 +1506,14 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		//if user selects a limit ($input->post->show_limit) we set that as the limit and set a cookie {see $this->cookieName} with that value to save state for session.
 		if ($this->input->post->show_limit) {
 
-					$this->showLimit  = $this->input->post->show_limit;
+					$this->showLimit = $this->input->post->show_limit;
 					setcookie($this->cookieName, $this->showLimit , 0, '/');
 		}
 
 		//if no custom limit selected but there is a cookie set, we use the cookie value
 		elseif ($this->input->cookie[$this->cookieName]) {
 
-					$this->showLimit  = (int) $this->input->cookie[$this->cookieName];
+					$this->showLimit = (int) $this->input->cookie[$this->cookieName];
 		}
 
 		//grab a limited number of categories to show in categories dashboard. Limit is determined as shown above
@@ -1538,7 +1539,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		//prepare values for 'Show XX Categories', i.e. number of categories to show per page in categories dashboard
 		$limitSelect = '';
-		$limitSelect .= '<span class="limit-select">' . $this->_('Show ') .  '<select id="limit" name="show_limit">';
+		$limitSelect .= '<span class="limit-select">' . $this->_('Show ') . '<select id="limit" name="show_limit">';
 
 		$limits = array( '', 5, 10, 15, 25, 50, 75, 100);
 
@@ -1701,14 +1702,14 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		//if user selects a limit ($input->post->show_limit) we set that as the limit and set a cookie {see $this->cookieName} with that value to save state for session.
 		if ($this->input->post->show_limit) {
 
-					$this->showLimit  = $this->input->post->show_limit;
+					$this->showLimit = $this->input->post->show_limit;
 					setcookie($this->cookieName, $this->showLimit , 0, '/');
 		}
 
 		//if no custom limit selected but there is a cookie set, we use the cookie value
 		elseif ($this->input->cookie[$this->cookieName]) {
 
-					$this->showLimit  = (int) $this->input->cookie[$this->cookieName];
+					$this->showLimit = (int) $this->input->cookie[$this->cookieName];
 		}
 
 		//grab a limited number of tags to show in tags dashboard. Limit is determined as shown above
@@ -1734,7 +1735,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		//prepare values for 'Show XX Tags', i.e. number of tags to show per page in tags dashboard
 		$limitSelect = '';
-		$limitSelect .= '<span class="limit-select">' . $this->_('Show ') .  '<select id="limit" name="show_limit">';
+		$limitSelect .= '<span class="limit-select">' . $this->_('Show ') . '<select id="limit" name="show_limit">';
 
 		$limits = array( '', 5, 10, 15, 25, 50, 75, 100);
 
@@ -2513,7 +2514,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 				if ($this->blogStyle == 1 || $this->blogStyle == 3) $parent = $this->posts;
 				elseif ($this->blogStyle == 2)  $parent = $this->blog;
-				else {$parent = wire('pages')->get('/');}//if $this->blogStyle == 4 parent is 'root'
+				else $parent = wire('pages')->get('/');//if $this->blogStyle == 4 parent is 'root'
 
 				$p = new Page();
 				//$p->of(false);//not needed since new page
