@@ -79,6 +79,10 @@ Uninstalling Blog is  a two-step process. If you are logged in as a superuser, y
 
 ##Changelog
 
+####Version 2.2.2
+1. All main methods that render HTML output are now configurable via a parameter/argument $options.
+2. Ability to add a featured image to a post
+
 ####Version 2.0.2
 1. Minor updates to demo template files.
 
