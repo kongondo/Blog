@@ -38,7 +38,7 @@ class MarkupBlog  extends WireData implements Module {
 			'title' => 'Markup Blog',
 			'summary' => 'Markup module to output a Blog based on the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 221,
+			'version' => 222,
 			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false,
@@ -812,7 +812,7 @@ class MarkupBlog  extends WireData implements Module {
 					$out .= "<div class='post' id='{$page->id}'>
 								<div class='post-head'>";
 								
-					if ($commentsCountTop == true) $out .= "<a class='num-comments-icon' href='{$page->url}#comments' title='$numCommentsStr'>$numComments</a>";
+					//if($commentsCountTop == true) $out .= "<a class='num-comments-icon' href='{$page->url}#comments' title='$numCommentsStr'>$numComments</a>";//moved below $featuredImageTop
 							
 					//headline size
 					$h = $small ? $options['post_small_headline_tag'] : $options['post_large_headline_tag'];
@@ -888,6 +888,7 @@ class MarkupBlog  extends WireData implements Module {
 
 					//if featured image to be output above post-headline
 					if($featuredImageTop == true) $out .= $featuredImage;
+					if($commentsCountTop == true) $out .= "<a class='num-comments-icon' href='{$page->url}#comments' title='$numCommentsStr'>$numComments</a>";
 
 					$out .= "<$h class='post-headline'><a href='{$page->url}'>{$page->title}</a></$h>";
 
@@ -1098,10 +1099,10 @@ class MarkupBlog  extends WireData implements Module {
 									$out .= "</a>";
 							}
 							
-							if($c->status == Comment::statusPending) {$out .= " <span class='comment-status-pending'>" . $this->_('PENDING') . "</span>";}
-							elseif($c->status == Comment::statusSpam) {$out .= " <span class='comment-status-spam'>" . $this->_('SPAM') . "</span>";}
-							elseif($c->page->blog_comments_view && $c->page->blog_comments_view->id == $this->dc->id || !$c->page->blog_comments_view && $gComments && $gComments->id==$this->dc->id) {
-									$out .= " <span class='comment-status-hidden'>" . $this->_('HIDDEN') . "</span>";}						
+							if($c->status == Comment::statusPending) $out .= " <span class='comment-status-pending'>" . $this->_('PENDING') . "</span>";
+							elseif($c->status == Comment::statusSpam) $out .= " <span class='comment-status-spam'>" . $this->_('SPAM') . "</span>";
+							elseif($c->page->blog_comments_view && $c->page->blog_comments_view->id == $this->dc->id || !$c->page->blog_comments_view && $gComments && $gComments->id==$this->dc->id)
+									$out .= " <span class='comment-status-hidden'>" . $this->_('HIDDEN') . "</span>";
 			
 							$out .= "</p>
 										<div class='comment-body CommentText'>";
@@ -1329,8 +1330,8 @@ class MarkupBlog  extends WireData implements Module {
 
 		$nav = array();
 
-		if ($this->blogStyle == 1 || $this->blogStyle == 2) {$blogParentId = $this->blog->id;}
-		elseif ($this->blogStyle == 3 || $this->blogStyle == 4) {$blogParentId = 1;}
+		if ($this->blogStyle == 1 || $this->blogStyle == 2) $blogParentId = $this->blog->id;
+		elseif ($this->blogStyle == 3 || $this->blogStyle == 4) $blogParentId = 1;
 
 		foreach($items as $url => $title) {
 				
