@@ -22,11 +22,13 @@
     if(count($page->blog_tags)) $subNav .= $blog->renderNav(__('Related Tags'), $page->blog_tags); 
 
     //subnav: contains authors, archives and categories links
-    $authorURL = $pages->get('template=blog-authors')->url;
+    $authorsURL = $pages->get('template=blog-authors')->url;
     $archivesURL = $pages->get('template=blog-archives')->url;
+    $authorURL = $sanitizer->pageName($page->createdUser->title) ? $sanitizer->pageName($page->createdUser->title) . '/' : '';//use pageName sanitized author title as PART of URL, else empty
+    $authorName = $page->createdUser->title ? $page->createdUser->title : 'Author Name';//use generic 'Author Name' if author title not yet set
 
     $subNavItems = array(
-                            $authorURL . $page->createdUser->name . "/" => $page->createdUser->get('title|name'), 
+                            $authorsURL . $authorURL => $authorName, 
                             $archivesURL . $year . "/" . $month . "/" => strftime('%B %Y', $date)
     );
 
