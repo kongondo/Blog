@@ -72,12 +72,17 @@ Full documentation is available [here](http://kongondo.com/tutorials/specific-fe
 * Fields and Templates are prefixed with **blog_** and **blog-** respectively.
 * The module also adds 3 Fields (biography [blog_body], image [blog_images] and title) to the user template. These are needed for the Blog Author biography.
 * Role **blog-author** and permission **blog** are created on install.
+* **Until you set 'author titles' for your Blog Authors (in Admin > Access > Users), a generic 'Author Name' will be used as their display names**.
 * In order to use the Recent Tweets Widget, you will need to separately install and setup the module [MarkupTwitterFeed](http://mods.pw/d).
 
 ##Uninstall
-Uninstalling Blog is  a two-step process. If you are logged in as a superuser, you will see a Blog menu item called **Cleanup**. It will lead to a screen with info about all the Fields, Templates, Pages and Role you are about to delete. It will also list the Blog Template Files that, if you wish, you can also delete. This utility is also useful when you want to try out the different Blog styles without uninstalling the whole Blog module. It returns Blog to the state similar to when you first installed the module. Of course, in case you want to remove Blog as well, just go ahead and uninstall in the normal way but **AFTER** you have cleaned-up.
+Uninstalling Blog is a two-step process. If you are logged in as a superuser, you will see a Blog menu item called **Cleanup**. It will lead to a screen with info about all the Fields, Templates, Pages and Role you are about to delete. It will also list the Blog Template Files that, if you wish, you can also delete. This utility is also useful when you want to try out the different Blog styles without uninstalling the whole Blog module. It returns Blog to the state similar to when you first installed the module. Of course, in case you want to remove Blog as well, just go ahead and uninstall in the normal way but **AFTER** you have cleaned-up.
 
 ##Changelog
+
+####Version 2.3.0
+1. Use Blog authors' **display names** in author pages url/links rather than their usernames
+2. Fixed renderNextPrevPosts() not sorting/displaying previous/next posts properly
 
 ####Version 2.2.2
 1. All main methods that render HTML output are now configurable via a parameter/argument $options.
