@@ -38,7 +38,7 @@ class MarkupBlog  extends WireData implements Module {
 			'title' => 'Markup Blog',
 			'summary' => 'Markup module to output a Blog based on the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 222,
+			'version' => 230,
 			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false,
@@ -159,13 +159,15 @@ class MarkupBlog  extends WireData implements Module {
 	 */
 	public function renderNextPrevPosts($page, Array $options = null) {
 		
-		$date = $page->getUnformatted('blog_date');		
+		//$date = $page->getUnformatted('blog_date');//may not always work properly. See explanation below.
 		
-		//first sibling of this post whose date is older than this ones.
-		$prevPost = $page->parent->child("blog_date<$date, sort=-blog_date");
+		/* ######### Note: if multiple pages are created via API they will SHARE TIMESTAMPS. So, we use $page->id as a proxy for 'date' post created. The > an ID the later post was created ######### */
 
-		//first sibling of this post whose date is newer than this ones. Note: blog_date is custom field in Blog pages
-		$nextPost = $page->parent->child("blog_date>$date, sort=blog_date");
+		//first sibling of this post whose 'date' is older than this one.
+		$prevPost = $page->parent->child("template=blog-post, id<$page->id, sort=-id");
+
+		//first sibling of this post whose 'date' is newer than this one.
+		$nextPost = $page->parent->child("template=blog-post, id>$page->id, sort=id");
 
 		//default options for next/prev posts
 		$defaultOptions = array(
@@ -515,7 +517,8 @@ class MarkupBlog  extends WireData implements Module {
 					//$numPostsStr = sprintf(_n('%d post', '%d posts', $author->numPosts), $author->numPosts);//not in use
 					
 					//Note: $author->url2 is the blog-generated version, since $author->url is in the admin.
-					$out .= "<li><a href='{$author->url2}'>" . $author->get('title|name') . "</a> <span class='num-posts'>$numPosts</span></li>";
+					$authorName = $author->get('title') ? $author->get('title') : 'Author Name';//use generic 'Author Name' if author title not set
+					$out .= "<li><a href='{$author->url2}'>" . $authorName . "</a> <span class='num-posts'>$numPosts</span></li>";
 		}
 
 		$out .= "</ul>";
@@ -745,9 +748,22 @@ class MarkupBlog  extends WireData implements Module {
 					
 					}//end if(empty($page->summary))
 
-					//set a couple new fields that our output will use
-					$page->set('authorName', $page->createdUser->get('title|name')); 
-					$page->set('authorURL', $this->authors->url . $page->createdUser->name . '/');
+					//set a couple new fields that our output will use					
+					if($page->createdUser->get('title')) {
+							
+							$authorTitle = $page->createdUser->get('title');
+							$page->set('authorName', $authorTitle);							
+							$page->set('authorURL', $this->authors->url . $this->sanitizer->pageName($authorTitle) . '/');//use pageName sanitized author title in author page URL
+
+					}
+					
+					else {
+							
+							$page->set('authorName', 'Author Name');//use generic 'Author Name' if author title not set
+							$page->set('authorURL', '');//no link to author page until user sets author title
+
+					}
+
 		
 		}//end foreach($posts as $page)
 
@@ -1208,12 +1224,11 @@ class MarkupBlog  extends WireData implements Module {
 
 		$out = '';
 
-
 		//if widget is available [i.e. published]...
 	    if (!$postAuthor->is(Page::statusUnpublished)) {
 
 	                $author = wire('page')->createdUser;
-	                $authorName = $author->get('title|name'); 
+	                $authorName = $author->get('title') ? $author->get('title') : 'Author Name';//if no author title not set use generic 'Author Name'
 
 	                $image = $author->blog_images->first();
 
