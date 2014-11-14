@@ -159,15 +159,13 @@ class MarkupBlog  extends WireData implements Module {
 	 */
 	public function renderNextPrevPosts($page, Array $options = null) {
 		
-		//$date = $page->getUnformatted('blog_date');//may not always work properly. See explanation below.
-		
-		/* ######### Note: if multiple pages are created via API they will SHARE TIMESTAMPS. So, we use $page->id as a proxy for 'date' post created. The > an ID the later post was created ######### */
+		$date = $page->getUnformatted('blog_date');		
 
 		//first sibling of this post whose 'date' is older than this one.
-		$prevPost = $page->parent->child("template=blog-post, id<$page->id, sort=-id");
+		$prevPost = $page->parent->child("template=blog-post, blog_date<$date, sort=-blog_date");
 
 		//first sibling of this post whose 'date' is newer than this one.
-		$nextPost = $page->parent->child("template=blog-post, id>$page->id, sort=id");
+		$nextPost = $page->parent->child("template=blog-post, blog_date>$date, sort=blog_date");
 
 		//default options for next/prev posts
 		$defaultOptions = array(
