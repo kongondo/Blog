@@ -24,19 +24,48 @@
     foreach($authors as $a) {
                 //we set a separate URL (url2) to reflect the public url of the author, since
                 //the author's $author->url is actually a page in the admin
-                $a->url2 = $page->url . $a->name . '/';
-                $authorLinks[$a->url2] = $a->get('title|name');
-    }
+                if($sanitizer->pageName($a->title)) {
+
+                            $a->authorPageName = $sanitizer->pageName($a->title);//overload each $a with a new property 'authorPageName' for use below
+                            $a->url2 = $page->url . $a->authorPageName . '/';
+
+                }
+
+                else {
+
+                        $a->authorPageName = '';
+                        $a->url2 = $page->url;
+
+                }
+
+                $authorLinks[$a->url2] = $a->get('title') ? $a->get('title') : 'Author Name';//use generic 'Author Name' if author title not yet set
+
+    }//end foreach $authors as $a
 
     if($input->urlSegment1) {
         //author specified: display biography and posts by this author, limiting the number of posts to show
 
                 $name = $sanitizer->pageName($input->urlSegment1);
-                $author = $users->get($name);
+
+                $authorID = '';
+
+                foreach ($authors as $a) {
+                    
+                    if($a->authorPageName == $name) {
+                    
+                        $authorID = $a->id;
+                        break;//break out of loop if we've found our author
+                    }
+                
+                }
+                
+                $author = $users->get($authorID);
+                
                 if(!$author->id || (!$author->hasRole($authorRole) && !$author->isSuperuser())) throw new Wire404Exception();
 
                 $posts = $pages->find("template=blog-post, created_users_id=$author, sort=-blog_date, limit=10");
-                $authorName = $author->get('title|name'); 
+               
+                $authorName = $author->get('title');
 
                 $authorURL = '';
 
@@ -57,16 +86,17 @@
                 $content .= "<div class='author-bio clearfix'>
                               <h3 class='author-name'>$authorName</h3>" . $photo . $author->blog_body . "</div>";
 
+
                 $content .= $blog->renderPosts($posts, true);
                 
                 //output subnav if viewing a single author's page
-                $subNav .= '<div id="sub-nav">' . $blog->renderNav($page->title, $authorLinks, $page->url . $author->name . '/') . '</div><!-- #sub-nav -->';
+                $subNav .= $blog->renderNav($page->title, $authorLinks, $page->url . $name . '/');//note url contains pageName sanitized author title $name
 
 
-    } 
+    }//end if $input->urlSegment1
 
     else {
-                // no author specified: display list of authors
+                //no author specified: display list of authors
                 $content .= "<h2>$page->title</h2>";
                 $content .=  $blog->renderAuthors($authors); 
     }
