@@ -40,7 +40,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 			'title' => 'Blog',
 			'summary' => 'Blog Manager module inspired by the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 230,
+			'version' => 231,
 			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false, 
@@ -1210,7 +1210,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		foreach ($posts as $p) {
 
-			if (!$posts) continue;//if no posts found, continue			
+			if (!$posts) break;//if no posts found, break			
 			
 			//initialise some comments variables
 			$commentsVisibility = '';
@@ -1521,7 +1521,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		
 		foreach ($categories as $c) {
 
-				if (!$categories) continue;//if no categories found, continue
+				if (!$categories) break;//if no categories found, break
 				
 				//check if category is published or not
 				$c->is(Page::statusUnpublished) ? $status = "<span class='unpublished'>" . $this->_('No') . "</span>" : $status = $this->_("Yes");
@@ -1717,7 +1717,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		foreach ($tags as $tag) {
 
-				if (!$tags) continue;//if no tags found, continue
+				if (!$tags) break;//if no tags found, break
 
 				//check if tag is published or not
 				$tag->is(Page::statusUnpublished) ? $status = "<span class='unpublished'>" . $this->_('No') . "</span>" : $status = $this->_("Yes");
