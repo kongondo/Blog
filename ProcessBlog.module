@@ -1320,7 +1320,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		if($total) $postsCount = "<h4>" . sprintf(__('%1$s %2$d to %3$d of %4$d'), $this->posts->title, $start, $end, $total) . "</h4>";
 
 		//add a description to posts dashboard {postsCount, limitSelect and instruction OR no posts found status}
-		$m->description = $total == 0 ? $this->_('No items found.') : $postsCount . $this->_('Click on a title to edit the item.' . $limitSelect);
+		$m->description = $total == 0 ? $this->_('No items found.') : $postsCount . $this->_('Click on a title to edit the item.') . $limitSelect;
 		$m->notes = $total == 0 || $this->commentsUse!=1 ? '' : $this->_('C/=Comments.');
 
 		//$m->attr('value', $t->render() . $s->render());//button inside markup wrapper
@@ -1558,7 +1558,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		if($total) $categoriesCount = "<h4>" . sprintf(__('%1$s %2$d to %3$d of %4$d'), $this->categories->title, $start, $end, $total) . "</h4>";
 
 		//add a description to categories dashboard {categoriesCount, limitSelect and instruction OR no categories found status}
-		$m->description = $total == 0 ? $this->_('No items found.') : $categoriesCount . $this->_('Click on a title to edit the item.' . $limitSelect);
+		$m->description = $total == 0 ? $this->_('No items found.') : $categoriesCount . $this->_('Click on a title to edit the item.') . $limitSelect;
 
 		$s = $this->modules->get('InputfieldSubmit'); 
 		/*$s->class .= ' head_button_clone';*/
@@ -1754,7 +1754,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		if($total) $tagsCount = "<h4>" . sprintf(__('%1$s %2$d to %3$d of %4$d'), $this->tags->title, $start, $end, $total) . "</h4>";
 
 		//add a description to tags dashboard {tagsCount, limitSelect and instruction OR no tags found status}
-		$m->description = $total == 0 ? $this->_('No items found.') : $tagsCount . $this->_('Click on a title to edit the item.' . $limitSelect);
+		$m->description = $total == 0 ? $this->_('No items found.') : $tagsCount . $this->_('Click on a title to edit the item.') . $limitSelect;
 		
 		$s = $this->modules->get('InputfieldSubmit'); 
 		/*$s->class .= ' head_button_clone';*/
