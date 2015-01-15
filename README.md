@@ -24,6 +24,8 @@ This Blog module enables you to easily create and manage a Blog in ProcessWire. 
 *	Use any CSS framework (or not!) you wish.
 * PocketGrid CSS included with the demo Template Files (fully responsive).
 
+<img src='https://github.com/kongondo/Blog/raw/master/screenshot-demo-frontend.png' />
+
 ##How to Install
 
 Install via ProcessWire modules' screen. Once installed, there's two steps involved to finalise the install:
@@ -74,12 +76,16 @@ Full documentation is available [here](http://kongondo.com/tutorials/specific-fe
 * Role **blog-author** and permission **blog** are created on install.
 * **Until you set 'author titles' for your Blog Authors (in Admin > Access > Users), a generic 'Author Name' will be used as their display names**.
 * In order to use the Recent Tweets Widget, you will need to separately install and setup the module [MarkupTwitterFeed](http://mods.pw/d).
-* **You should NOT delete the main Blog pages post-install(i.e. anything other than Example Tag, Example Category and Example Post) OR (however remote the chance of this is) CHANGE the IDs of these pages (in the database). In order to allow for flexibility, Blog stores and tracks its main pages using their IDs**.
 
 ##Uninstall
 Uninstalling Blog is a two-step process. If you are logged in as a superuser, you will see a Blog menu item called **Cleanup**. It will lead to a screen with info about all the Fields, Templates, Pages and Role you are about to delete. It will also list the Blog Template Files that, if you wish, you can also delete. This utility is also useful when you want to try out the different Blog styles without uninstalling the whole Blog module. It returns Blog to the state similar to when you first installed the module. Of course, in case you want to remove Blog as well, just go ahead and uninstall in the normal way but **AFTER** you have cleaned-up.
 
 ##Changelog
+
+####Version 2.3.1
+1. Fixed Posts/Categories/Tags dashboard html rendering issue on multilingual sites.
+2. Added 'post_small_tag' option to renderPosts() to specify html tag to wrap summary blog posts (small).
+3. Some code optimisations.
 
 ####Version 2.3.0
 1. Use Blog authors' **display names** in author pages url/links rather than their usernames
