@@ -38,7 +38,7 @@ class MarkupBlog  extends WireData implements Module {
 			'title' => 'Markup Blog',
 			'summary' => 'Markup module to output a Blog based on the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 230,
+			'version' => 231,
 			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false,
@@ -659,6 +659,7 @@ class MarkupBlog  extends WireData implements Module {
 							'post_small_allowable_tags' => '',//holds string of HTML tags for strip_tags $allowable_tags. Needs to be in format '<code><p><img>'
 							'post_small_headline_tag' => 'h4',
 							'post_large_headline_tag' => 'h2',
+							'post_small_tag' => 'p',
 							
 							//post comments
 							'post_comments' => 1,//show comments info? 0=off,1=comments count top,2=comments count bottom,3=comments count top & bottom
@@ -930,8 +931,14 @@ class MarkupBlog  extends WireData implements Module {
 					if($featuredImageTop == false) $out .= $featuredImage;
 
 					//if to output 'View More' link (if post $small)
-					if($small) $out .= "<p>" . $page->summary . "&hellip; <a class='more' href='{$page->url}'>" . $options['post_more_text'] . "</a></p>";
-					else $out .= $page->blog_body; 
+					if($small) {
+						$tag = $options['post_small_tag'];
+						$out .= "<$tag  class='post-small'>" . $page->summary . "&hellip; <a class='more' href='{$page->url}'>" . $options['post_more_text'] . "</a></$tag>";
+					}
+					
+					else {
+						$out .= $page->blog_body;
+					}
 						
 					//Note: Left here for posterity. We are not including a gallery in this version
 					//if the post has images and no <img> tags in the body, then make it a gallery
