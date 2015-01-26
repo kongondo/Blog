@@ -1002,11 +1002,13 @@ class MarkupBlog  extends WireData implements Module {
 	 * @return PageArray|null $related Related posts or null if none found
 	 *
 	 */
-	public function renderRelatedPosts($relatedBy = null, $limit = null, $sort = null) {
+	public function renderRelatedPosts(Page $post = null, $relatedBy = null, $limit = null, $sort = null) {
 
-		$page = wire('page');
+		if(is_null($post)) $page = wire('page');
+		else $page = $post;
+		if(!$page instanceof Page) throw new WireException('renderRelatedPosts requires a Page'); 
+		
 		$pages = wire('pages');
-
 		$related = null;
 		$selector = '';
 
