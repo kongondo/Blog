@@ -82,6 +82,12 @@ Uninstalling Blog is a two-step process. If you are logged in as a superuser, yo
 
 ##Changelog
 
+####Version 2.3.3
+Added a very visible reminder in Blog's module configuration screen not to uninstall the module BEFORE running the in-built Cleanup Utility.
+
+####Version 2.3.2
+Added a renderRelatedPosts() method.
+
 ####Version 2.3.1
 1. Fixed Posts/Categories/Tags dashboard html rendering issue on multilingual sites.
 2. Added 'post_small_tag' option to renderPosts() to specify html tag to wrap summary blog posts (small).

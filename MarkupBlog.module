@@ -38,7 +38,7 @@ class MarkupBlog  extends WireData implements Module {
 			'title' => 'Markup Blog',
 			'summary' => 'Markup module to output a Blog based on the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 231,
+			'version' => 233,
 			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false,
@@ -141,8 +141,7 @@ class MarkupBlog  extends WireData implements Module {
 		$jump .= "</p>";
 
 		//return the jumplist and the markup of tags
-		return $jump . $out; 
-
+		return $jump . $out;
 
 	}
 
@@ -207,7 +206,8 @@ class MarkupBlog  extends WireData implements Module {
 		
 		$out .= "</div>";
 		
-		return $out; 
+		return $out;
+
 	}
 
 	/**
@@ -327,6 +327,7 @@ class MarkupBlog  extends WireData implements Module {
 		}
 		
 		return $out;
+
 	}
 	
 	/**
@@ -412,7 +413,8 @@ class MarkupBlog  extends WireData implements Module {
 				);
 		}
 
-		return $years; 
+		return $years;
+
 	}
 
 	/**
@@ -495,7 +497,8 @@ class MarkupBlog  extends WireData implements Module {
 
 		}//end foreach $years as $year
 
-		return $out; 
+		return $out;
+
 	}
 
 	/**
@@ -521,7 +524,7 @@ class MarkupBlog  extends WireData implements Module {
 
 		$out .= "</ul>";
 		
-		return $out; 
+		return $out;
 
 	}
 
@@ -555,7 +558,7 @@ class MarkupBlog  extends WireData implements Module {
 				if(!$c->page->blog_comments_view && $gComments && $gComments->id==$this->dc->id && !$admin) $comments->remove($c);
 		}
 		
-		return $comments; 
+		return $comments;
 
 	}
 
@@ -983,9 +986,50 @@ class MarkupBlog  extends WireData implements Module {
 		// if there are more posts than the specified limit, then output pagination
 		if($posts->getLimit() < $posts->getTotal()) $out .= $posts->renderPager();//@@todo - consider making renderPager configurable?
 		
-		return $out;	
-
+		return $out;
 	
+	}
+
+	/**
+	 * Return PageArray of posts related to the current post.
+	 *
+	 * The returned PageArray can then be used with renderNav() to list the related posts.
+	 *
+	 * @access public
+	 * @param int $limit limit of maximum related posts to find
+	 * @param int $relatedBy criteria for finding  related posts
+	 * @param string $sort prioritise related posts to find, especially when limit set
+	 * @return PageArray|null $related Related posts or null if none found
+	 *
+	 */
+	public function renderRelatedPosts(Page $post = null, $relatedBy = null, $limit = null, $sort = null) {
+
+		if(is_null($post)) $page = wire('page');
+		else $page = $post;
+		if(!$page instanceof Page) throw new WireException('renderRelatedPosts requires a Page'); 
+		
+		$pages = wire('pages');
+		$related = null;
+		$selector = '';
+
+		//set defaults
+		$relatedBy = $relatedBy === null ? $relatedBy = 1 : $relatedBy;		
+		$limit = $limit === null ? $limit = 3 : $limit;
+		$sort = $sort === null ? $sort = '-blog_date' : $sort;
+
+		//sanitize submitted sort selector value. Default is sort by latest post
+		$sort = $this->sanitizer->selectorValue($sort);
+
+		//find related posts by given criteria. Default is to relate by both tags AND categories
+		if($relatedBy == 1 && count($page->blog_tags) && count($page->blog_categories)) $selector = "blog_tags=$page->blog_tags, blog_categories=$page->blog_categories";
+		elseif($relatedBy == 2 && count($page->blog_tags)) $selector = "blog_tags=$page->blog_tags";//relate by tags only
+		elseif($relatedBy == 3 && count($page->blog_categories)) $selector = "blog_categories=$page->blog_categories";//relate by categories only
+
+		//find related posts
+		if($selector) $related = $pages->find("template=blog-post, id!=$page->id, limit=$limit, sort=$sort, $selector");
+
+		return $related;
+
 	}
 
 	/**
@@ -1315,6 +1359,7 @@ class MarkupBlog  extends WireData implements Module {
 		$rss->itemDescriptionLength = 0; // no maxlength
 		$rss->itemDateField = 'date';
 		$rss->render($items);
+
 	}
 
 	/**
