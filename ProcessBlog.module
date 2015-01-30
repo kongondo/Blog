@@ -40,7 +40,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 			'title' => 'Blog',
 			'summary' => 'Blog Manager module inspired by the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 232,
+			'version' => 233,
 			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false, 
@@ -231,11 +231,17 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 			$m = new InputfieldMarkup;
 			$m->label = __('Blog fully installed');
-			$m->description = __('You have already fully installed Blog with the following settings. These settings can no longer be changed unless you first uninstall the Blog Components (pages, fields and templates) using the Cleanup tab in the Blog Dashboard when logged in as a SuperUser.');
+			$m->description = __('You have already fully installed Blog with the following settings. These settings can no longer be changed unless you first uninstall the Blog Components (pages, fields and templates) using the Cleanup tab in the Blog Dashboard when logged in as a Superuser.');
 
 			//create and render a table showing final blog settings as selected and installed by user
 			$t = self::renderFinalSettingsTable($data);
-			$m->attr('value', $t->render());
+
+			$cleanupURL = '<a target="_blank" href="' . wire('config')->urls->admin . 'blog/cleanup/">' . __('Cleanup utility') . '</a>';				 
+
+			$warning = '<h3 class="warning">' . __('Do not uninstall Blog until AFTER you have run the ') . $cleanupURL . 
+						__(' unless you only want to keep your Blog Pages without using the module.') . '</h3>';
+			
+			$m->attr('value', $t->render() . $warning);		
 			$form->add($m);
 
 			return $form;
