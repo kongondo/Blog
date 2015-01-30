@@ -45,3 +45,7 @@
 		clear: both;
 }
 
+h3.warning {color: red;}
+
+h3.warning a {text-decoration: underline; color: inherit;}
+
