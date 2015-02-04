@@ -40,7 +40,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 			'title' => 'Blog',
 			'summary' => 'Blog Manager module inspired by the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 233,
+			'version' => 234,
 			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false, 
@@ -2545,9 +2545,9 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 					return false;
 				}
 
-				//@todo - SHOULD THIS BE A RICH TEXT AREA?
-				$p->blog_body = $this->sanitizer->textarea($this->input->post->quickpost_body);
-				
+				//preserve lines breaks for later use in a rich text editor by converting them to <p>
+				$text = trim($this->sanitizer->textarea($this->input->post->quickpost_body));
+				$p->blog_body = '<p>' . preg_replace('`[\r\n]+`', '</p><p>', $text) . '</p>';//using backtick as delimiter
 
 				if ($this->schedulePages == 1 && $this->modules->isInstalled('SchedulePages') && $p->template->hasField('publish_from') && $p->template->hasField('publish_until')) {
 
