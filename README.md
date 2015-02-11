@@ -82,6 +82,9 @@ Uninstalling Blog is a two-step process. If you are logged in as a superuser, yo
 
 ##Changelog
 
+####Version 2.3.4
+Preserve all line breaks as paragraphs for posts created via ProcessBlog's quickpost.
+
 ####Version 2.3.3
 Added a very visible reminder in Blog's module configuration screen not to uninstall the module BEFORE running the in-built Cleanup Utility.
 
