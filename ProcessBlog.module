@@ -19,8 +19,9 @@
 *
 */
 
-class ProcessBlog extends Process implements Module {
-	
+class ProcessBlog extends Process implements Module, ConfigurableModule {
+
+
 	/**
 	 * Return information about this module (required).
 	 *
@@ -29,31 +30,702 @@ class ProcessBlog extends Process implements Module {
 	 *
 	 */
 	public static function getModuleInfo() {
-	
+
 		//@ User role needs 'blog' permission
 		//@ $permission = 'blog';
 		//@ Installs MarkupBlog - for frontend rendering of the Blog
+		//@ Installs BlogPublishDate - for auto-saving Blog Post published date
 
 		return array(
 			'title' => 'Blog',
 			'summary' => 'Blog Manager module inspired by the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 100,
-			'href' => 'https://processwire.com/talk/topic/6465-module-blog/',
+			'version' => 234,
+			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false, 
 			'permission' => 'blog',
-			'installs' => 'MarkupBlog'
+			'installs' => array('MarkupBlog','BlogPublishDate')
 		);
 
 	}
-	
-	/**
+
+  	/**
 	 * The name that will be used for the page this module creates.
 	 *
 	 */	
-
 	const PAGE_NAME = 'blog';//
+
+	/**
+	 * string name of the cookie used to save limit of posts to show per page in posts dashboard.
+	 *
+	 */
+	private $cookieName;
+
+	/**
+	 * int value of number of posts/categories/tags to show per page respective dashboard page.
+	 *
+	 */
+	private $showLimit;
+
+	//Get the module config data
+	protected $data;
+	
+	//the main blog pages and their important children
+	private $blog;
+	private $posts;
+	private $categories;
+	private $tags;
+	private $comments;
+	private $widgets;
+	private $authors;
+	private $archives;
+	private $settings;
+	private $asc;
+	private $dnc;
+	private $dc;
+	private $rposts;
+	private $rcomments;
+	/*private $broll;*/
+	private $tweets;
+	/*private $pauthor;*/
+
+	//other important properties
+	private $commentsUse;
+	private $schedulepages;
+
+	/**
+	 * 	Default module configuration values.
+	 *
+	 *	The values here will saved to the database on install.
+	 *
+	 * 			blogStyle:
+	 *			- style 1: /mysite/blog/posts/example-post/
+	 *			- style 2: /mysite/blog/example-post/
+	 *			- style 3: /mysite/posts/example-post/
+	 *			- style 4: /mysite/example-post/
+	 *
+	 *	@access public
+	 *
+	 */
+	public static function configDefaults () {
+		
+		return array(
+						'blogFullyInstalled' => 0, // boolean 0=false {new install}; 1=true {blog fully installed - i.e. including template files and pages}
+						'blogStyle' => '', // 1='see example 1'
+						'schedulePages' => 0,//boolean 0=false; 1=true: Whether to use auto-publish/unpublish feature {needs SchedulePages module}
+						'commentsUse' => 1, //boolean 0=false; 1=true
+						'templateFilesInstall' => 1,//int 1=blank template files; 2=demo template files; 3=no template files
+						/*'prefixTemplatesFields' => 'blog',*///string default='blog'. Will be used to prefix templates, fields and template files. E.g. blog-post, blog_date, blog-post.php. Blank = no prefix
+						'tagTemplatesFields' => 'blog',//string default='blog'. Will be used to tag templates and fields in the admin. Blank = no tag						
+					
+						/* BLOG PARENT PAGES IDs */
+						//changed to below for convenience in coding - to use array index as both an identifier and identifier storage (id) AS well as related template name
+						'blog' => '',//ID of the page 'Blog' - if used
+						'blog-posts' => '',//ID of the page 'Posts' - if used
+						'blog-categories' => '',//ID of the page 'Categories'
+						'blog-tags' => '',//ID of the page 'Tags'
+						'blog-comments' => '',//ID of the page 'Comments' - if used
+						'blog-widgets' => '',//ID of the page 'Widgets'
+						'blog-authors' => '',//ID of the page 'Authors'
+						'blog-archives' => '',//ID of the page 'Archives'
+						'blog-settings' => '',	//ID of the page 'Settings'
+						'blog-asc' => '',//ID of the page 'Always Show Comments'
+						'blog-dnc' => '',//ID of the page 'Disable New Comments'
+						'blog-dc' => '',//ID of the page 'Disable Comments'
+						'blog-rposts' => '',//ID of the page 'Recent Posts' - widget
+						'blog-rcomments' => '',//ID of the page 'Recent Comments' - widget
+						'blog-broll' => '',//ID of the page 'Blogroll' - widget
+						'blog-tweets' => '',//ID of the page 'Recent Tweets' - widget
+						'blog-pauthor' => '',//ID of the page 'Post Author' - widget
+		);
+
+	}
+
+	 /**
+	 *	Stores and sets some default module properties.
+	 *	
+	 *	Default config values that are not yet stored in the database are set by you in the constructor.
+	 *
+	 *	@access public
+	 *
+	 */
+	 public function __construct() {
+
+	 		foreach(self::configDefaults() as $key => $value) {$this->$key = $value;}
+
+	 }
+
+	 /**
+	 *	Initialise the module. This is an optional initialisation method called before any execute methods.
+	 *	
+	 *	Initialises various class properties ready for use throughout the class.
+	 *
+	 *	@access public
+	 *
+	 */
+	 public function init() {
+
+		if ($this->permissions->get('blog')->id && !$this->user->hasPermission('blog')) throw new WirePermissionException("You have no permission to use this module");
+		parent::init();
+
+		$this->modules->get('JqueryFancybox');
+
+		//cookie per user and per relevant blog dashboard (posts, categories or tags) context
+		$this->cookieName = $this->user->id . '-processBlog-' . wire('input')->urlSegment1;
+
+		//default number of posts/categories/tags to show per respective dashboard if no custom limit set (via post/session cookie).
+		$this->showLimit = 10;
+
+		$blogConfigs = wire('modules')->getModuleConfigData($this);
+
+		//intialise some properties we'll use throught the class. These contain objects made up of the main blog pages and the main children
+		$this->blog	 =		wire('pages')->get($blogConfigs['blog']);
+		$this->posts =      wire('pages')->get($blogConfigs['blog-posts']);
+		$this->categories = wire('pages')->get($blogConfigs['blog-categories']);
+		$this->tags =       wire('pages')->get($blogConfigs['blog-tags']);
+		$this->comments =   wire('pages')->get($blogConfigs['blog-comments']);
+		$this->widgets =    wire('pages')->get($blogConfigs['blog-widgets']);
+		$this->authors =    wire('pages')->get($blogConfigs['blog-authors']);
+		$this->archives =   wire('pages')->get($blogConfigs['blog-archives']);
+		$this->settings =   wire('pages')->get($blogConfigs['blog-settings']);
+		$this->asc =        wire('pages')->get($blogConfigs['blog-asc']);
+		$this->dnc =        wire('pages')->get($blogConfigs['blog-dnc']);
+		$this->dc =         wire('pages')->get($blogConfigs['blog-dc']);
+		$this->rposts =     wire('pages')->get($blogConfigs['blog-rposts']);
+		$this->rcomments =  wire('pages')->get($blogConfigs['blog-rcomments']);
+		/*$this->broll =      wire('pages')->get($blogConfigs['blog-broll']);*/
+		$this->tweets =     wire('pages')->get($blogConfigs['blog-tweets']);
+		/*$this->pauthor =    wire('pages')->get($blogConfigs['blog-pauthor']);*/
+
+		$this->blogStyle = $blogConfigs['blogStyle'];
+		$this->commentsUse = $blogConfigs['commentsUse'];
+		$this->schedulePages = $blogConfigs['schedulePages'];
+		$this->templateFilesInstall = $blogConfigs['templateFilesInstall'];
+	 }
+
+	 /**
+	 *	Module configuration interface.
+	 *	
+	 *	Displayed in module configuration screen. This is a ProcessWire method
+	 *	User configurable values stored in the database.
+	 *
+	 *	@access public
+	 *	@return mixed $form rendered form
+	 *
+	 */
+	 public static function getModuleConfigInputfields(array $data) {
+
+		$dir = wire('config')->urls->ProcessBlog;//our path
+	 	wire('config')->styles->add($dir . 'config.css');
+
+		foreach(self::configDefaults() as $key => $value) {
+					if(!isset($data[$key])) $data[$key] = $value;
+		}
+
+		//create the config screen
+		$form = new InputfieldWrapper();
+		
+		//do not show configuration settings if blog is already fully installed but show them their settings
+		if(isset($data['blogFullyInstalled']) && $data['blogFullyInstalled'] == 1) {
+
+			$m = new InputfieldMarkup;
+			$m->label = __('Blog fully installed');
+			$m->description = __('You have already fully installed Blog with the following settings. These settings can no longer be changed unless you first uninstall the Blog Components (pages, fields and templates) using the Cleanup tab in the Blog Dashboard when logged in as a Superuser.');
+
+			//create and render a table showing final blog settings as selected and installed by user
+			$t = self::renderFinalSettingsTable($data);
+
+			$cleanupURL = '<a target="_blank" href="' . wire('config')->urls->admin . 'blog/cleanup/">' . __('Cleanup utility') . '</a>';				 
+
+			$warning = '<h3 class="warning">' . __('Do not uninstall Blog until AFTER you have run the ') . $cleanupURL . 
+						__(' unless you only want to keep your Blog Pages without using the module.') . '</h3>';
+			
+			$m->attr('value', $t->render() . $warning);		
+			$form->add($m);
+
+			return $form;
+		}
+
+		//configuration instructions when blog is not yet fully installed
+		$m = new InputfieldMarkup;
+		$m->label = __('Important');
+		$m->description = __('Please select at least a Blog Style below and save before proceeding to the Blog Dashboard. You can also change the other settings as desired. It is important to note the following:');
+		$m->skipLabel = Inputfield::skipLabelHeader;//we don't want a label displayed here
+		$m->notes = __("When you first launch the Blog Dashboard you will need to finalise the installation before running the module. Once that installation is complete, you will no longer be able to see and change the settings below unless you first uninstall the Blog Components (pages, fields and templates). You can do that using the Cleanup tab in the Blog Dashboard. You would have to be logged in as a SuperUser. In case you left this Blog module configuration settings page open then went ahead and finalised installing Blog, please DO NOT change any settings here and press the submit button again! Doing so may lead to Blog not working properly. Please carefully read the note below about pre- and post-finalising Blog install.");
+		$form->add($m);
+
+		//radios: blog styles selection
+		$r = new InputfieldRadios();
+		$r->attr('id+name', 'blogStyle');
+		$r->label =  __('Select a Blog URL style');
+		$r->description = __("How your Blog pages would render relative to your site's structure/tree and an example paths are shown below each option respectively. This setting must be filled before you can proceed.");
+
+		$radioOptions = array (
+						 1 => __('Style 1'),
+						 2 => __('Style 2'),
+						 3 => __('Style 3'),
+						 4 => __('Style 4'),
+	 	);
+
+		$r->addOptions($radioOptions);
+		$r->value = $data['blogStyle'];
+		$form->add($r);
+
+		//blog styles tree and paths visual
+		$m = new InputfieldMarkup;
+		$m->label = __('Blog URL styles');
+		$m->skipLabel = Inputfield::skipLabelHeader;//we don't want a label displayed here
+		
+		$b = self::blogStylesTree();
+		$m->attr('value', $b);
+		$m->notes = __("When you first launch the Blog Dashboard, you will have an opportunity to automatically RENAME any of the following 9 Blog PARENT pages before they are created: Blog, Posts, Categories, Tags, Comments, Widgets, Authors, Archives and Settings. For instance, if you wish, you could rename 'Posts' to 'Items', or 'Authors' to 'Writers', etc. After that, you could also manually RENAME or MOVE these pages and their CHILDREN in your page tree. With the exception of the pages 'Example Post', 'Example Category' and 'Example Tag', do not DELETE any of the pages created on install OR change their IDs. Depending on your settings here, not all of these pages will be created. For instance, the page Comments and its children will not be created if you disable the commenting feature below.");
+		$form->add($m);
+		
+		//checkbox: use schedule pages?
+		$c = new InputfieldCheckbox();
+		$c->attr('id+name', 'schedulePages');
+		$c->label =  __('Scheduled auto-publish/unpublish');
+		$c->label2 =  __('Check to enable auto-publish/unpublish at set times');
+
+		$description =  __('The module SchedulePages is installed. This feature is ready to use if you wish.');
+
+		if(!wire('modules')->isInstalled('SchedulePages')) {
+			$description = __('To use this feature you must first install the module SchedulePages. This must be done BEFORE you access the Blog Dashboard for the first time. Currently, you do not have the module installed so this setting will not work.');
+			$c->attr('class', 'hidden');
+		}
+
+		$c->description = $description;
+		$c->value = $data['schedulePages'];
+		$checked = $data['schedulePages'] ? 'checked' : '';
+		$c->attr('checked', $checked);
+		$form->add($c);
+
+		//checkbox: use comments? - checked by default
+		$c = new InputfieldCheckbox();
+		$c->attr('id+name', 'commentsUse');
+		$c->label =  __('Install commenting feature');
+		$c->label2 =  __('Check to enable install of comments fields for your blog');
+		$c->description =  __('Enabling this feature will allow users to be able to comment on your posts. You will still have granular control on commenting.');
+		$c->value = $data['commentsUse'];
+		$checked = isset($data['commentsUse']) && $data['commentsUse'] == '' ?  '' : 'checked';
+		$c->attr('checked', $checked);
+		$form->add($c);
+
+		//radios: install template files?
+		$r = new InputfieldRadios();
+		$r->attr('id+name', 'templateFilesInstall');
+		$r->label =  __('Install template files');
+		$r->description = __('Optionally let the module install related template files for your templates. This will run only once when you first access the Blog Dashboard (ProcessBlog).');
+
+		$radioOptions = array (
+
+						 1 => __('Blank template files'),
+						 2 => __('Template files with a demo blog'),
+						 3 => __("Don't install template files"),
+
+	 	);
+
+		$r->addOptions($radioOptions);
+		$r->value = $data['templateFilesInstall'];
+		$form->add($r);
+
+		/* @@todo - note: removed this for now. It will could potentially create problems down the line and decrease code readability
+		//Blog Template and Fields prefix
+		$t = new InputfieldText;
+		$t->attr('id+name', 'prefixTemplatesFields');
+		$t->label =  __('Prefix for blog templates, template files and fields');
+		$t->attr('value', $data['prefixTemplatesFields']);
+		$t->description = __("Specify a prefix that will be used to name your templates (e.g. blog-post), template files (blog-post.php) and fields (blog_date). The default is 'blog'. This setting cannot be blank.");
+		$form->add($t);*/
+
+		//text: Blog Template and Fields Admin Tag (for grouping in /admin/setup/fields/ or /admin/setup/templates/)
+		$t = new InputfieldText;
+		$t->attr('id+name', 'tagTemplatesFields');
+		$t->label =  __('Tag for blog templates and fields');
+		$t->attr('value', $data['tagTemplatesFields']);
+		$t->description = __("Optionally specify a tag that will be used to group your templates and fields in their respective admin pages. The default is 'blog'. Leave this blank if you do not want a tag.");
+		$form->add($t);
+
+		return $form;
+	 }
+
+ 	/**
+	 * Return an array of this module's saved configuration settings: key=>value pairs.
+	 *	
+	 *	@access protected
+	 *	@return array $settings module's saved configuration settings
+	 *
+	 */
+	protected function getDefaultSettings() {
+		
+		$settings = wire('modules')->getModuleConfigData($this);	
+		
+		return $settings; 
+	}
+
+	/**
+	 * 	Render example blog styles trees and paths	
+	 *	
+	 *	@access public
+	 *	@return string $out markup
+	 *
+	 */	
+
+	public static function blogStylesTree() {
+
+		$domain = $_SERVER['SERVER_NAME'];
+
+		$out = '';
+
+		$out .= '<div id="blog-styles">';
+
+			$blogPages = array(
+					'blog'=>'Blog',
+					'posts'=>'Posts',
+					'post'=>'Example Post',
+					'categories'=>'Categories',
+					'category'=>'Example category',
+					'tags'=>'Tags',
+					'tag'=>'Example Tag',
+					'comments'=>'Comments',
+					'asc'=>'Always Show Comments',
+					'dnc'=>'Disable New Comments',
+					'dc'=>'Disable Comments',
+					'widgets'=>'Widgets',
+					'rposts'=>'Recent Posts',
+					'rcomments'=>'Recent Comments',
+					'broll'=>'Blogroll',
+					'tweets'=>'Recent Tweets',
+					'pauthor'=>'Post Author',
+					'authors'=>'Authors',
+					'archives'=>'Archives',
+					'settings'=>'Settings',
+			);
+
+		    $blogParents = array('Blog', 'Posts', 'Categories', 'Tags', 'Comments', 'Widgets', 'Authors', 'Archives', 'Settings');
+
+		    //blog style #1
+			$b1 = '';
+
+		    $b1 .= '<!-- Blog style 1-->
+		            <div class="blog-style">
+		            <span class="example-path">' . $domain .  __('/blog/posts/example-post/') . '</span><br>
+		            <span class="example-path">' . $domain .  __('/blog/categories/example-category/') . '</span><br><br>';
+		    
+		    foreach ($blogPages as $key => $value) {     
+						if ($key == 'blog') {$b1 .= $value . '<br>';}
+						elseif (in_array($value, $blogParents )) $b1 .= '<span>' . $value . '</span><br>';
+						else $b1.= '<span class="child-item">' . $value . '</span><br>';
+			}
+
+		    $b1 .= '</div>';
+			
+			$out .= $b1;
+
+		    //blog style #2
+		    $b2 = '';
+
+		    $b2 .= '<!-- Blog style 2-->
+		            <div class="blog-style">
+		            <span class="example-path">' . $domain .  __('/blog/example-post/') . '</span><br>
+		            <span class="example-path">' . $domain .  __('/blog/categories/example-category/') . '</span><br><br>';
+		    
+			foreach ($blogPages as $key => $value) {
+						if($key == 'posts') continue;
+						if($key == 'blog') {$b2 .= $value . '<br>';}
+						elseif (in_array($value, $blogParents ) || $key == 'post') {$b2 .= '<span>' . $value . '</span><br>';}
+						else {$b2 .= '<span class="child-item">' . $value . '</span><br>';}
+			}
+
+		    $b2 .= '</div>';
+			
+			$out .= $b2;
+
+		    //blog style #3
+		    $b3 = '';
+
+		    $b3 .= '<!-- Blog style 3-->
+		            <div class="blog-style">
+		            <span class="example-path">' . $domain .  __('/posts/example-post/') . '</span><br>
+		            <span class="example-path">' . $domain .  __('/categories/example-category/') . '</span><br><br>';
+		    
+			foreach ($blogPages as $key => $value) {
+						if($key == 'blog') continue;
+						if (in_array($value, $blogParents )) $b3 .= $value . '<br>';
+						else $b3 .= '<span>' . $value . '</span><br>';
+			}
+
+		    $b3 .= '</div>';
+			
+			$out .= $b3;
+
+		    //blog style #4
+		    $b4 = '';
+
+		    $b4 .= '<!-- Blog style 4-->
+		            <div class="blog-style">
+		            <span class="example-path">' . $domain .  __('/example-post/') . '</span><br>
+		            <span class="example-path">' . $domain .  __('/categories/example-category/') . '</span><br><br>';
+		    
+			foreach ($blogPages as $key => $value) {
+						if($key=='blog' || $key == 'posts') continue;
+						if (in_array($value, $blogParents) || $key =='post') $b4 .= $value . '<br>';
+						else $b4 .= '<span>' . $value . '</span><br>';
+			}
+
+		    $b4 .= '</div>';
+			
+			$out .= $b4;
+			
+			$out .= '</div>';
+			
+			return $out;
+		
+	}
+
+	/**
+	 * 	Returns a MarkupAdminDataTable object for rendering later.
+	 *
+	 *	Shows values of final selected blog settings.
+	 *	Used by both firstAccess() and getModuleConfigInputfields().
+	 *	
+	 *	@access public
+	 *	@return object $t table inputField
+	 *
+	 */	
+	public static function renderFinalSettingsTable(array $data) {
+
+		 $domain = $_SERVER['SERVER_NAME'];
+
+		//create a mew table. We use wire because we are in a static method
+		$t = wire('modules')->get('MarkupAdminDataTable');
+		$t->setEncodeEntities(false);
+		$t->setClass('settingsTable');
+		
+		//set header rows
+		$t->headerRow(array(
+			'Property',
+			'Setting',
+		));
+				
+		/*table rows data - for final Blog settings */	
+		if ($data['blogStyle']==1) $blogStyle = 'Style 1: ' . $domain . '/blog/posts/example-post/';
+		elseif ($data['blogStyle']==2) $blogStyle = 'Style 2: ' . $domain . '/blog/example-post/';
+		elseif ($data['blogStyle']==3) $blogStyle = 'Style 3: ' . $domain . '/posts/example-post/';
+		else $blogStyle = 'Style 4: ' . $domain . '/example-post/';
+
+		$schedulePages = $data['schedulePages'] ?  'Scheduled auto-publish/unpublish enabled' : 'Scheduled auto-publish/unpublish not enabled';
+		$commentsUse = $data['commentsUse'] ?  'Commenting feature enabled' : 'Commenting feature not enabled';
+	
+		if ($data['templateFilesInstall']==1) $templateFilesInstall = 'Blank template files';
+		elseif ($data['templateFilesInstall']==2) $templateFilesInstall = 'Template files with demo blog content';
+		else $templateFilesInstall = 'No template files';
+
+		$tagTemplatesFields = $data['tagTemplatesFields'] ? $data['tagTemplatesFields'] : 'No tag specified';
+	
+		$settings = array(
+							'Blog Style' => $blogStyle, 
+							'Auto-publish/unpublish' => $schedulePages,
+							'Commenting feature' => $commentsUse, 
+							'Install template files' => $templateFilesInstall,
+							/*'Templates and fields prefix' => $data['prefixTemplatesFields'], not using this currently*/
+							'Tag for blog templates and fields' => $tagTemplatesFields,
+
+		);
+
+		foreach ($settings  as $key => $value) {
+					$t->row(array(
+							$key,
+							$value,
+					));
+		}
+
+		return $t;
+
+	}
+
+	/**
+	 *	Interface to second step of Blog install.
+	 *	
+	 *	Displayed when Blog is first accessed and it is not yet fully installed.
+	 *	Sends install form to installWizard().
+	 *
+	 *	@access public
+	 *	@return mixed $form rendered form
+	 *
+	 */
+ 	public function firstAccess($data) {
+
+	 	$domain = $_SERVER['SERVER_NAME'];
+
+	 	//url to this module's settings page
+	 	$blogURL = $this->config->urls->admin . 'module/edit?name=' . $this;
+
+	 	$fistInstallWelcome = '<h2>' . $this->_('Finalise your Blog installation') . '</h2>
+	 						<p>' . $this->_("Please finalise Blog installation by reviewing your settings below and making any necessary changes either here or in the module's <a href={$blogURL}>config screen</a> . Below you can customise the names of your Blog PARENT pages. This is an important final step to customise your Blog. Once the install wizard has run, you will not be able to make changes except renaming your Blog pages. This wizard will install blog pages, templates, template files, fields and an author role according to your settings. This means some of these components may not be installed. When you are happy with the settings, click the button to proceed with the installation. Once installed, do not DELETE any of the PARENT pages, change their IDs or rename the templates or fields.") . '</p>';
+ 
+		//CREATE A NEW FORM
+		$form = new InputfieldForm; 
+		$form->attr('id', 'blog'); 
+		$form->action = './';
+		$form->method = 'post';
+
+		//CREATE A NEW WRAPPER
+		$w = new InputfieldWrapper;
+
+		//CREATE THE FIRST FIELDSET
+		$fs1 = $this->modules->get("InputfieldFieldset"); 
+		$fs1->label = $this->_('Settings');
+
+		//CREATE AN INPUTFIELD MARKUP
+		$m = new InputfieldMarkup;
+		$m->label = $this->_('Important');
+		$m->skipLabel = Inputfield::skipLabelHeader;//we don't want a label displayed here
+		$m->description = $this->_("In case you wish to make any changes to these settings you must do so in Blog's module's settings page before before finalising Blog install below. Click <a href={$blogURL}>here</a> if you want to go back and make changes.");
+	
+		/*table rows data - for initial setup Blog settings */
+		$t = self::renderFinalSettingsTable($data);
+
+		$m->attr('value', $t->render());
+		$fs1->add($m);
+		
+		$w->add($fs1);//first fieldset added to wrapper
+
+		//CREATE THE SECOND FIELDSET
+		$fs2 = new InputfieldFieldset; 
+		$fs2->label = $this->_('Parent Pages Titles');
+		//$fs2->removeAttr('id');// not necessary
+		$fs2->setAttribute('id', 'widgets_edit');//Here I set my own ID since I will want to target this <li>; otherwise, PW will set its own. Note, there is no method setAttr!
+		$fs2->addClass('edit_fieldsets');	
+
+		//CREATE AN INPUTFIELD MARKUP
+		$m = $this->modules->get('InputfieldMarkup');
+		$m->description = $this->_("Changes here are optional. You can also manually change these titles later when editing the pages. However, depending on the Blog Style you selected, you want to make sure that these titles do not clash with your existing pages.");
+		$m->notes = $this->_('The wizard will create pages, templates, fields, template files and one role. If there are any existing items on your site with similar names, the whole installation will stop. None of your existing items will be overwritten. You would have to make changes and run the wizard again.');
+			
+		//CREATE A NEW TABLE - Blog Settings Table
+		$t = new MarkupAdminDataTable;
+		$t->setEncodeEntities(false);
+		$t->setClass('settingsTable');
+		
+		//set header rows
+		$t->headerRow(array(
+			$this->_('Default Title'),
+			$this->_('Custom Title'),
+		));
+
+		//prepare variables for page titles
+		$blog = '';
+		$posts = '';
+		$categories = '';
+		$tags = '';
+		$comments = '';
+		$widgets = '';
+		$authors = '';
+		$archives = ''; 
+		$settings = '';
+
+		$parentCustomTitles = array();
+
+		$textFields = array(
+
+							//0=value; 1=name; 2=new InputfieldText
+							array('Blog', 'blog', $blog),
+							array('Posts', 'posts', $posts),
+							array('Categories', 'categories', $categories),
+							array('Tags', 'tags', $tags),
+							array('Comments', 'comments', $comments),
+							array('Widgets', 'widgets', $widgets),
+							array('Authors', 'authors', $authors),
+							array('Archives', 'archives', $archives),
+							array('Settings', 'settings', $settings),
+		);
+
+		//remove non-relevant pages according to selected blog style
+		foreach ($textFields as $v) {
+			
+						if ($data['blogStyle'] == 2 && $v[0] == 'Posts') continue;
+						if ($data['blogStyle'] == 3 && $v[0] == 'Blog') continue;
+						if (($data['blogStyle'] == 4 && $v[0] == 'Blog') ||  ($data['blogStyle'] == 4 && $v[0] == 'Posts')) continue;
+						if (!$data['commentsUse'] && $v[0] == 'Comments') continue;
+
+						$v[2] = new InputfieldText;
+						$v[2]->attr('name', $v[1]);
+						$v[2]->attr('value', $v[0]);
+						$parentCustomTitles[$v[0]] = $v[2];
+		}
+
+		//table rows
+		foreach ($parentCustomTitles as $key => $value) {
+					$t->row(array(
+							$key,
+							$value->render(),
+					));
+		}
+
+		$s = $this->modules->get('InputfieldSubmit'); 
+		//$s->class .= ' head_button_clone';
+		$s->attr('id+name', 'install_wizard_btn');
+		$s->class .= " final_settings_save";//add a custom class to this submit button
+		$s->attr('value', $this->_('Run install wizard')); 
+
+		$m->attr('value', $t->render() . $s->render());		
+		$fs2->add($m);
+
+		$w->add($fs2);//second fieldset added to wrapper
+
+		$form->add($w);	
+
+		$post = $this->input->post; 
+		
+		//send input->post values to the Method blogInstallerWizard();
+		if($post->install_wizard_btn) $this->installWizard($form);
+
+		return $fistInstallWelcome . $form->render();
+
+ 	}
+
+ 	/**
+	 *	Display Blog Dashboard (summary of Posts informaton) and Blod Archives.
+	 *
+	 *  This function is executed when a page with this Process (Blog) assigned is accessed.  
+ 	 *	Renders different manager views depending on whether Blog is fully installed or not.
+ 	 *
+ 	 *	@access public
+	 *	@return mixed
+	 *
+	 */
+ 	public function execute() {
+
+		//Get the module config data
+		$data = $this->getDefaultSettings();
+
+		//if blogStyle has not been specified we throw an error
+		if(!isset($data['blogStyle']) || $data['blogStyle'] == '') {			
+			//$this->error($this->_('You must first select and save a Blog Style in the module config!'));
+			$moduleURL = '<a target="_blank" href="' . $this->config->urls->admin . 'module/edit?name=' . $this . '">' . $this->_('module config!') . '</a>';				 
+			$this->error($this->_('You must first select and save a Blog Style in the ') . $moduleURL, Notice::allowMarkup);
+			return;
+		}
+		//if blog style url has been set but this is a new install, i.e. blogFullyInstalled == 0, we show first welcome
+		elseif(isset($data['blogFullyInstalled']) && $data['blogFullyInstalled'] == 0) {
+
+				//if scheduled auto-publish/unpublish is selected but the module SchedulePages is not yet installed
+				if ($data['schedulePages'] == 1 && !wire('modules')->isInstalled('SchedulePages')) {
+					
+						$this->error($this->_('To install the scheduled auto-publish/unpublish feature you must first install the module SchedulePages!'));			
+						return;
+
+				}
+				return $this->firstAccess($data);
+		}
+		//if blog is already fully installed, let's proceed as normal and show the blog dashboard
+		else {
+				return $this->blogDashboard();
+		}
+
+ 	}
 
 	/**
 	 * Function to create the Blog Manager menu.
@@ -66,7 +738,7 @@ class ProcessBlog extends Process implements Module {
 
 		$menu = "<ul class='blog_menu'>";
 		
-		$on = !wire('input')->urlSegment1 ? 'blog onblog' : 'blog';
+		$on = !wire('input')->urlSegment1 ? 'blog_menu_item onblog' : 'blog_menu_item';
 		
 		/*
 		NEED ABSOLUTE URLS TO DEAL WITH ISSUE OF TRAILING SLASH.
@@ -76,21 +748,27 @@ class ProcessBlog extends Process implements Module {
 		//$menu .= "<li><a class='$on' href='./'>Dashboard</a></li>";
 
 		//had to revert to below [absolute url]; see URL segment + trailing slash issue
-		$menu .= "<li><a class='$on' href='" . wire('page')->url . "'>" .$this->_('Overview'). "</a></li>";
+
+		$menu .= "<li><a class='$on' href='" . wire('page')->url . "'>" . $this->_('Dashboard') . "</a></li>";
 
 		$menuItemsOther = array(
 
-							'posts' => $this->_('Posts'), 
-							'categories' => $this->_('Categories'), 
-							'tags' => $this->_('Tags'), 
-							'authors' => $this->_('Authors'), 
-							'settings' => $this->_('Settings'), 
+							//@@todo - tried to make these match their page titles but messing up layout!
+							'posts' => $this->_('Posts'),
+							'categories' => $this->_('Categories'),
+							'tags' => $this->_('Tags'),
+							'authors' => $this->_('Authors'),
+							'settings' => $this->_('Settings'),
+							'cleanup' => $this->_('Cleanup'),
 						
 						);
 
+		//we do not want non-superusers to view the cleanup (blog components uninstaller) page
+		if (!$this->user->isSuperuser()) unset($menuItemsOther['cleanup']);
+
 		foreach ($menuItemsOther as $key => $value) {
 			
-					$on = wire('input')->urlSegment1 == $key ? 'blog onblog' : 'blog' ;
+					$on = wire('input')->urlSegment1 == $key ? 'blog_menu_item onblog' : 'blog_menu_item';
 		
 					//$menu .= "<li><a class='$on' href='./$key'>$value</a></li>";
 					/*
@@ -109,37 +787,16 @@ class ProcessBlog extends Process implements Module {
 	}
 
 	/**
-	 *	Initialise the module.
-	 *  
-	 * Check if user has the permission 'blog' to view this module.
-	 * This is an optional initialisation method called before any execute methods. It will be automatically loaded by ProcessWire.
-	 *	Include jQueryFancybox.
-	 *
-	 *	@access public
+	 *	Display default Blog view.
 	 *	
-	 */
-	public function init() {
-
-		if ($this->permissions->get('blog')->id && !$this->user->hasPermission('blog')) throw new WirePermissionException("You have no permission to use this module");
-		parent::init();
-
-		$this->modules->get('JqueryFancybox');
-		
-	}
-	
-	/**
-	 *	Display Blog Dashboard (summary of Posts informaton) and Blod Archives.
-	 *
-	 *  This function is executed when a page with this Process (Blog) assigned is accessed.  
- 	 *	Renders a read-only table (Dashboard) showing overall Blog Posts stats.
- 	 *	Renders a read-only table showing overall Blog Archives stats.
- 	 *
- 	 *	@access public
+	 *  Shows Blog's manager landing page.
+	 *	
+	 *	@access public
 	 *	@return mixed $form rendered form
 	 *
 	 */
-	public function ___execute() {
-	
+ 	public function blogDashboard() {
+
 		//default blog view = dashboard
 
 		//CREATE A NEW FORM
@@ -158,70 +815,79 @@ class ProcessBlog extends Process implements Module {
 		
 		$qn = array();
 
-		foreach ($selector as $k => $v) {
-			$qn [$k] = count(wire('pages')->find("template={$k}, parent!=7"));//exclude pages in trash
-		}
+		foreach ($selector as $k => $v) {$qn [$k] = count(wire('pages')->find("template={$k}, parent!=7"));}//exclude pages in trash
 
 		//add count of unpublished posts to array
 		$qn ['unpublished'] = count(wire('pages')->find("template=blog-post, status=unpublished, parent!=7"));
 
-		//################ - Comments count for Dashborad - ####################
+		//################ - Comments count for Blog Dashborad - ####################
 		
-		$posts = wire('pages')->find('template=blog-post, include=all, sort=-blog_date, parent!=7');//@@todo - will need to limit here eventually!
-		
+		$posts = wire('pages')->find('template=blog-post, include=all, sort=-blog_date, parent!=7');//@@todo - might need to limit here eventually!
+
 		$numApproved = 0; 
 		$numPending = 0; 
 		$numSpam = 0;
 
 		foreach ($posts as $p) {
 
-			foreach($p->blog_comments as $comment) {
-				if($comment->isApproved()) $numApproved++; 
-				elseif($comment->status == Comment::statusPending) $numPending++;
-				elseif($comment->status == Comment::statusSpam) $numSpam++; 
-			}
+			if ($this->commentsUse == 1) {
+					foreach($p->blog_comments as $comment) {
+								if($comment->isApproved()) $numApproved++; 
+								elseif($comment->status == Comment::statusPending) $numPending++;
+								elseif($comment->status == Comment::statusSpam) $numSpam++; 
+					}
+
+			}//end if comments
 		
 		}
 		
 		$numTotal = $numApproved + $numPending + $numSpam;
 
-		//SECOND TABLE for quick view of posts
-		$overposts = '';
-		$overposts .= "
+		//TABLE for quick view of posts
 
-		<table id='posts_overview'>
+		//prepare some variables we'll use here
+		$comments = $this->comments;
+		$categories = $this->categories;
+		$tags = $this->tags;
+		$archives = $this->archives;
 
-			<tr>
-				<td>{$this->_('Posts')}</td>
-				<td class='large'>{$qn['blog-post']}</td>
-				<td>{$this->_('Comments')}</td>
-				<td class='large'>{$numTotal}</td>
-			</tr>
+		$overPostsData = array(
 
-			<tr>
-				<td>{$this->_('Unpublished')}</td>
-				<td class='large'>{$qn['unpublished']}</td>
-				<td>{$this->_('Approved')}</td>
-				<td class='large'>{$numApproved}</td>
-			</tr>
+                  array($this->_('Posts'), $qn['blog-post'], sprintf(__('%s'), $comments->title), $numTotal),
+                  array($this->_('Unpublished'), $qn['unpublished'], $this->_('Approved'), $numApproved),
+                  array(sprintf(__('%s'), $categories->title), $qn['blog-category'], $this->_('Pending'), $numPending ),
+                  array(sprintf(__('%s'), $tags->title), $qn['blog-tag'], $this->_('Spam'), $numSpam ),
 
-			<tr>
-				<td>{$this->_('Categories')}</td>
-				<td class='large'><span>{$qn['blog-category']}</span></td>
-				<td>{$this->_('Pending')}</td>
-				<td class='large'>{$numPending}</td>
-			</tr>
+   	 	);
 
-			<tr>
-				<td>{$this->_('Tags')}</td>
-				<td class='large'>{$qn['blog-tag']}</td>
-				<td>{$this->_('Spam')}</td>
-				<td class='large'>{$numSpam}</td>
-			</tr>
+		//remove comments-related data if commentsUse !=1
+   	 	if ($this->commentsUse !=1) {
+				unset($overPostsData[0][2]);
+				unset($overPostsData[0][3]);
+				unset($overPostsData[1][2]);
+				unset($overPostsData[1][3]);
+				unset($overPostsData[2][2]);
+				unset($overPostsData[2][3]);
+				unset($overPostsData[3][2]);
+				unset($overPostsData[3][3]);
+   	 	}
 
-		</table>
-	
-		";
+	    $overPosts = '';
+	    $overPosts .= '<table id="posts_overview">';
+
+	    foreach ($overPostsData as $key => $value) {
+
+					$overPosts .= '<tr>';
+
+					foreach ($value as $v) {
+							$class = is_int($v) ? 'class="large"' : '';
+							$overPosts .= "<td $class>" . $v . "</td>";
+					}
+
+					$overPosts .= '<tr>';
+	    }
+		
+	    $overPosts .='</table>';
 
 		$w = new InputfieldWrapper();
 		$w->attr('title', $this->_('Overview')); 
@@ -234,7 +900,7 @@ class ProcessBlog extends Process implements Module {
 		$m->columnWidth = 50;
 		$m->label = $this->_('Quick view');
 		//$m->description = $this->_('At a glance');
-		$m->attr('value', $overposts);
+		$m->attr('value', $overPosts);
 		$m->skipLabel = Inputfield::skipLabelHeader;//we don't want a label displayed here
 		$fs1->add($m);//add post stats inputfield to fieldset
 
@@ -281,10 +947,10 @@ class ProcessBlog extends Process implements Module {
 		}//...end/..outer "for"
 
 		//Build archives table using $years array - we want to show all months for any year where there are posts
-		$archives = '<table id="archives" class = "AdminDataTable AdminDataList AdminDataTableSortable">
+		$archivesTable = '<table id="archives" class = "AdminDataTable AdminDataList AdminDataTableSortable">
 				<thead>
 					<tr>
-						<th>Year</th>
+						<th>' . $this->_("Year") . '</th>
 						<th>Jan</th>
 						<th>Feb</th>
 						<th>Mar</th>
@@ -302,31 +968,31 @@ class ProcessBlog extends Process implements Module {
 				<tbody>';
 		foreach ($years as $y => $total) {
 			
-				$archives .= "<tr><td>" . $y . "</td>";
+				$archivesTable .= "<tr><td>" . $y . "</td>";
 
 				foreach ($total as $t) {
 					
 					//if no posts for the month, don't output '0' but '-'. Otherwise, output total posts for month
-					$archives .= $t == 0 ? "<td>-</td>" : "<td>" . $t . "</td>";
+					$archivesTable .= $t == 0 ? "<td>-</td>" : "<td>" . $t . "</td>";
 				}
 		
-				$archives .= "</tr>";
+				$archivesTable .= "</tr>";
 		}
 
-		$archives .= "</tbody></table>";//end archives table
+		$archivesTable .= "</tbody></table>";//end archives table
 
 		$fs2 = $this->modules->get("InputfieldFieldset"); 
-		$fs2->label = $this->_('Archives');
+		$fs2->label = sprintf(__('%s'), $archives->title);
 		$fs2->setAttribute('id', 'archives');
 		//$fs2->collapsed = Inputfield::collapsedYes; 
 				
 		$m = $this->modules->get('InputfieldMarkup');
 		$m->columnWidth = 50;
-		$m->label = $this->_('Archives');
+		$m->label = sprintf(__('%s'), $archives->title);
 		
-		$m->description = empty($years) ? $this->_('No archives found.') : '';
-		
-		$m->attr('value', $archives);
+		$m->description = empty($years) ? $this->_('No items found.') : '';
+				
+		$m->attr('value', $archivesTable);
 		$m->skipLabel = Inputfield::skipLabelHeader;//we don't want a label displayed here
 		$fs2->add($m);//add post stats inputfield to fieldset
 		$fs2->addClass('edit_fieldsets');
@@ -337,9 +1003,9 @@ class ProcessBlog extends Process implements Module {
 		$form->attr('value', $this->blogMenu());//add the Blog Menu
 
 		return $form->render();
-					
-	}
-	
+
+ 	}
+
 	/**
 	 *	Display, Add and Edit Blog Posts.
 	 *
@@ -366,34 +1032,77 @@ class ProcessBlog extends Process implements Module {
 		//$w->attr('id', 'blogsettings'); 
 
 		//CREATE THE FIRST FIELDSET
-		$fs1 = $this->modules->get("InputfieldFieldset"); 
-		$fs1->label = $this->_('Quick Post ');
+		$fs1 = $this->modules->get("InputfieldFieldset");
+		//$fs1->label = sprintf(__('Quick %s'), $this->posts->title);@@todo - unsure about this - just use quick post, i.e. post something (whatever it is) quickly
+		$fs1->label = $this->_('Quick Post');
 		
 		//quick post code
 		$m = $this->modules->get('InputfieldMarkup');
 		//$m->columnWidth = 50;
 		$m->label = $this->_('Add');
-		$m->collapsed = Inputfield::collapsedYes; 
+		$m->collapsed = Inputfield::collapsedYes;
+
+		$blogPostTemplate = wire('templates')->get("blog-post");
+
+		//add auto-publish only if conditions correct
+		if ($this->schedulePages == 1 && $this->modules->isInstalled('SchedulePages') && $blogPostTemplate->hasField('publish_from') && $blogPostTemplate->hasField('publish_until')) {
+
+				//for date fields - 'publish from' and 'publish to'
+				//1st date/time inputfield - 'publish from'
+				$d1 = $this->modules->get("InputfieldDatetime");
+				$d1->attr("name+id", "posts_publish_from");
+				$d1->dateOutputFormat = 'j F Y g:i a';//8 April 2012 - in the details tab, combines date and time code in this field
+				$d1->dateInputFormat = 'j F Y';
+				//$dfd->timeOutputFormat = 'g:i a';// 5:10 pm - for output, the code fields are combined - no need for this
+				$d1->timeInputFormat = 'g:i a';
+				#$d1->datepicker = 3;//Date/Time picker on field focus
+				$d1->datepicker = 1;//Date/Time picker on arrow click
+				$d1->size = 30;
+				$d1->defaultToday = 0;
+				$d1->label = $this->_('Publish from');
+				$d1->description = $this->_('Optionally auto-publish this post from this date.');
+				$d1->collapsed = Inputfield::collapsedYes; 
+
+				//2nd date/time inputfield - 'publish until'
+				$d2 = $this->modules->get("InputfieldDatetime");
+				$d2->attr("name+id", "posts_publish_until");
+				$d2->dateOutputFormat = 'j F Y g:i a';//8 April 2012 - in the details tab, combines date and time code in this field
+				$d2->dateInputFormat = 'j F Y';
+				//$d2->timeOutputFormat = 'g:i a';// 5:10 pm - for output, the code fields are combined - no need for this
+				$d2->timeInputFormat = 'g:i a';
+				#$d2->datepicker = 3;//Date/Time picker on field focus
+				$d2->datepicker = 1;//Date/Time picker on arrow click
+				$d2->size = 30;
+				$d2->defaultToday = 0;
+				$d2->label = $this->_('Publish until');
+				$d2->description = $this->_('Optionally auto-unpublish this post on this date.');
+				$d2->collapsed = Inputfield::collapsedYes; 
+
+				$m->add($d1);
+				$m->add($d2);
+		}
 
 		$tx = $this->modules->get('InputfieldText');
 		
 		$tx->attr('name', 'quickpost_title');
-		$tx->label = 'Title';
+		$tx->label = $this->_('Title');
 		//$tx->required = true;
-		$tx->description = "A title is required";
+		$tx->description = $this->_('A title is required.');
 
 		$txa = $this->modules->get('InputfieldTextarea');
 		//$txa = $this->modules->get('InputfieldTinyMCE');
 		$txa->attr('name', 'quickpost_body');
-		$txa->label = 'Body';
+		$txa->label = $this->_('Body');
 
+		//$m->add($df);
 		$m->add($tx);
 		$m->add($txa);
 		
 		//asm select for categories for quick post
 		$as = $this->modules->get('InputfieldAsmSelect');
-		$as->label = "Categories";
-		$as->description = "Select one or more categories below and drag to sort them in order of relevance.";
+		$as->label = sprintf(__('%s'), $this->categories->title);
+		$as->description = "Select one or more " . sprintf(__('%s'), strtolower($this->categories->title)) . " below and drag to sort them in order of relevance.";
+		
 		$as->attr('id+name', 'quickpost_categories_add');//set an id and name[] to this inputfield page select; in our $input->post, we'll loop through the name[] array
 
 		$opts = wire('pages')->find('template=blog-category');
@@ -406,7 +1115,7 @@ class ProcessBlog extends Process implements Module {
 
 		//for tags for quick post
 		$pac = $this->modules->get('InputfieldPageAutocomplete');
-		$pac->label = "Tags";
+		$pac->label = sprintf(__('%s'), $this->tags->title);
 		$pac->set('findPagesSelector', 'template=blog-tag');//limit tag selection to only the tag pages
 		$pac->attr('id+name', 'quickpost_tags_add');//set an id and name
 
@@ -426,7 +1135,9 @@ class ProcessBlog extends Process implements Module {
 		$s->attr('value', $this->_('Publish'));
 		$s->class .= " quickpost_publish";//add a custom class to this submit button
 		
-		$m->add($s);
+		$m->add($s);		
+
+		//$m->attr('value', $d1->render() . $d2->render());
 
 		$fs1->add($m);
 		//$w->add($m);	
@@ -446,7 +1157,7 @@ class ProcessBlog extends Process implements Module {
 		//CREATE AN INPUTFIELD MARKUP: Will hold list of posts table
 		$m = $this->modules->get('InputfieldMarkup');
 		//$m->label = $this->_('Edit');
-		//$m->description = $this->_('Click on a title to edit the post.');//moved down; to first check if posts found and adapt description accordingly
+		//$m->description = $this->_('Click on a title to edit the item.');//moved down; to first check if posts found and adapt description accordingly
 		//$m->collapsed = Inputfield::collapsedYes; 
 			
 		//CREATE A NEW TABLE: for posts
@@ -455,71 +1166,169 @@ class ProcessBlog extends Process implements Module {
 		$t->setClass('postsTable');
 		
 		//set header rows
-		$t->headerRow(array(
+		$postsTableHeaders = array(
+
 			'<input type="checkbox" class="toggle_all">',
 			$this->_('Title'),
 			//$this->_('Categories'),
 			//$this->_('Tags'),
-			$this->_('Comments'),
-			$this->_('Pending comments'),
-			$this->_('Spam comments'),
+			$this->_('C/Visibility'),
+			$this->_('C/Approved'),
+			$this->_('C/Pending'),
+			$this->_('C/Spam'),
 			$this->_('Images'),
 			$this->_('Files'),
 			$this->_('Author'),
 			$this->_('Published'),
 			$this->_('Date'),
-			//$this->_('Delete'),			
+			//$this->_('Delete'),
 
-		));
+		);
+		
+		//if commentsUse !=1 unset comments header rows
+		if ($this->commentsUse !=1) {
+				
+				unset($postsTableHeaders[2]);
+				unset($postsTableHeaders[3]);
+				unset($postsTableHeaders[4]);
+				unset($postsTableHeaders[5]);
+		}
 
-		//grab all posts; will output + their info later in a table
-		$posts = wire('pages')->find('template=blog-post, include=all, sort=-blog_date, parent!=7, limit=10');//PAGINATE!
+		$t->headerRow($postsTableHeaders);
+
+		//Determine number of posts to show per page in posts dashboard. Default = 10 {see $this->showLimit}
+		
+		//if user selects a limit ($input->post->show_limit) we set that as the limit and set a cookie {see $this->cookieName} with that value to save state for session.
+		if ($this->input->post->show_limit) {
+
+					$this->showLimit = $this->input->post->show_limit;
+					setcookie($this->cookieName, $this->showLimit , 0, '/');
+		}
+
+		//if no custom limit selected but there is a cookie set, we use the cookie value
+		elseif ($this->input->cookie[$this->cookieName]) {
+
+					$this->showLimit = (int) $this->input->cookie[$this->cookieName];
+		}
+
+		//grab a limited number of posts to show in posts dashboard. Limit is determined as shown above
+		$posts = wire('pages')->find("template=blog-post, include=all, sort=-created, parent!=7, limit={$this->showLimit}");
 
 		foreach ($posts as $p) {
 
-			if (!$posts) continue;//if no posts found, continue
-		
-			//each post page could have 0 or more comments. If comments present, that's an array, hence need to loop through them + check their status
-			foreach($p->blog_comments as $comment) {
+			if (!$posts) break;//if no posts found, break			
+			
+			//initialise some comments variables
+			$commentsVisibility = '';
+			$approvedTotal = '';
+			$pendingTotal = '';
+			$spamTotal = '';
+			
+			//only set if commentsUse == 1
+			if ($this->commentsUse == 1) {
 
-				//create an assoc array $numC to store comment ids and their status for each post. Will use this later to count total comments per post per status
-				if($comment->isApproved()) $numC[$p->id]['approved'][] = $comment->id;
-				elseif($comment->status == Comment::statusPending) $numC[$p->id]['pending'][] = $comment->id;
-				elseif($comment->status == Comment::statusSpam) $numC[$p->id]['spam'][] = $comment->id;
+					if ($p->blog_comments_view == '') $commentsVisibility = 'Default';
+					elseif($p->blog_comments_view->id == $this->asc->id) $commentsVisibility = 'Always Show';
+					elseif($p->blog_comments_view->id == $this->dnc->id) $commentsVisibility = 'Disable New';
+					elseif($p->blog_comments_view->id == $this->dc->id) $commentsVisibility = 'Disabled';
+
+					//each post page could have 0 or more comments. If comments present, that's an array, hence need to loop through them + check their status
+					foreach($p->blog_comments as $comment) {
+
+						//create an assoc array $numC to store comment ids and their status for each post. Will use this later to count total comments per post per status
+						if($comment->isApproved()) $numC[$p->id]['approved'][] = $comment->id;
+						elseif($comment->status == Comment::statusPending) $numC[$p->id]['pending'][] = $comment->id;
+						elseif($comment->status == Comment::statusSpam) $numC[$p->id]['spam'][] = $comment->id;
+					}
+
+					//count number of comments and their status for each post. If no comments, total for that status = 0
+					$approvedTotal = isset($numC[$p->id]['approved']) ? (count($numC[$p->id]['approved'])) : 0;
+					$pendingTotal = isset($numC[$p->id]['pending']) ? (count($numC[$p->id]['pending'])) : 0;
+					$spamTotal = isset($numC[$p->id]['spam']) ? (count($numC[$p->id]['spam'])) : 0;
+			
+			
+			}//end if $this->commentsUse == 1
+
+
+			//check if post is published or not
+			$p->is(Page::statusUnpublished) ? $status = '<span class="unpublished">' . $this->_('No') . '</span>' : $status = $this->_('Yes');
+
+			//if post published it also means blog_date IS NOT EMPTY {autoload module will ensure this} display date published (i.e. blog_date)
+			if ($status == 'Yes') {
+				
+					$dateSorter = date('Y-m-d H:i:s', $p->blog_date);//need this (hidden span) in order to correctly sort by date column in MarkupAdminDataTable
+					$dateFormat = wire('fields')->get('blog_date')->dateOutputFormat; 
+					$date = FieldtypeDatetime::formatDate($p->blog_date, $dateFormat);//Return a date formatted as specified in the Blog post's 'blog_date' field.
 			}
 
-			//count number of comments and their status for each post. If no comments, total for that status = 0
-			$approvedTotal = isset($numC[$p->id]['approved']) ? (count($numC[$p->id]['approved'])) : 0;
-			$pendingTotal = isset($numC[$p->id]['pending']) ? (count($numC[$p->id]['pending'])) : 0;
-			$spamTotal = isset($numC[$p->id]['spam']) ? (count($numC[$p->id]['spam'])) : 0;
-			
-			//check if post is published or not
-			$p->is(Page::statusUnpublished) ? $status = "<span class='unpublished'>No</span>" : $status = "Yes";
+			//if post unpublished AND blog_date IS EMPTY [meaning never been published as opposed to published then post expired/unpublished] display text 'Pending'			
+			elseif ($status !='Yes' && !$p->blog_date) {
+				
+					$dateSorter = '';
+					$date =  '<span class="unpublished">' . $this->_('Pending') . '</span>';
+			}
 
+			//if post unpublished AND blog_date is NOT EMPTY [meaning has been published BUT now unpublished, i.e. EXPIRED, display text 'Expired'			
+			else {
+
+					$dateSorter = date('Y-m-d H:i:s', $p->blog_date);//need this (hidden span) in order to correctly sort by date column in MarkupAdminDataTable
+					$date =  '<span class="unpublished">' . $this->_('Expired') . '</span>';
+			}
+
+			//set table rows
+			$postsTable = array(
+									"<input type='checkbox' name='posts_action[]' value='{$p->id}' class='toggle'>",//disabled sorting on this in .js file
+									"<a href='{$this->config->urls->admin}page/edit/?id={$p->id}' class='editBlog iframe'>$p->title</a>",
+									$commentsVisibility,//total approved comments
+									$approvedTotal,//total approved comments
+									$pendingTotal,//total pending comments
+									$spamTotal,//total spam comments
+									$p->blog_images->count(),//number of images in post
+									$p->blog_files->count(),//number of files in post
+									$p->createdUser->get('title|name'),//post author
+									$status,//post published or not
+									//$date,//if post published this will is the date entered in the post's 'blog_date' OTHERWISE 'pending' or 'expired' will be displayed as relevant					
+									'<span class="date-sorter">'. $dateSorter . '</span>'. $date,//if post published this will is the date entered in the post's 'blog_date' OTHERWISE 'pending' or 'expired' will be;			
+			);
+
+			//if commentsUse !=1 unset comments rows
+			if ($this->commentsUse !=1) {					
+					
+					unset($postsTable[2]);
+					unset($postsTable[3]);
+					unset($postsTable[4]);
+					unset($postsTable[5]);
+			}
+			
 			//render the table rows with variables set above
-			$t->row(array(
-					"<input type='checkbox' name='posts_delete[]' value='{$p->id}' class='toggle'>",//disabled sorting on this in .js file
-					"<a href='{$this->config->urls->admin}page/edit/?id={$p->id}' class='editBlog iframe'>$p->title</a>",
-					$approvedTotal,//total approved comments
-					$pendingTotal,//total pending comments
-					$spamTotal,//total spam comments
-					$p->blog_images->count(),//number of images in post
-					$p->blog_files->count(),//number of files in post
-					$p->createdUser->get('title|name'),//post author
-					$status,//post published or not
-					date('d-m-Y', $p->blog_date),//this is the date entered in the post's 'date' field [blog_date]
-			));
+			$t->row($postsTable);
 
 		}//end foreach $posts as $p
 		
-		$m->description = $posts->count==0 ? $this->_('No posts found.') : $this->_('Click on a title to edit the post.');
+		//prepare values for 'Show XX Posts', i.e. number of posts to show per page in posts dashboard
+		$limitSelect = '';
+		$limitSelect .= '<span class="limit-select">' . $this->_('Show ') . '<select id="limit" name="show_limit">';
 
-		$s = $this->modules->get('InputfieldSubmit'); 
-		/*$s->class .= ' head_button_clone';*/
-		$s->attr('id+name', 'posts_delete_btn');
-		$s->class .= " posts_delete";//add a custom class to this submit button
-		$s->attr('value', $this->_('Delete')); 
-		
+		$limits = array( '', 5, 10, 15, 25, 50, 75, 100);
+
+		foreach ($limits as $limit) {
+					
+					$limitSelect .='<option value="' . $limit . '"' . ($this->showLimit == $limit ? 'selected="selected"':'') . '>' . $limit . '</option>';
+		}
+
+		$limitSelect .= '</select>'. $this->_(' Items') . '</span>';
+
+		//display a headline indicating quantities. We'll add this to posts dashboard
+		$start = $posts->getStart()+1;
+		$end = $start + count($posts)-1;
+		$total = $posts->getTotal();
+
+		if($total) $postsCount = "<h4>" . sprintf(__('%1$s %2$d to %3$d of %4$d'), $this->posts->title, $start, $end, $total) . "</h4>";
+
+		//add a description to posts dashboard {postsCount, limitSelect and instruction OR no posts found status}
+		$m->description = $total == 0 ? $this->_('No items found.') : $postsCount . $this->_('Click on a title to edit the item.') . $limitSelect;
+		$m->notes = $total == 0 || $this->commentsUse!=1 ? '' : $this->_('C/=Comments.');
+
 		//$m->attr('value', $t->render() . $s->render());//button inside markup wrapper
 		//$m->attr('value', $t->render());
 
@@ -534,7 +1343,7 @@ class ProcessBlog extends Process implements Module {
 		$currentUrl = wire('page')->url . wire('input')->urlSegmentsStr."/";//get the url segment string. In this case it is "posts"
 		$pagination = $posts->renderPager(array('baseUrl' => $currentUrl));
 
-		$m->attr('value', $pagination . $t->render() . $pagination . $s->render());//wrap our table with pagination
+		$m->attr('value', $pagination . $t->render() . $pagination);//wrap our table with pagination
 
 		//$w->add($m);	
 		//$w->add($s); //button inside wrapper
@@ -542,6 +1351,50 @@ class ProcessBlog extends Process implements Module {
 		$fs2->add($m);
 		//$w->add($m);
 
+		//the posts bulk actions panel
+
+		$actions = array(
+							'publish' => $this->_('Publish'),
+							'unpublish' => $this->_('Unpublish'),
+							'defaultCommentsView' => $this->_('Default Comments View'),
+							'alwaysShowComments' => $this->_('Always Show Comments'),
+							'disableNewComments' => $this->_('Disable New Comments'),
+							'disableComments' => $this->_('Disable Comments'),
+							'trash' => $this->_('Trash'),
+							'delete' => $this->_('Delete'),
+
+		);
+
+		//if commentsUse !=1 unset comments actions
+		if ($this->commentsUse !=1) {
+
+				unset($actions['defaultCommentsView']);
+				unset($actions['alwaysShowComments']);
+				unset($actions['disableNewComments']);
+				unset($actions['disableComments']);
+		}
+
+		$m = $this->modules->get('InputfieldMarkup');
+		$m->label = $this->_('Actions');
+		$m->collapsed = 1;
+		$m->description = $this->_('Choose an Action to be applied to the selected items.');
+		
+		$is = $this->modules->get('InputfieldSelect');
+		$is->label = $this->_('Action');
+		$is->attr('name+id', 'posts_action_select');
+		$is->addOptions($actions);
+		
+		$s = $this->modules->get('InputfieldSubmit'); 
+		/*$s->class .= ' head_button_clone';*/
+		$s->attr('id+name', 'posts_action_btn');
+		$s->class .= " posts_action";//add a custom class to this submit button
+		$s->attr('value', $this->_('Apply')); 
+		
+		$m->add($is);//add the input select
+		$m->add($s);//add the apply button
+
+		$fs2->add($m);
+	
 		$w->add($fs2);//second fieldset added to wrapper
 
 		$form->add($w);	
@@ -551,7 +1404,7 @@ class ProcessBlog extends Process implements Module {
 		$post = $this->input->post; 
 
 		//send input->post values to the Method save();
-		if($post->posts_delete_btn || $post->quickpost_save_unpublished_btn || $post->quickpost_publish_btn) $this->save($form);
+		if($post->posts_action_btn || $post->quickpost_save_unpublished_btn || $post->quickpost_publish_btn) $this->save($form);
 		
 		//render the final form
 		return $form->render();
@@ -585,12 +1438,12 @@ class ProcessBlog extends Process implements Module {
 
 		//CREATE THE FIRST FIELDSET
 		$fs1 = $this->modules->get("InputfieldFieldset"); 
-		$fs1->label = $this->_('New Categories');
+		$fs1->label = sprintf(__('New %s'), $this->categories->title);
 
 		$m = $this->modules->get('InputfieldMarkup');
 		//$m->columnWidth = 35;
 		$m->label = $this->_('Add');
-		$m->description = $this->_('One category per line');
+		$m->description = $this->_('One item per line.');
 		$m->collapsed = Inputfield::collapsedYes; 
 
 		$txa = $this->modules->get('InputfieldTextarea');
@@ -629,7 +1482,7 @@ class ProcessBlog extends Process implements Module {
 
 		//CREATE THE SECOND FIELDSET (because I want the two fs separate!)
 		$fs2 = $this->modules->get("InputfieldFieldset"); 
-		$fs2->label = $this->_('Edit Categories');
+		$fs2->label = sprintf(__('Edit %s'), $this->categories->title);
 		//$fs2->removeAttr('id');
 		$fs2->setAttribute('id', 'categories_edit');//here I set my own ID since I will want to target this <li>; otherwise, PW will set its own. Note, there is no method setAttr!
 		$fs2->addClass('edit_fieldsets');
@@ -638,7 +1491,6 @@ class ProcessBlog extends Process implements Module {
 		$m = $this->modules->get('InputfieldMarkup');
 		//$m->columnWidth = 65;
 		//$m->label = $this->_('Edit');
-		$m->description = $this->_('Click on a title to edit the category');
 		//$m->collapsed = Inputfield::collapsedYes; 
 			
 		//CREATE A NEW TABLE
@@ -651,18 +1503,34 @@ class ProcessBlog extends Process implements Module {
 			'<input type="checkbox" class="toggle_all">',
 			$this->_('Title'),
 			$this->_('Published'),
-			$this->_('Posts'),
+			$this->_('Items'),
 			
 		));
+		
+		//Determine number of categories to show per page in categories dashboard. Default = 10 {see $this->showLimit}
+		
+		//if user selects a limit ($input->post->show_limit) we set that as the limit and set a cookie {see $this->cookieName} with that value to save state for session.
+		if ($this->input->post->show_limit) {
 
-		$categories = wire('pages')->find('template=blog-category, include=all, sort=title, parent!=7, limit=10');
+					$this->showLimit = $this->input->post->show_limit;
+					setcookie($this->cookieName, $this->showLimit , 0, '/');
+		}
+
+		//if no custom limit selected but there is a cookie set, we use the cookie value
+		elseif ($this->input->cookie[$this->cookieName]) {
+
+					$this->showLimit = (int) $this->input->cookie[$this->cookieName];
+		}
+
+		//grab a limited number of categories to show in categories dashboard. Limit is determined as shown above
+		$categories = wire('pages')->find("template=blog-category, include=all, sort=title, parent!=7, limit={$this->showLimit}");
 		
 		foreach ($categories as $c) {
 
-				if (!$categories) continue;//if no categories found, continue
+				if (!$categories) break;//if no categories found, break
 				
 				//check if category is published or not
-				$c->is(Page::statusUnpublished) ? $status = "<span class='unpublished'>No</span>" : $status = "Yes";
+				$c->is(Page::statusUnpublished) ? $status = "<span class='unpublished'>" . $this->_('No') . "</span>" : $status = $this->_("Yes");
 
 				$numPosts = count(wire('pages')->find("template=blog-post, blog_categories=$c"));
 
@@ -673,9 +1541,30 @@ class ProcessBlog extends Process implements Module {
 					$numPosts,
 							
 				));
+		}//end foreach $categories as $c
+
+		//prepare values for 'Show XX Categories', i.e. number of categories to show per page in categories dashboard
+		$limitSelect = '';
+		$limitSelect .= '<span class="limit-select">' . $this->_('Show ') . '<select id="limit" name="show_limit">';
+
+		$limits = array( '', 5, 10, 15, 25, 50, 75, 100);
+
+		foreach ($limits as $limit) {
+					
+					$limitSelect .='<option value="' . $limit . '"' . ($this->showLimit == $limit ? 'selected="selected"':'') . '>' . $limit . '</option>';
 		}
 
-		$m->description = $categories->count==0 ? $this->_('No categories found.') : $this->_('Click on a title to edit the category.');
+		$limitSelect .= '</select>' . $this->_(' Items') . '</span>';
+
+		//display a headline indicating quantities. We'll add this to posts dashboard
+		$start = $categories->getStart()+1;
+		$end = $start + count($categories)-1;
+		$total = $categories->getTotal();
+
+		if($total) $categoriesCount = "<h4>" . sprintf(__('%1$s %2$d to %3$d of %4$d'), $this->categories->title, $start, $end, $total) . "</h4>";
+
+		//add a description to categories dashboard {categoriesCount, limitSelect and instruction OR no categories found status}
+		$m->description = $total == 0 ? $this->_('No items found.') : $categoriesCount . $this->_('Click on a title to edit the item.') . $limitSelect;
 
 		$s = $this->modules->get('InputfieldSubmit'); 
 		/*$s->class .= ' head_button_clone';*/
@@ -735,13 +1624,13 @@ class ProcessBlog extends Process implements Module {
 		//$w->attr('id', 'blogsettings'); 
 
 		//CREATE THE FIRST FIELDSET
-		$fs1 = $this->modules->get("InputfieldFieldset"); 
-		$fs1->label = $this->_('New Tags');
+		$fs1 = $this->modules->get("InputfieldFieldset");
+		$fs1->label = sprintf(__('New %s'), $this->tags->title);
 
 		$m = $this->modules->get('InputfieldMarkup');
 		//$m->columnWidth = 35;
 		$m->label = $this->_('Add');
-		$m->description = $this->_('One tag per line');
+		$m->description = $this->_('One item per line.');
 		$m->collapsed = Inputfield::collapsedYes; 
 
 		$txa = $this->modules->get('InputfieldTextarea');
@@ -787,8 +1676,8 @@ class ProcessBlog extends Process implements Module {
 		$w->add($fs1);//first fieldset added to wrapper
 
 		//CREATE THE SECOND FIELDSET (because I want the two fs separate!)
-		$fs2 = $this->modules->get("InputfieldFieldset"); 
-		$fs2->label = $this->_('Edit Tags');
+		$fs2 = $this->modules->get("InputfieldFieldset");
+		$fs2->label = sprintf(__('Edit %s'), $this->tags->title);
 		//$fs2->removeAttr('id');
 		$fs2->setAttribute('id', 'tags_edit');//set custom ID since I will want to target this <li>; otherwise, PW will set its own. Note, there is no method setAttr!
 		$fs2->addClass('edit_fieldsets');
@@ -797,7 +1686,7 @@ class ProcessBlog extends Process implements Module {
 		$m = $this->modules->get('InputfieldMarkup');
 		//$m->columnWidth = 65;
 		//$m->label = $this->_('Edit');
-		//$m->description = $this->_('Click on a title to edit the tag');
+		//$m->description = $this->_('Click on a title to edit the item');
 		//$m->collapsed = Inputfield::collapsedYes; 
 			
 		//CREATE A NEW TABLE
@@ -810,18 +1699,34 @@ class ProcessBlog extends Process implements Module {
 				'<input type="checkbox" class="toggle_all">',
 				$this->_('Title'),
 				$this->_('Published'),
-				$this->_('Posts'),
+				$this->_('Items'),
 			
 		));
 
-		$tags = wire('pages')->find('template=blog-tag, include=all, sort=title, parent!=7, limit=10');
+		//Determine number of tags to show per page in tags dashboard. Default = 10 {see $this->showLimit}
+		
+		//if user selects a limit ($input->post->show_limit) we set that as the limit and set a cookie {see $this->cookieName} with that value to save state for session.
+		if ($this->input->post->show_limit) {
+
+					$this->showLimit = $this->input->post->show_limit;
+					setcookie($this->cookieName, $this->showLimit , 0, '/');
+		}
+
+		//if no custom limit selected but there is a cookie set, we use the cookie value
+		elseif ($this->input->cookie[$this->cookieName]) {
+
+					$this->showLimit = (int) $this->input->cookie[$this->cookieName];
+		}
+
+		//grab a limited number of tags to show in tags dashboard. Limit is determined as shown above
+		$tags = wire('pages')->find("template=blog-tag, include=all, sort=title, parent!=7, limit={$this->showLimit}");
 
 		foreach ($tags as $tag) {
 
-				if (!$tags) continue;//if no tags found, continue
+				if (!$tags) break;//if no tags found, break
 
 				//check if tag is published or not
-				$tag->is(Page::statusUnpublished) ? $status = "<span class='unpublished'>No</span>" : $status = "Yes";
+				$tag->is(Page::statusUnpublished) ? $status = "<span class='unpublished'>" . $this->_('No') . "</span>" : $status = $this->_("Yes");
 
 				$numPosts = count(wire('pages')->find("blog_tags=$tag"));	
 
@@ -832,9 +1737,30 @@ class ProcessBlog extends Process implements Module {
 					$numPosts,
 							
 				));
+		}//end foreach $tags as $tag
+
+		//prepare values for 'Show XX Tags', i.e. number of tags to show per page in tags dashboard
+		$limitSelect = '';
+		$limitSelect .= '<span class="limit-select">' . $this->_('Show ') . '<select id="limit" name="show_limit">';
+
+		$limits = array( '', 5, 10, 15, 25, 50, 75, 100);
+
+		foreach ($limits as $limit) {
+					
+					$limitSelect .='<option value="' . $limit . '"' . ($this->showLimit == $limit ? 'selected="selected"':'') . '>' . $limit . '</option>';
 		}
 
-		$m->description = $tags->count==0 ? $this->_('No tags found.') : $this->_('Click on a title to edit the tag.');
+		$limitSelect .= '</select>' . $this->_(' Items') . '</span>';
+
+		//display a headline indicating quantities. We'll add this to posts dashboard
+		$start = $tags->getStart()+1;
+		$end = $start + count($tags)-1;
+		$total = $tags->getTotal();
+
+		if($total) $tagsCount = "<h4>" . sprintf(__('%1$s %2$d to %3$d of %4$d'), $this->tags->title, $start, $end, $total) . "</h4>";
+
+		//add a description to tags dashboard {tagsCount, limitSelect and instruction OR no tags found status}
+		$m->description = $total == 0 ? $this->_('No items found.') : $tagsCount . $this->_('Click on a title to edit the item.') . $limitSelect;
 		
 		$s = $this->modules->get('InputfieldSubmit'); 
 		/*$s->class .= ' head_button_clone';*/
@@ -888,13 +1814,13 @@ class ProcessBlog extends Process implements Module {
 		//$w->attr('id', 'blogsettings'); 
 
 		//CREATE THE FIRST FIELDSET
-		$fs1 = $this->modules->get("InputfieldFieldset"); 
-		$fs1->label = $this->_('Blog Authors ');
+		$fs1 = $this->modules->get("InputfieldFieldset");
+		$fs1->label = sprintf(__('Blog %s'), $this->authors->title);
 		
 		//Markup to wrap authors' table
 		$m = $this->modules->get('InputfieldMarkup');
 		//$m->columnWidth = 50;
-		$m->label = $this->_('Authors');
+		$m->label = sprintf(__('%s'), $this->authors->title);
 		$m->skipLabel = Inputfield::skipLabelHeader;//we don't want a label displayed here
 		
 		//CREATE A NEW TABLE
@@ -904,9 +1830,9 @@ class ProcessBlog extends Process implements Module {
 		
 		//set header rows for table
 		$t->headerRow(array(
-			$this->_('Author'),
+			sprintf(__('%s'), $this->authors->title),
 			$this->_(''),
-			$this->_('Posts'),
+			$this->_('Items'),
 			$this->_('Pending'),
 			
 		));
@@ -916,12 +1842,12 @@ class ProcessBlog extends Process implements Module {
 	
 		foreach ( $authors as $author) {
 					
-					$authorPhoto = count($author->blog_images) ? "<img src ='" . $author->blog_images->first->size(75, 75)->url ."'>"  : "<span class='red' >No photo</span>";
+					$authorPhoto = count($author->blog_images) ? "<img src ='" . $author->blog_images->first->size(75, 75)->url ."'>"  : "<span class='red' >" . $this->_('No photo') . "</span>";
 					$authorPublishedCnt = count(wire('pages')->find("template=blog-post, created_users_id={$author->id}"));//count number of posts by this author
 					$authorPendingCnt = count(wire('pages')->find("template=blog-post, status=unpublished, created_users_id={$author->id}"));//count number of posts by this author
 					$t->row(array(
 						$authorPhoto,
-						$authorTitle = $author->title ? $author->title : $author->name . " <span class='red'>(please enter your first and last names in your profile).</span>",
+						$authorTitle = $author->title ? $author->title : $author->name . ": <span class='red'>" . $this->_('please enter your first and last names in your profile') . "</span>",
 						$authorPublishedCnt,
 						$authorPendingCnt
 					));
@@ -965,8 +1891,8 @@ class ProcessBlog extends Process implements Module {
 		//$w->attr('id', 'blogsettings'); 
 
 		//CREATE THE FIRST FIELDSET
-		$fs1 = $this->modules->get("InputfieldFieldset"); 
-		$fs1->label = $this->_('General Settings');
+		$fs1 = $this->modules->get("InputfieldFieldset");
+		$fs1->label = sprintf(__('%s'), $this->settings->title);
 
 		//CREATE AN INPUTFIELD MARKUP
 		$m = $this->modules->get('InputfieldMarkup');
@@ -981,69 +1907,112 @@ class ProcessBlog extends Process implements Module {
 		
 		//set header rows
 		$t->headerRow(array(
-			$this->_(''),
-			$this->_(''),
-			//$this->_('Recent posts to show'),
-			//$this->_('Recent comments to show'),
-			//$this->_('Recent tweets to show'),
+			'',
+			'',
 		));
-				
-		$blog = wire('pages')->get("/blog/");
-		$comments = wire('pages')->get("/blog/comments/");
-		$recentPosts = wire('pages')->get("/blog/widgets/recent-posts/, include=all");
-		$recentComments = wire('pages')->get("/blog/widgets/recent-comments/, include=all");
-		$recentTweets = wire('pages')->get("/blog/widgets/recent-tweets/, include=all");
 
 		/*table rows data - for Blog settings */
 
+		//blog's title
 		$blogTitle = $this->modules->get('InputfieldText');
 		$blogTitle->attr('name', 'blog_title');
-		$blogTitle->attr('value', $blog->blog_headline);
+		$blogTitle->attr('value', $this->settings->blog_headline);
 		
+		//blog's tagline
 		$blogTagline = $this->modules->get('InputfieldTextarea');
 		$blogTagline->attr('name', 'blog_tagline');
 		$blogTagline->set('rows', 3);
-		$blogTagline->attr('value', $blog->blog_summary); 
+		$blogTagline->attr('value', $this->settings->blog_summary);
 		
-		$postsBlogPage = $this->modules->get('InputfieldInteger');//in the Blog homepage, total posts to show
+		//in the Blog homepage, total posts to show 
+		$postsBlogPage = $this->modules->get('InputfieldInteger');
 		$postsBlogPage->attr('name', 'bloghome_posts_qnty');
-		$postsBlogPage->attr('value', $blog->blog_quantity);
+		$postsBlogPage->attr('value', $this->settings->blog_quantity);
 
-		$commentsPerPage = $this->modules->get('InputfieldInteger');//in the comments page, total comments per page
-		$commentsPerPage->attr('name', 'comments_page_qnty');
-		$commentsPerPage->attr('value', $comments->blog_quantity);
+		//length of truncated posts (i.e. post excerpt when 'small=true')
+		$postsLength = $this->modules->get('InputfieldInteger');
+		$postsLength->attr('name', 'posts_trunc_qnty');
+		$postsLength->attr('value', $this->settings->blog_small);
 
+		//initiliase some comments variables
+		$commentsPerPage = '';
+		$commentsMaxPerPost = '';
+		$commentsVisibility = '';
+		$recentCommentsNumber = '';
+
+		//only set if commentsUse ==1
+		if ($this->commentsUse == 1) {
+
+				$commentsPerPage = $this->modules->get('InputfieldInteger');//in the comments page, total comments per page
+				$commentsPerPage->attr('name', 'comments_page_qnty');
+				$commentsPerPage->attr('value', $this->comments->blog_quantity);
+
+				//maximum comments per post afterwhich no more comments allowed
+				$commentsMaxPerPost = $this->modules->get('InputfieldInteger');
+				$commentsMaxPerPost->attr('name', 'comments_post_qnty');
+				$commentsMaxPerPost->attr('value', $this->comments->blog_comments_max);
+
+				$options = array();//for comments visibility options below
+				foreach ($this->comments->children as $child) {
+						//if($child->name =='always-show-comments') continue;//this is not an option for global comments visibility
+						if($child->id == $this->asc->id) continue;//this is not an option for global comments visibility
+						$options[$child->id] = $child->title;//will be rendered in the format <option value="1234">page title</option>
+				}
+
+				$selected = $this->comments->blog_comments_view;//currently selected visibility option in the global setting
+				$commentsVisibility = $this->modules->get('InputfieldSelect');
+				$commentsVisibility->attr('name', 'comments_view');
+				$commentsVisibility->addOptions($options);
+				$commentsVisibility->attr('value', $selected);//apply selected to this input field select
+				
+				$recentCommentsNumber = $this->modules->get('InputfieldInteger');
+				$recentCommentsNumber->attr('name', 'recent_comments_qnty');
+				$recentCommentsNumber->attr('value', $this->rcomments->blog_quantity);
+
+
+		}
+
+		//widget: number of recent posts to show
 		$recentPostsNumber = $this->modules->get('InputfieldInteger');
 		$recentPostsNumber->attr('name', 'recent_posts_qnty');
-		$recentPostsNumber->attr('value', $recentPosts->blog_quantity); 
+		$recentPostsNumber->attr('value', $this->rposts->blog_quantity); 
 
-		$recentCommentsNumber = $this->modules->get('InputfieldInteger');
-		$recentCommentsNumber->attr('name', 'recent_comments_qnty');
-		$recentCommentsNumber->attr('value', $recentComments->blog_quantity); 
-
+		//widget: number of recent tweets to show
 		$recentTweetsNumber = $this->modules->get('InputfieldInteger');
 		$recentTweetsNumber->attr('name', 'recent_tweets_qnty');
-		$recentTweetsNumber->attr('value', $recentTweets->blog_quantity);
+		$recentTweetsNumber->attr('value', $this->tweets->blog_quantity);
 
+		//widget: twitter screen name
 		$twitterScreenName = $this->modules->get('InputfieldText');
 		$twitterScreenName->attr('name', 'twitter_screen_name');
-		$twitterScreenName->attr('value', $recentTweets->blog_note);
+		$twitterScreenName->attr('value', $this->tweets->blog_note);
 	
-		$setting = array(
+		$settings = array(
 							'Blog Title' => $blogTitle, 
 							'Tagline' => $blogTagline, 
 							'Blog Homepage: Total Posts' => $postsBlogPage, 
-							'Comments Page: Total per page' => $commentsPerPage,
+							'Posts: Summary length (default=450)' => $postsLength,
+							'Comments: Per comments page' => $commentsPerPage,
+							'Comments: Maximum per Post' => $commentsMaxPerPost,
+							'Comments: Visibility' => $commentsVisibility,
 							'Widget: Recent Posts to show' => $recentPostsNumber, 
 							'Widget: Recent Comments to show' => $recentCommentsNumber, 
-							'Widget: Recent tweets to show' => $recentTweetsNumber,
+							'Widget: Recent Tweets to show' => $recentTweetsNumber,
 							'Twitter screen name' => $twitterScreenName
 		);
 
-		foreach ($setting as $key => $value) {
+		//if commentusUse !=1, unset comments-related input
+		if ($this->commentsUse !=1) {
+			unset($settings['Comments: Per comments page']);
+			unset($settings['Comments: Maximum per Post']);
+			unset($settings['Comments: Visibility']);
+			unset($settings['Widget: Recent Comments to show']);
+		}
+
+		foreach ($settings as $key => $value) {
 					$t->row(array(
 							$key,
-							$value->render()
+							$value->render(),
 					));
 		}
 
@@ -1061,15 +2030,15 @@ class ProcessBlog extends Process implements Module {
 		$w->add($fs1);//first fieldset added to wrapper
 
 		//CREATE THE SECOND FIELDSET (because I want the two fs separate!)
-		$fs2 = $this->modules->get("InputfieldFieldset"); 
-		$fs2->label = $this->_('Widgets');
+		$fs2 = $this->modules->get("InputfieldFieldset");
+		$fs2->label = sprintf(__('%s'), $this->widgets->title);
 		//$fs2->removeAttr('id');// not necessary
 		$fs2->setAttribute('id', 'widgets_edit');//Here I set my own ID since I will want to target this <li>; otherwise, PW will set its own. Note, there is no method setAttr!
 		$fs2->addClass('edit_fieldsets');	
 
 		$m = $this->modules->get('InputfieldMarkup');
 		//$m->label = $this->_('Edit');
-		$m->description = $this->_('Click on a title to edit the widget');
+		$m->description = $this->_('Click on a title to edit the item');
 
 		//CREATE A NEW TABLE - Blog Widgets Table
 		$t = $this->modules->get('MarkupAdminDataTable');
@@ -1078,13 +2047,12 @@ class ProcessBlog extends Process implements Module {
 		
 		//set header rows
 		$t->headerRow(array(
-			$this->_('Name'),
-			$this->_('Description'),
-			$this->_('Unavailable'),
+				$this->_('Name'),
+				$this->_('Description'),
+				$this->_('Unavailable'),
 		));
 
-		//$widgets = wire('pages')->find('parent.title=widgets, include=all, parent!=7');
-		$widgets = wire('pages')->get('/blog/widgets/')->children('include=all');
+		$widgets = $this->widgets->children('include=all');
 
 		foreach ($widgets as $widget) {
 						
@@ -1125,9 +2093,217 @@ class ProcessBlog extends Process implements Module {
 	}
 
 	/**
+	 *	Display Blog Cleanup page to Superusers.
+	 *	
+	 *  Used to delete blog components (pages, role, fields, templates and optionally template files.
+	 *	After, user can either uninstall OR reinstall Blog.
+	 *	
+	 *	@access protected
+	 *	@return mixed $form rendered form
+	 *
+	 */
+	protected function ___executeCleanup() {
+
+		if (!$this->user->isSuperuser()) {
+
+			$this->error($this->_("Sorry you cannot view that page. You need to log in as a Superuser first."));
+			$this->session->redirect(wire('page')->url);//redirect to Blog dashboard if user is not Superuser
+		}
+
+		//if user manually accesses cleanup URL before blog is fully installed or after blog components have been removed
+		if ($this->blogFullyInstalled == 0) return '<h2>Blog is not yet fully installed. Nothing to remove!</h2>';
+
+		
+		//CREATE A NEW FORM
+		$form = new InputfieldForm; 
+		$form->attr('id', 'blog'); 
+		$form->action = './';
+		$form->method = 'post';
+
+		//CREATE A NEW WRAPPER
+		$w = new InputfieldWrapper;
+		//$w->attr('title', $this->_('Blog Title')); 
+		//$w->attr('id', 'blogsettings'); 
+
+		//CREATE THE FIRST FIELDSET
+		$fs = $this->modules->get("InputfieldFieldset");
+		$fs->label = $this->_('Cleanup');
+
+		//CREATE AN INPUTFIELD MARKUP
+		$m = $this->modules->get('InputfieldMarkup');
+		$m->label = $this->_('Please read carefully');
+		$m->description = $this->_('The installed Blog Style is #' . $this->blogStyle);
+		#$m->collapsed = Inputfield::collapsedYes;
+
+		//array of blog fields. We'll use this to delete each, one by one as applicable
+		$fields = array(
+
+						'blog_body',
+						'blog_categories',
+						'blog_comments',
+						'blog_comments_view',
+						'blog_comments_max',
+						'blog_quantity',
+						'blog_date',
+						'blog_files',
+						'blog_headline',
+						'blog_href',
+						'blog_images',
+						'blog_links',
+						'blog_note',
+						'blog_summary',
+						'blog_tags',
+						'blog_small',
+		);
+
+		//unset irrelevant fields depending on commentsUse (important since user could have a field with similar name that is not part of Blog!)
+		if ($this->commentsUse !=1) {
+					unset($fields[2]);//blog_comments
+					unset($fields[3]);//blog_comments_view
+					unset($fields[4]);//blog_comments_max
+		}
+
+		$tf = $this->templateFilesInstall == 1 || $this->templateFilesInstall == 2 ? ' and optionally (tick checkbox below) <strong>Template Files</strong> (in case you installed the blank/demo Template Files)' : '';
+		
+		$info = '';
+		$info.= '<div id="components"><div><p>This utility will <strong>irreversibly delete</strong> all the following Blog Components in case you wish to afterward uninstall OR reinstall Blog: <strong>Fields, Templates</strong>' . $tf  .  ', <strong>Pages</strong> and <strong>Role</strong> listed below. Before you start, make sure to empty the trash of any Blog pages.</p></div>
+				<div class="block"><h4>Fields</h4>
+				<ol>';
+
+		foreach ($fields as $field) {$info .= '<li>' . $field . '</li>';}
+
+		$info .='</ol></div>';
+
+		$templates = array(
+							'blog',
+							'blog-archives',
+							'blog-authors',
+							'blog-categories',
+							'blog-category',
+							'blog-comments',
+							'blog-links',
+							'blog-post',
+							'blog-posts',
+							'blog-recent-comments',
+							'blog-recent-posts',
+							'blog-recent-tweets',
+							'blog-tag',
+							'blog-tags',
+							'blog-widgets',
+							'blog-widget-basic',
+							'blog-settings',
+							'blog-basic',
+							'repeater_blog-links',
+
+		);
+
+		//unset irrelevant templates depending on blogStyle (important since user could have a template with similar name that is not part of Blog!) AND commentsUse
+		if ($this->blogStyle == 3 || $this->blogStyle == 4)	unset($templates[0]);//blog template
+		if ($this->blogStyle == 2 || $this->blogStyle == 4)	unset($templates[8]);//blog-posts template
+		if ($this->commentsUse !=1) {
+					unset($templates[5]);//blog-comments
+					unset($templates[9]);//blog-recent-comments
+					unset($templates[17]);//blog-basic
+		}
+
+		$info .= '<div class="block"><h4>Templates</h4><ol>';
+
+		foreach ($templates as $template) {$info .= '<li>' . $template . '</li>';}
+
+		$info .='</ol></div>';		
+		$info .='<div class="block"><h4>Pages</h4><p>All pages using the listed templates</p></div>';
+		$info .='<div class="block"><h4>Role</h4><p>blog-author</p></div>';
+		
+		$templateFiles = array(
+								'blog.php',
+								'blog-archives.php',
+								'blog-authors.php',
+								'blog-categories.php',
+								'blog-category.php',
+								'blog-comments.php',
+								'blog-links.php',
+								'blog-post.php',
+								'blog-posts.php',
+								'blog-recent-comments.php',
+								'blog-recent-posts.php',
+								'blog-recent-tweets.php',
+								'blog-side-bar.inc',//will only be present if templateFilesInstall == 2 {demo template files}
+								'blog-tag.php',
+								'blog-tags.php',
+								'blog-main.inc',//will only be present if templateFilesInstall == 2 {demo template files}
+
+		);
+
+		//remove non-existent template files based on the blogStyle, commentsUse and templateFilesInstall
+		//also safeguards againts removing user created template files with similar names!
+		if ($this->blogStyle == 2 || $this->blogStyle == 4) unset($templateFiles[8]);//blog-posts.php
+		if ($this->blogStyle == 3 || $this->blogStyle == 4) unset($templateFiles[0]);//blog.php					
+		if ($this->templateFilesInstall !=2) {
+				unset($templateFiles[12]);//blog-side-bar.inc
+				unset($templateFiles[15]);//blog-main.inc
+		}
+
+		if ($this->commentsUse !=1) {
+					unset($templateFiles[5]);//blog-comments.php
+					unset($templateFiles[9]);//blog-recent-comments.php
+		}
+
+		$chx = '';
+
+		if ($this->templateFilesInstall == 1 || $this->templateFilesInstall == 2) {
+
+				$chx = "
+				<input type=checkbox id='remove_tpl_files' name='remove_tpl_files' value='1'>
+				<label id='remove_tf' for='remove_tpl_files'>Check box to also remove Template Files</label>";
+
+				$info .= '<div class="block"><h4>Template Files (optional)</h4><ol>';
+
+				foreach ($templateFiles as $templateFile) {$info .= '<li>' . $templateFile . '</li>';}
+
+				$info .='</ol></div>';
+
+		}
+
+		$info .='</div>';
+
+		$s = $this->modules->get('InputfieldSubmit'); 
+		/*$s->class .= ' head_button_clone';*/
+		$s->attr('id+name', 'cleanup_btn');
+		$s->class .= " cleanup";//add a custom class to this submit button
+		$s->attr('value', $this->_('Cleanup')); 
+		//$m->add($s);
+
+		$m->attr('value', $info . $s->render() . $chx);
+
+		$fs->add($m);
+		$w->add($fs);//fieldset added to wrapper
+
+		$form->add($w);	
+
+		$form->attr('value', $this->blogMenu());//add the Blog Menu
+
+		$post = $this->input->post; 
+
+		//send input->post values to execute cleanup of blog components: fields, templates, template files, pages and role;
+		if($post->cleanup_btn)  {
+
+				require_once(dirname(__FILE__) . '/BlogCleanup.php'); 
+
+				$this->cleanup = new BlogCleanup();
+				$this->cleanup->cleanUp($form);
+
+		}
+		
+		//render the final form
+		return $form->render();
+	
+	}
+
+
+	/**
 	 *	Processes Blog Manager form input (CRUD).
 	 *	
-	 *	CRUD Processes all the form input sent from executePosts, -Categories,  -Tags, and -Settings.
+	 *	CRUD - Processes all the form input sent from executePosts, -Categories,  -Tags, and -Settings.
 	 *	
 	 *  @param mixed $form
 	 *	@access private
@@ -1138,7 +2314,6 @@ class ProcessBlog extends Process implements Module {
 		$form->processInput($this->input->post); 
 				
 		//delete Actions
-		$deletePostsBtn = $this->input->post->posts_delete_btn;//the button
 		$deleteCatsBtn = $this->input->post->categories_delete_btn;
 		$deleteTagsBtn = $this->input->post->tags_delete_btn;
 		
@@ -1148,43 +2323,135 @@ class ProcessBlog extends Process implements Module {
 		$addCatsBtn = $this->input->post->categories_add_btn;
 		$addTagsBtn = $this->input->post->tags_add_btn;
 		
+		//posts bulk actions button
+		$actionsPostsBtn = $this->input->post->posts_action_btn;//the button
+		$action = $this->input->post->posts_action_select;
+		
+
 		//other save actions
 		$saveBlogSettingsBtn = $this->input->post->general_settings_save_btn;
 		$saveWidgetsStatusBtn = $this->input->post->widgets_save_status_btn;
 		
 		
 		/* ########## EXECUTE CREATE/EDIT/DELETE ACTIONS ########## */
-		
-		//delete posts
-		if($deletePostsBtn && $deletePostsBtn == 'Delete') {//was the right button pressed
-				
-				$deletePosts = $this->input->post->posts_delete;//checkbox array name
 
-				//check if posts to delete were selected. 
-				if ($deletePosts) {
+		//posts bulk actions
+		if($actionsPostsBtn && $actionsPostsBtn == 'Apply') {//was the right button pressed
+				
+				if (!$action) {
+					$this->error($this->_("You need to select an action."));
+					return false;
+				}
+				
+				$actionPosts = $this->input->post->posts_action;//checkbox array name
+
+				//check if posts were selected. 
+				if ($actionPosts) {
 
 						//prepare sent post IDs to find and TRASH the post pages	
-						$postIds = implode('|', $deletePosts);//split array elements, joining them with pipe (I) to use in selector
+						$postIds = implode('|', $actionPosts);//split array elements, joining them with pipe (I) to use in selector
 						
 						$posts = wire('pages')->find("id={$postIds}, include=all");
 
 						$i = 0;
-						foreach ($posts as $p) {
+						
+						if ($action=='publish') {
+								foreach ($posts as $p) {
+											$p->removeStatus(Page::statusUnpublished);
+											$p->save();
+											$i++;
+								}
+
+								$msg = sprintf(_n("Published %d Post.", "Published %d Posts.", $i), $i);
+
+						}//end publish posts
+
+						elseif ($action == 'unpublish') {
+								foreach ($posts as $p) {
+											$p->addStatus(Page::statusUnpublished);
+											$p->save();
+											$i++;
+								}
+						
+								$msg = sprintf(_n("Unpublished %d Post.", "Unpublished %d Posts.", $i), $i);
+
+						}//end unpublish posts
+
+						elseif ($action == 'defaultCommentsView') {
+								foreach ($posts as $p) {
+											$p->blog_comments_view = '';//we remove page selection
+											$p->save();
+											$i++;
+								}
+						
+								$msg = sprintf(_n("Default comments view applied to %d Post.", "Default comments view applied to %d Posts.", $i), $i);						
+
+						}//end default comments view for posts (i.e. enabled by default)
+
+						elseif ($action == 'alwaysShowComments') {
+								foreach ($posts as $p) {
+											if ($this->asc) $p->blog_comments_view = $this->asc;//if page found, add it to the blog_comments_view page field
+											$p->save();
+											$i++;
+								}
+						
+								$msg = sprintf(_n("Always show comments applied to %d Post.", "Always show comments applied to %d Posts.", $i), $i);						
+
+						}//end always show posts comments (i.e. enforce show to override any global setting)
+
+						elseif ($action == 'disableNewComments') {
+								foreach ($posts as $p) {
+											if ($this->dnc) $p->blog_comments_view = $this->dnc;//if page found, add it to the blog_comments_view page field
+											$p->save();
+											$i++;
+								}
+						
+								$msg = sprintf(_n("New comments disabled for %d Post.", "New comments disabled for %d Posts.", $i), $i);
+
+						}//end disable new comments for posts
+
+						elseif ($action == 'disableComments') {
+								foreach ($posts as $p) {
+											if ($this->dc) $p->blog_comments_view = $this->dc;//if page found, add it to the blog_comments_view page field
+											$p->save();
+											$i++;
+								}
+						
+								$msg = sprintf(_n("Comments disabled for %d Post.", "Comments disabled for %d Posts.", $i), $i);
+									
+						}//end disable comments for posts
+
+						elseif ($action == 'trash') {
+								foreach ($posts as $p) {
 									$p->trash();
 									$i++;
-						}
+								}
+								
+								$msg = sprintf(_n("Trashed %d Post.", "Trashed %d Posts.", $i), $i);
 
-						$this->message($this->_("Trashed {$i} Posts"));//tell user how many posts were deleted
+						}//end trash posts
+						
+						elseif ($action == 'delete') {
+								foreach ($posts as $p) {
+									$p->delete();
+									$i++;
+								}
+								
+								$msg = sprintf(_n("Deleted %d Post.", "Deleted %d Posts.", $i), $i);
+
+						}//end delete posts
+
+						$this->message($msg);//tell user how many posts were 'actioned'
 						$this->session->redirect(wire('page')->url . "posts/");//redirect to page where we were
 
 				}
 
 				else {
-						//show error message if delete button clicked without first selecting posts to be deleted
-						$this->error($this->_("You need to select posts to delete."));
+						//show error message if apply action button clicked without first selecting posts
+						$this->error($this->_("You need to select at least one post before applying an action."));
 				}
 		
-		}//end delete posts
+		}//end posts bulk actions
 
 
 		//delete categories
@@ -1205,7 +2472,7 @@ class ProcessBlog extends Process implements Module {
 								$i++;
 						}
 
-						$this->message($this->_("Trashed {$i} Categories"));//tell user how many categories were deleted
+						$this->message(sprintf(_n("Trashed %d Category.", "Trashed %d Categories.", $i), $i));//tell user how many categories were trashed
 						$this->session->redirect(wire('page')->url . "categories/");//redirect to page where we were
 
 				}
@@ -1215,11 +2482,10 @@ class ProcessBlog extends Process implements Module {
 						$this->error($this->_("You need to select categories to delete."));
 				}
 
-		}//end delete categories
-		
+		}//end delete categories		
 		
 		//delete tags
-		elseif ($deleteTagsBtn  && $deleteTagsBtn == 'Delete') {
+		elseif ($deleteTagsBtn && $deleteTagsBtn == 'Delete') {
 			
 				$deleteTags = $this->input->post->tags_delete;
 
@@ -1236,7 +2502,7 @@ class ProcessBlog extends Process implements Module {
 								$i++;
 						}
 
-						$this->message($this->_("Trashed {$i} Tags"));//tell user how many tags were deleted
+						$this->message(sprintf(_n("Trashed %d Tag.", "Trashed %d Tags.", $i), $i));//tell user how many tags were trashed
 						$this->session->redirect(wire('page')->url . "tags/");//redirect to page where we were
 
 				}
@@ -1252,9 +2518,13 @@ class ProcessBlog extends Process implements Module {
 		//add new post - could be unpublished or published - determine status before saving
 		elseif (($addUnpublishedPostsBtn && $addUnpublishedPostsBtn == 'Save Unpublished') || ($addPostsBtn && $addPostsBtn == 'Publish') ){
 
+				if ($this->blogStyle == 1 || $this->blogStyle == 3) $parent = $this->posts;
+				elseif ($this->blogStyle == 2)  $parent = $this->blog;
+				else $parent = wire('pages')->get('/');//if $this->blogStyle == 4 parent is 'root'
+
 				$p = new Page();
-				//$p->of(false);//not needed since new page?
-				$p->parent = wire('pages')->get("/blog/posts/"); 
+				//$p->of(false);//not needed since new page
+				$p->parent = $parent; 
 				$p->template = wire('templates')->get("blog-post");
 				$p->title = $this->sanitizer->text($this->input->post->quickpost_title);
 
@@ -1275,10 +2545,17 @@ class ProcessBlog extends Process implements Module {
 					return false;
 				}
 
-				//@todo - SHOULD THIS BE A RICH TEXT AREA?
-				$p->blog_body = $this->sanitizer->textarea($this->input->post->quickpost_body);
-				$p->blog_date = time();//we set the time the post was created
+				//preserve lines breaks for later use in a rich text editor by converting them to <p>
+				$text = trim($this->sanitizer->textarea($this->input->post->quickpost_body));
+				$p->blog_body = '<p>' . preg_replace('`[\r\n]+`', '</p><p>', $text) . '</p>';//using backtick as delimiter
+
+				if ($this->schedulePages == 1 && $this->modules->isInstalled('SchedulePages') && $p->template->hasField('publish_from') && $p->template->hasField('publish_until')) {
+
+						$p->publish_from = $this->sanitizer->text($this->input->post->posts_publish_from);
+						$p->publish_until = $this->sanitizer->text($this->input->post->posts_publish_until);
 				
+				}
+								
 				//categories for new post
 				$categories = $this->input->post->quickpost_categories_add;//array of page IDs to add to page field categories. We sanitize each below (as int)
 				
@@ -1319,7 +2596,7 @@ class ProcessBlog extends Process implements Module {
 				//if user selected to quick post as unpublished
 				if($addUnpublishedPostsBtn) $p->addStatus(Page::statusUnpublished);
 				$p->save();
-				//$p->of(true);//not needed? since new page
+				//$p->of(true);//not needed since new page
 				$this->message($this->_("Added new post {$p->title}."));//tell user quick post successfully added
 				$this->session->redirect(wire('page')->url . "posts/");//redirect to page where we were
 		
@@ -1341,7 +2618,7 @@ class ProcessBlog extends Process implements Module {
 					$i = 0;//set counter for number of categories added
 					foreach ($categories as $c) {
 						$p = new Page();
-						$p->parent = wire('pages')->get("/blog/categories/"); 
+						$p->parent = $this->categories;
 						$p->template = wire('templates')->get("blog-category");
 						$p->title = $this->sanitizer->text($c);
 						if (!$p->title) continue;//skip to next if no title provided
@@ -1364,7 +2641,7 @@ class ProcessBlog extends Process implements Module {
 						//create a string of "failed" category titles to add to error message
 						$failedTitles = implode(', ', $failed); 
 
-						if($i > 0) $this->message($this->_("Added {$i} new Categories"));//tell user how many tags were added
+						if($i > 0) $this->message(sprintf(_n("Added %d new Category.", "Added %d new Categories.", $i), $i));//tell user how many categories were added
 						if($failedTitles) $this->error($this->_("Some categories not added because names already in use. These are: {$failedTitles}."));
 						$this->session->redirect(wire('page')->url . "categories/");//redirect to page where we were
 
@@ -1394,7 +2671,7 @@ class ProcessBlog extends Process implements Module {
 					foreach ($tags as $t) {
 						
 						$p = new Page();
-						$p->parent = wire('pages')->get("/blog/tags/"); 
+						$p->parent = $this->tags;
 						$p->template = wire('templates')->get("blog-tag");
 						$p->title = $this->sanitizer->text($t);
 						if (!$p->title) continue;//skip to next if no title provided
@@ -1416,7 +2693,7 @@ class ProcessBlog extends Process implements Module {
 						//create a string of "failed" tag titles to add to error message
 						$failedTitles = implode(', ', $failed); 
 					
-						if($i > 0) $this->message($this->_("Added {$i} new Tags"));//tell user how many tags were added
+						if($i > 0) $this->message(sprintf(_n("Added %d new Tag.", "Added %d new Tags.", $i), $i));//tell user how many tags were added
 						if($failedTitles) $this->error($this->_("Some tags not added because names already in use. These are: {$failedTitles}."));
 						$this->session->redirect(wire('page')->url . "tags/");//redirect to page where we were
 
@@ -1434,38 +2711,77 @@ class ProcessBlog extends Process implements Module {
 		//save the general blog settings after we sanitize the values
 		elseif ($saveBlogSettingsBtn && $saveBlogSettingsBtn == 'Save') {
 
+				//in settings page
 				$blogTitle = $this->sanitizer->text($this->input->post->blog_title);
 				$blogTagline = $this->sanitizer->textarea($this->input->post->blog_tagline);
 				$postsBlogPage = (int) $this->input->post->bloghome_posts_qnty;
+				$postsLength  = (int) $this->input->post->posts_trunc_qnty;
+				
+				//comments page - will unset if commentsUse!=1
 				$commentsPerPage = (int) $this->input->post->comments_page_qnty;
+				$commentsMaxPerPost = (int) $this->input->post->comments_post_qnty;
+				$commentsVisibility = (int) $this->input->post->comments_view;
+				
+				//widgets
 				$recentPostsNumber = (int) $this->input->post->recent_posts_qnty;
 				$recentCommentsNumber = (int) $this->input->post->recent_comments_qnty;
 				$recentTweetsNumber =  (int) $this->input->post->recent_tweets_qnty;
 				$twitterScreenName = $this->sanitizer->text($this->input->post->twitter_screen_name);
 
-				//$v[0]=path to page; $v[1]=field; $v[2]=new valued of field (sanitized above)
+				//$v[0]=page object; $v[1]=field; $v[2]=new valued of field (sanitized above)
 				$settings = array(
 
-									//blog page
-									array('/blog/', 'blog_headline', $blogTitle),//site title
-									array('/blog/', 'blog_summary', $blogTagline),//tagline
-									array('/blog/', 'blog_quantity', $postsBlogPage),//number of posts to show on Blog Homepage
+									//fields in 'settings' page
+									array($this->settings, 'blog_headline', $blogTitle),//site title
+									array($this->settings, 'blog_summary', $blogTagline),//tagline
+									array($this->settings, 'blog_quantity', $postsBlogPage),//number of posts to show on Blog Homepage
+									array($this->settings, 'blog_small', $postsLength),//posts truncate length
 
-									//comments page + widget pages
-									array('/blog/comments/', 'blog_quantity', $commentsPerPage),//comments per page when viewing comments page
-									array('/blog/widgets/recent-posts/', 'blog_quantity', $recentPostsNumber),//number of recent posts to show
-									array('/blog/widgets/recent-comments/', 'blog_quantity', $recentCommentsNumber),//number of recent comments to show
-									array('/blog/widgets/recent-tweets/', 'blog_quantity', $recentTweetsNumber),//number of recent tweets to show
-									array('/blog/widgets/recent-tweets/', 'blog_note', $twitterScreenName),//twitter screen name
+									//posts, comments page + widget pages									
+									array($this->comments, 'blog_quantity', $commentsPerPage),//comments per page when viewing comments page
+									array($this->comments, 'blog_comments_max', $commentsMaxPerPost),//maximum comments per post
+									array($this->rcomments, 'blog_quantity', $recentCommentsNumber),//number of recent comments to show
+									array($this->rposts, 'blog_quantity', $recentPostsNumber),//number of recent posts to show
+									array($this->tweets, 'blog_quantity', $recentTweetsNumber),//number of recent tweets to show
+									array($this->tweets, 'blog_note', $twitterScreenName),//twitter screen name
 				);
 			
+
+				if ($this->commentsUse !=1) {
+						unset($settings[4]);
+						unset($settings[5]);
+						unset($settings[6]);
+				}
+
+
 				foreach ($settings as $k => $v) {
 
-						$p = wire('pages')->get("{$v[0]}, include=all");//get the page
+						$p = $v[0];
 						$p->of(false);
 						$p->$v[1] = $v[2];
 						$p->save();
 				}
+
+				//additional save comments visibility - if commentsUse == 1
+				if ($this->commentsUse == 1) {
+					
+						if ($commentsVisibility) {//if there is a visibility selection, let's add it to the comments page blog_comments_view (single page) field
+										
+										$p = $this->comments;
+										$cv = wire('pages')->get($commentsVisibility);
+										if ($cv) $p->blog_comments_view = $cv;//if page found, add it to the blog_comments_view page field				
+										$p->save();
+						}
+
+						elseif (!$commentsVisibility) {//if no value was sent, it means it was emptied; so we remove old value
+										$p = $this->comments;
+										$p->blog_comments_view = '';			
+										$p->save();
+						}
+				
+
+				}
+
 
 				$this->message($this->_("Blog settings saved"));//tell user settings were saved
 				$this->session->redirect(wire('page')->url . "settings/");//redirect to page where we were
@@ -1481,7 +2797,7 @@ class ProcessBlog extends Process implements Module {
 
 				//@todo - WILL I NEED TO SET LIMIT? I doubt there could be many widgets
 				//Assuming there won't be many widgets, hence, no need to limit
-				$widgets = wire('pages')->get('/blog/widgets/')->children('include=all');
+				$widgets = $this->widgets->children('include=all');
 				
 				$a = 0;//to count widgets made unavailable, i.e. unpublished
 				$b = 0;//to count widgets made available, i.e. published
@@ -1510,8 +2826,8 @@ class ProcessBlog extends Process implements Module {
 				}
 
 				//tell the user how many widgets were changed or show error if user saves without making changes first
-				if ($a > 0) $this->message($this->_("{$a} Widgets made unavailable (unpublished)."));
-				if ($b > 0) $this->message($this->_("{$b} Widgets made available (published)."));
+				if($a > 0) $this->message(sprintf(_n("%d Widget made unavailable (unpublished).", "%d Widgets made unavailable (unpublished).", $a), $a));
+				if($b > 0) $this->message(sprintf(_n("%d Widget made available (published).", "%d Widgets made available (published).", $b), $b));
 				if ($a + $b == 0) $this->error($this->_("You need to make changes before saving."));//if user clicked save button without making any changes
 				$this->session->redirect(wire('page')->url . "settings/");//redirect to page where we were
 		
@@ -1521,48 +2837,65 @@ class ProcessBlog extends Process implements Module {
 	}
 
 	/**
+	 * 	Called only when the user is finalising blog install.
+	 *
+	 *	This is the second step of Blog install. 
+	 *	@require_once the class BlogInstallWizard.php. It extends this class.
+	 *
+	 *	@access public
+	 *
+	 */	
+	public function installWizard($form) {
+
+		require_once(dirname(__FILE__) . '/BlogInstallWizard.php'); 
+
+		$this->wizard = new BlogInstallWizard();
+		$this->wizard->verifyInstall($form);
+
+ 	}
+
+	/**
 	 * 	Called only when the module is installed.
 	 *
 	 *	A new page with this Process module assigned is created.
-	 *	\@require_once ProcessBlogInstall.inc
+	 *	@require_once ProcessBlogInstall.inc
 	 *	@access public
 	 *
 	 */	
 	public function ___install() {
 
-		//create Blog page
+		//create Blog Admin page
 		$page = $this->pages->get('template=admin, name='.self::PAGE_NAME);
 		if (!$page->id) {
-			$page = new Page();
-			$page->template = 'admin';
-			//$page->parent = $this->pages->get($this->config->adminRootPageID)->child('name=setup');//we add as direct child of admin instead
-			$page->parent = $this->pages->get($this->config->adminRootPageID);
-			$page->title = 'Blog';
-			$page->name = self::PAGE_NAME;
-			$page->process = $this;
-			$page->save();
-		
-			// tell the user we created this page
-			$this->message("Created Page: {$page->path}"); 
-		
+				$page = new Page();
+				$page->template = 'admin';
+				//$page->parent = $this->pages->get($this->config->adminRootPageID)->child('name=setup');//we add as direct child of admin instead
+				$page->parent = $this->pages->get($this->config->adminRootPageID);
+				$page->title = 'Blog';
+				$page->name = self::PAGE_NAME;
+				$page->process = $this;
+				$page->save();
+			
+				// tell the user we created this page
+				$this->message("Created Page: {$page->path}"); 
+			
 		}
 		
 		//we create the permission blog to limit access to the module		
 		$permission = $this->permissions->get('blog');
 		if (!$permission->id) {
-			$p = new Permission();
-			$p->name = 'blog';
-			$p->title = $this->_('View Blog Page');
-			$p->save();			
-		
-			// tell the user we created this module's permission
-			$this->message("Created New Permission: blog");
+				$p = new Permission();
+				$p->name = 'blog';
+				$p->title = $this->_('View Blog Page');
+				$p->save();			
+			
+				// tell the user we created this module's permission
+				$this->message("Created New Permission: blog");
 			
 		}
 
-		//we add and execute the .inc file with the installer for Fields, Templates, Template Files, blog Pages and the role 'blog-author'
-		require_once(dirname(__FILE__) . '/ProcessBlogInstall.inc'); 
-	
+		//save initial module configurations
+		wire('modules')->saveModuleConfigData($this, self::configDefaults());	
 
 	}
 
@@ -1583,19 +2916,19 @@ class ProcessBlog extends Process implements Module {
 		//$page = $this->pages->get('template=admin, name='.self::PAGE_NAME);
 			
 		if($page->id) {
-		// if we found the page, let the user know and delete it
-			$this->message("Deleted Page: {$page->path}"); 
-			$page->delete();
+			// if we found the page, let the user know and delete it
+				$this->message("Deleted Page: {$page->path}"); 
+				$page->delete();
 		}
 
 		//find and delete the blog permission and let the user know
 		$permission = $this->permissions->get('blog');
 		if ($permission->id){
-			$permission->delete();
-			$this->message("Deleted Permission: blog");
+				$permission->delete();
+				$this->message("Deleted Permission: blog");
 		}
 		
 	}	
 
-	
+
 }

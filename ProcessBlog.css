@@ -9,114 +9,143 @@
 *
 */
 
-	/* #### BLOG MENU #### */
+/* Prevent "jump" on shorter pages */
+html {
+	overflow-y:scroll;
+}
 
-	ul.blog_menu {
-		/*float:left;*/
-		width:100%;
-		/*display: table;*/
-		padding:1em 0 5.0em 0;
-		margin:0;
-		/*height: 87px;*/
-		list-style-type:none;
-	}
+/* #### BLOG MENU #### */
 
-	ul.blog_menu li {
-		display: table-cell;
-	    width: 14.285714%;  /* (100 / numItems)% */
-	    text-align: center;
-	}
+ul.blog_menu {
+	/*float:left;*/
+	width:100%;
+	/*display: table;*/
+	padding:1em 0 5.0em 0;
+	margin:0;
+	/*height: 87px;*/
+	list-style-type:none;
+}
 
-	a.blog {
-		float:left;
-		width:6em;
-		text-decoration:none;
-		color:inherit;
-		padding:0.2em 0.6em;
-		font-size: 1.15em;
-		font-weight: bold;
-	}
+ul.blog_menu li {
+	display: table-cell;
+    width: 14.285714%;  /* (100 / numItems)% */
+    text-align: center;
+}
 
-	a.blog:hover {color:#A6A6A6;}
+a.blog_menu_item {
+	float:left;
+	width:6em;
+	text-decoration:none;
+	color:inherit;
+	padding:0.2em 0.6em;
+	font-size: 1.15em;
+	font-weight: bold;
+}
 
-	ul.blog_menu > li {display:inline;}
+a.blog:hover {color:#A6A6A6;}
 
-	/* current blog menu item */
-	a.onblog {color: #f64704;}
+ul.blog_menu > li {display:inline;}
 
-	/* #### INPUT FIELDS #### */
-	textarea#categories_add_text, textarea#tags_add_text {margin-bottom: 1em;}
+/* current blog menu item */
+a.onblog {color: #f64704;}
 
-	input#quickpost_title, input#quickpost_body{
-	     width: 100%; 
-	     box-sizing: border-box;
-	     -webkit-box-sizing:border-box;
-	     -moz-box-sizing: border-box;
-	}
+/* #### INPUT FIELDS #### */
+textarea#categories_add_text, textarea#tags_add_text {margin-bottom: 1em;}
 
-	input#add_and_publish {
-		margin-left: 1em;
-		position: relative;
-		top: 0.3em;
-	}
+input#quickpost_title, input#quickpost_body{
+     width: 100%; 
+     box-sizing: border-box;
+     -webkit-box-sizing:border-box;
+     -moz-box-sizing: border-box;
+}
 
-	/* ####  TABLES #### */
+input#add_and_publish, input#remove_tpl_files {
+	margin-left: 1em;
+	position: relative;
+	top: 0.3em;
+}
 
-	/* various tables */
-	table#archives, table#posts_overview, table.authorsTable {width: 100%;}
+/* ####  TABLES #### */
 
-	/*** arachives table ***/
-	table#archives td, table#archives th {text-align: center;}
-	table#archives td:nth-child(1), table#archives th:nth-child(1) {text-align: left;}
-	table#archives th {font-weight: bold;}
+/* various tables */
+table#archives, table#posts_overview, table.authorsTable {width: 100%;}
 
-	/*** posts table ***/
-	table#posts_overview td {
-		font-size: 1em;
-		padding-bottom: 0.75em;
-	}
+/*** arachives table ***/
+table#archives td, table#archives th {text-align: center;}
+table#archives td:nth-child(1), table#archives th:nth-child(1) {text-align: left;}
+table#archives th {font-weight: bold;}
 
-	table#posts_overview  td:nth-child(1), table#posts_overview  td:nth-child(3) {width:20%;}
+/*** posts table ***/
+table#posts_overview td {
+	font-size: 1em;
+	padding-bottom: 0.75em;
+}
 
-	table#posts_overview td.large {
-		font-weight: bold;
-		font-size: 1.15em;
-	}
+table#posts_overview  td:nth-child(1), table#posts_overview  td:nth-child(3) {width:20%;}
 
-	/*** tags table ***/
-	/* checkboxes column */
-	table.tagsTable th:nth-child(1), table.categoriesTable th:nth-child(1) {width:3%;}
+table#posts_overview td.large {
+	font-weight: bold;
+	font-size: 1.15em;
+}
 
-	/* published status column */
-	table.tagsTable th:nth-child(3), table.categoriesTable th:nth-child(3) {width:12%;}
+table.postsTable span.date-sorter {display: none;}
 
-	/* number of posts using this tag/category column [4th/last column] */
-	table.tagsTable th:nth-child(4), table.categoriesTable th:nth-child(4) {width:10%;}
+span.limit-select {float: right;}
 
-	/*** authors' table ***/
-	table.authorsTable td {height:85px;}
-	table.authorsTable td:nth-child(1) {width: 8%;}/* blog author image column */
-	table.authorsTable td:nth-child(3), table.authorsTable td:nth-child(4) {width: 10%;}/* posts [published and pending(unpublished)]- /3rd & 4th(last) columns */
+/*** tags table ***/
+/* checkboxes column */
+table.tagsTable th:nth-child(1), table.categoriesTable th:nth-child(1) {width:3%;}
 
-	/*** settings table ***/
-	table.settingsTable th:nth-child(1) {width:22%;}
-	table.settingsTable  {border: none;}
+/* published status column */
+table.tagsTable th:nth-child(3), table.categoriesTable th:nth-child(3) {width:12%;}
 
-	/*** widgets table ***/
-	table.widgetsTable th:nth-child(3) {width: 10%;}/* unavailable column */
+/* number of posts using this tag/category column [4th/last column] */
+table.tagsTable th:nth-child(4), table.categoriesTable th:nth-child(4) {width:10%;}
 
-	/*** other tables ***/
-	table.AdminDataList tbody td, table.settingsTable tbody th {border-right: none;}/* overriding some processwire markup admin table css */
+/*** authors' table ***/
+table.authorsTable td {height:85px;}
+table.authorsTable td:nth-child(1) {width: 8%;}/* blog author image column */
+table.authorsTable td:nth-child(3), table.authorsTable td:nth-child(4) {width: 10%;}/* posts [published and pending(unpublished)]- /3rd & 4th(last) columns */
 
-	/* other */
+/*** settings table ***/
+table.settingsTable th:nth-child(1) {width:22%;}
+table.settingsTable  {border: none;}
 
-	li.edit_fieldsets {margin-top: 2em !important;}
+/*** widgets table ***/
+table.widgetsTable th:nth-child(3) {width: 10%;}/* unavailable column */
 
-	label#add_new {
-		margin: 0.75em 0 0 0.25em;
-		display: inline-block;
-		vertical-align: top;
-	}
+/*** other tables ***/
+table.AdminDataList tbody td, table.settingsTable tbody th {border-right: none;}/* overriding some processwire markup admin table css */
 
-	span.unpublished, span.red {color: red;}/* for highlighting some text */
+/* other */
+
+li.edit_fieldsets {margin-top: 2em !important;}
+
+label#add_new, label#remove_tf {
+	margin: 0.75em 0 0 0.25em;
+	display: inline-block;
+	vertical-align: top;
+}
+
+span.unpublished, span.red {color: red;}/* for highlighting some text */
+
+div.block {
+		width: 20%;
+		float: left;
+}
+
+
+div#components:after {/* clear blog-style div's float */
+	content: '\0020'; 
+	visibility: hidden; 
+	display: block; 
+	height: 0; 
+	clear: both;
+}
+
+div.block ol li {
+	margin: 0 0 0 20px;
+	padding: 0;
+}
+
 	

@@ -41,4 +41,14 @@
 				if ($.tablesorter != undefined) $.tablesorter.defaults.headers = {0:{sorter:false}};//works but requires two clicks to kick-in!
 		}
 		
-	});
+		//submit form on select of limit of items to show  - posts, categories, tags
+		/*$('#limit').change(function () {
+			$(this).closest('form').submit();
+		});
+
+		//broken in PW dev 2.5.7. See issue #784 on GitHub
+		*/
+
+		$('#limit').change(function(){ $(this).closest("form").removeClass("nosubmit").submit(); });//note workaround for PW issue #784 (GitHub)
+
+	});//end jquery

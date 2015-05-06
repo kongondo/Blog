@@ -2,18 +2,14 @@
 
 /**
  * Post template
- * Example template file populated with MarkupBlog output and additional custom code for a Blog Post
+ * Demo template file populated with MarkupBlog output and additional custom code for a Blog Post
  *
  */
 
 	//CALL THE MODULE - MarkupBlog
-	$blogOut = $modules->get("MarkupBlog");
+	$blog = $modules->get("MarkupBlog");
         
-    //nav
-    $blogHome = $pages->get("/blog/");
-    $topNavItems = $blogHome->children('name!=posts');//we exclude the 'posts' page
-    //echo $blogOut->renderNav('', $nav->prepend($bloghome), $page);
-    $topNav = $blogOut->renderNav('', $topNavItems, $page);
+    //subnav
     $subNav = '';
     
     //subnav: get date info for creating link to archives page in subnav
@@ -22,82 +18,43 @@
     $month = date('n', $date); 
 
     //subnav: if there are categories and/or tags, then make a separate nav for them
-    if(count($page->blog_categories)) $subNav .= $blogOut->renderNav(__('Related Categories'), $page->blog_categories); 
-    if(count($page->blog_tags)) $subNav .= $blogOut->renderNav(__('Related Tags'), $page->blog_tags); 
+    if(count($page->blog_categories)) $subNav .= $blog->renderNav(__('Related Categories'), $page->blog_categories); 
+    if(count($page->blog_tags)) $subNav .= $blog->renderNav(__('Related Tags'), $page->blog_tags); 
 
     //subnav: contains authors, archives and categories links
+    $authorsURL = $pages->get('template=blog-authors')->url;
+    $archivesURL = $pages->get('template=blog-archives')->url;
+    $authorURL = $sanitizer->pageName($page->createdUser->title) ? $sanitizer->pageName($page->createdUser->title) . '/' : '';//use pageName sanitized author title as PART of URL, else empty
+    $authorName = $page->createdUser->title ? $page->createdUser->title : 'Author Name';//use generic 'Author Name' if author title not yet set
+
     $subNavItems = array(
-    "{$config->urls->root}blog/authors/{$page->createdUser->name}/" => $page->createdUser->get('title|name'), 
-    "{$config->urls->root}blog/archives/$year/$month/" => strftime('%B %Y', $date)
+                            $authorsURL . $authorURL => $authorName, 
+                            $archivesURL . $year . "/" . $month . "/" => strftime('%B %Y', $date)
     );
 
-    $subNav .= $blogOut->renderNav(__('See Also'), $subNavItems);
+    $subNav .= $blog->renderNav(__('See Also'), $subNavItems);
 
-    //main content
+     //main content
     
     //render a single full post including title, comments, comment form + next/prev posts links, etc
-    $content = $blogOut->renderPosts($page) . $blogOut->renderComments($page->blog_comments) . $blogOut->renderNextPrevPosts($page);
-    	
-?>
-	 
-	
-	<!doctype html>
-	<html lang="en-gb" dir="ltr" class="uk-notouch">
-    	<head>
-        	<meta charset="utf-8">
-            <?php header('X-UA-Compatible: IE=edge,chrome=1');//taming IE ?>
-        	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    //$blog->postAuthor(): if available, add 'post author widget' at the end (or at the top if desired) of each post
+   // $content = $blog->renderPosts($page) . $blog->renderComments($page->blog_comments) . $blog->renderNextPrevPosts($page);//without post author
 
-        	<title><?php echo $page->title;?></title>
+    /*
+        for this demo, renderComments() has to adapt to whether blog commenting feature was installed or not whilst remaining blog structure/style-agnostic
+        in your own blog install, you would know if you enabled the feature so there would be no need for such a check
+		in addition, our 'check' code is not code you would normally use in a template file. 
+		we use such code here to be both foolproof that the commenting feature is installed and blog structure-agnostic 
+    */
+    #not foolproof; user could have post-installed custom commenting feature (e.g. Disqus) with a similar field blog_comments
+	//$renderComments = $page->template->hasField('blog_comments') ? $blog->renderComments($page->blog_comments) : '';
 
-        	<!-- Google Webfonts -->
-            <link href='http://fonts.googleapis.com/css?family=Shadows+Into+Light' rel='stylesheet' type='text/css'><!--  Main Menu -->
-            <link href='http://fonts.googleapis.com/css?family=Archivo+Narrow:400,400italic,700,700italic' rel='stylesheet' type='text/css'><!-- Body Copy, etc -->
-        	
-            <!-- Style Sheets -->
-        	<link rel="stylesheet" href="<?php echo $config->urls->templates;?>css/pocketgrid.css" /><!-- The PocketGrid -->
-            <link rel="stylesheet" href="<?php echo $config->urls->templates;?>css/blog.css" /><!-- Custom Styles -->
+    $blogConfigs = $modules->getModuleConfigData('ProcessBlog');
 
-            <!-- Scripts -->
-            <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script> 
-            <script src="<?php echo $config->urls->templates;?>js/blog.js"></script>
+    $renderComments = $blogConfigs['commentsUse'] == 1 ? $blog->renderComments($page->blog_comments) : '';   
 
-        </head>
+    $content = $blog->renderPosts($page) . $blog->postAuthor() . $renderComments . $blog->renderNextPrevPosts($page);//with post author widget 	
+    
+    //include the main/common markup
+    require_once("blog-main.inc");
 
-        <body>
-
-            <div id="wrapper" class="block-group"> <!-- #wrapper -->
-            
-                <div id="header" class="block"> <!-- header -->                        
-						<ul id="navbar">
-                            <li><a href="<?php echo $pages->get('/')->url ?>">Home</a></li>
-                            <li><a href="#">About</a></li>
-                            <li><a href="<?php echo $pages->get('/blog/')->url ?>">Blog</a></li>
-                            <li><a href="#">Contact</a></li>
-                        </ul>
-                </div> <!-- end #header -->
-         
-                <!-- LEFT COLUMN - NAV -->
-            	<div id ="nav" class="block"><!-- #nav -->             
-                    <div id="top-nav"><?php echo $topNav;?></div><!-- #top-nav -->
-                    <div id="sub-nav"><?php echo $subNav;?></div><!-- #sub-nav -->
-            	</div><!-- end #nav -->
-            			
-                <!-- CENTRE COLUMN - MAIN -->				
-                <div id="main" class="block"><?php echo $content?></div> <!-- #main -->
-                  
-            	<!-- RIGHT COLUMN - SIDEBAR --> 
-            	<div id="sidebar" class="block"><?php include_once("blog-side-bar.inc"); ?></div><!-- #sidebar -->
-          
-        <!-- BOTTOM - FOOTER -->
-
-                <div id="footer" class="block"><!-- #footer -->
-                    <small id="footer_note">Copyright 2014</small>
-                    <small id="processwire">Powered by <a target="_blank" href="http://processwire.com">ProcessWire Open Source CMS</a></small>
-                </div><!-- end #footer -->
-
-            </div><!-- end #wrapper -->
-
-        </body>
-
-    </html>

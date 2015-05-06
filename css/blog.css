@@ -1,6 +1,6 @@
 /**
 * @author Kongondo <kongondo@gmail.com>
-* @credits some code borrowed from Ryan Cramer's Blog Profile
+* @credits Some code borrowed from Ryan Cramer's Blog Profile
 *
 */
 
@@ -42,7 +42,7 @@ h2, h3, h4, ul.links {margin-top: 0;}
 
 h4 {margin-bottom: 0;}
 
-div#main h3 {
+div#main h3.posts-count {
 	color: #1D8ACB;
 	background-color: #ECF7FD; /* baby blue background on e.g. 'posts 1 to 3 of 5'*/
 	border-bottom: 1px dotted #1D8ACB;/* blue like menu */
@@ -89,7 +89,7 @@ ul.MarkupPagerNav {
 	margin: 0;
 }
 
-.MarkupPagerNav li a, .MarkupPagerNav li.MarkupPagerNavSeparator {
+.MarkupPagerNav li a, .MarkupPagerNav li.MarkupPagerNavSeparator, a.button-prev, a.button-next {
 	display: block;
 	float: left;
 	padding: 5px 11px;                
@@ -99,7 +99,7 @@ ul.MarkupPagerNav {
 	border: 1px solid #1D8ACB;
 }
 
-.MarkupPagerNav li.MarkupPagerNavOn a,.MarkupPagerNav li a:hover {
+.MarkupPagerNav li.MarkupPagerNavOn a,.MarkupPagerNav li a:hover, a.button-prev:hover, a.button-next:hover {
 	text-decoration: none !important;
 	color: #1D8ACB;
 	background: #ECF7FD;
@@ -156,10 +156,10 @@ div#blogroll {background-color: #FFFCEB;}
 div#blogroll h4{color:#E28327;}
 
 /* posts */
-div.post {
-	border-bottom: 1px dotted #1D8ACB;
-	margin-bottom: 15px;
-}
+div.post {margin-bottom: 15px;}	/*border-bottom: 1px dotted #1D8ACB;*/
+
+
+div.no-author div.post{	border-bottom: 1px dotted #1D8ACB;}/*border at bottom of post [just before comments] if post-author widget unavailable */
 
 div.post-foot {margin-bottom: 15px;}
 
@@ -189,6 +189,30 @@ span.edit {margin-left: 3px;}
 	left: -14px;
 }
 
+div#post-author  {
+	background-color: #ECF7FD;
+	border: 1px solid #D9D9D9;
+	padding: 15px;
+}
+
+div#post-author h4 {
+	color: #1D8ACB;
+	background: none;
+	border: none;
+	margin-bottom: 0;
+	font-weight: bold;
+}
+
+div#post-author h4 small {
+	font-size: 70%;
+	font-weight: normal;
+}
+
+div#post-author p {
+	margin-top: 0;
+}
+
+
 .next-post span, .prev-post span {color: #1D8ACB;}
 
 /* tags */
@@ -198,6 +222,14 @@ ul.posts-group {
 }
 
 /* comments + comments form */
+
+div#comments {
+	margin-top: 30px;
+	/*border-top: 1px dotted #1D8ACB;*/
+}
+
+h4#comments-disallowed, h4#comments-closed, h4#comments-login, h4#comments-empty, h4#no-posts {color: #D05; text-align: center; margin: 45px 0;}
+
 #comments .num-comments-icon {
 	float: left; 
 	position: relative;
@@ -227,7 +259,7 @@ ul.posts-group {
 	margin-left: 5px;
 }
 
-p.num-comments {display: none;}/* hide the text showing post's number of comments; using icons instead */
+/*p.num-comments {display: none;} hide the text showing post's number of comments; using icons instead */
 
 ul.CommentList {
 	list-style: none;

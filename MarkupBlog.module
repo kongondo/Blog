@@ -38,8 +38,8 @@ class MarkupBlog  extends WireData implements Module {
 			'title' => 'Markup Blog',
 			'summary' => 'Markup module to output a Blog based on the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 100,
-			'href' => 'https://processwire.com/talk/topic/6465-module-blog/',
+			'version' => 234,
+			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false,
 			'requires' => 'ProcessBlog' 
@@ -57,9 +57,21 @@ class MarkupBlog  extends WireData implements Module {
 	 */
 	public function init() {
 
-		//required
+		$blogConfigs = wire('modules')->getModuleConfigData('ProcessBlog');
 
-		
+		//intialise some properties we'll use throught the class. These contain objects made up of the main blog pages and the main children
+		$this->blog	 =		wire('pages')->get($blogConfigs['blog']);
+		$this->posts =      wire('pages')->get($blogConfigs['blog-posts']);
+		$this->comments =   wire('pages')->get($blogConfigs['blog-comments']);
+		$this->authors =    wire('pages')->get($blogConfigs['blog-authors']);
+		$this->archives =   wire('pages')->get($blogConfigs['blog-archives']);
+		$this->settings =   wire('pages')->get($blogConfigs['blog-settings']);
+		$this->dnc =        wire('pages')->get($blogConfigs['blog-dnc']);//disable-new-comments
+		$this->dc =         wire('pages')->get($blogConfigs['blog-dc']);//disable-comments
+		$this->pauthor =    wire('pages')->get($blogConfigs['blog-pauthor']);
+
+		$this->blogStyle = $blogConfigs['blogStyle'];
+		$this->commentsUse = $blogConfigs['commentsUse'];	
 	}
 	
 	/**
@@ -71,10 +83,25 @@ class MarkupBlog  extends WireData implements Module {
 	 *
 	 * @access public
 	 * @param PageArray $tags
+	 * @param array $options Options to configure rendered tags output
 	 * @return string $jump . $out
 	 *
 	 */
-	public function renderTags(PageArray $tags) {
+	public function renderTags(PageArray $tags, $options = null) {
+		
+		//default options for tags
+		$defaultOptions = array(
+
+							'tags_posts_text' =>$this->_('post,posts'),//come in the format 'singular,plural' for e.g. 1 'post'
+		);
+
+		//merge user options with default tags options
+		if($options != null && is_array($options)) $options = array_merge($defaultOptions, $options);
+		else $options = $defaultOptions;
+
+		list($singular, $plural) = explode(',', $options['tags_posts_text']);//come in the format 'singular,plural'	
+		$post = '%d ' . $singular;
+		$posts = '%d ' . $plural;
 
 		//count the number of posts using each tag
 		foreach($tags as $tag) {
@@ -96,7 +123,7 @@ class MarkupBlog  extends WireData implements Module {
 				}
 				$lastLetter = $letter; 
 
-				$numPosts = sprintf(_n('%d post', '%d posts', $tag->numPosts), $tag->numPosts);
+				$numPosts = sprintf(_n($post, $posts, $tag->numPosts), $tag->numPosts);
 
 				$out .= "<li><a href='{$tag->url}'>{$tag->title}</a> <span class='num-posts'>$numPosts</span></li>";
 		}
@@ -114,8 +141,7 @@ class MarkupBlog  extends WireData implements Module {
 		$jump .= "</p>";
 
 		//return the jumplist and the markup of tags
-		return $jump . $out; 
-
+		return $jump . $out;
 
 	}
 
@@ -126,27 +152,62 @@ class MarkupBlog  extends WireData implements Module {
 	 *
 	 * @access public
 	 * @param Page $page
+	 * @param array $options Options to configure rendered next/prev posts's e.g. << for previous and >> for next
 	 * @return string $out
 	 *
 	 */
-	public function renderNextPrevPosts($page) {
+	public function renderNextPrevPosts($page, Array $options = null) {
 		
-		$date = $page->getUnformatted('blog_date');
+		$date = $page->getUnformatted('blog_date');		
+
+		//first sibling of this post whose 'date' is older than this one.
+		$prevPost = $page->parent->child("template=blog-post, blog_date<$date, sort=-blog_date");
+
+		//first sibling of this post whose 'date' is newer than this one.
+		$nextPost = $page->parent->child("template=blog-post, blog_date>$date, sort=blog_date");
+
+		//default options for next/prev posts
+		$defaultOptions = array(
+
+							'prev_post' => '&lt;',//tag/text for previous post, e.g. &laquo;, &#171;, etc, i.e. << >>, etc
+							'next_post' => '&gt;',//tag/text for next post, e.g. &rsaquo;, etc
+							'prev_post_text' => 'title',//if title or not empty: will show title of the prev post. Otherwise show specificed text, e.g. 'Older entries'
+							'next_post_text' => 'title',//if title or not empty: will show title of the next post. Otherwise show specificed text, e.g. 'Newer entries'
+		);
+
+		//merge user options with default next/prev options
+		if($options != null && is_array($options)) $options = array_merge($defaultOptions, $options);
+		else $options = $defaultOptions;
+
+		//only show next/prev string if not empty
+		$prev = $options['prev_post'] !='' ? "<span>" . $options['prev_post'] . "</span> " : '';
+		$next = $options['next_post'] !='' ? " <span>" . $options['next_post'] . "</span>" : '';
+
+		$prevPostText = $options['prev_post_text'];//previous post's link text
+		$nextPostText = $options['next_post_text'];//next post's link text
 		
-		//first sibling of this post whose date is newer than this ones. Note: blog_date is custom field in Blog pages
-		$nextPost = $page->parent->child("blog_date>$date, sort=blog_date");
-		
-		//first sibling of this post whose date is older than this ones.
-		$prevPost = $page->parent->child("blog_date<$date, sort=-blog_date");
+		//determine if to show next/prev page link title or custom text e.g. 
+		if ($prevPostText == 'title' ||  $prevPostText =='' || $nextPostText == 'title' ||  $nextPostText =='' ) {
+						$prevLinkText = $prevPost->title;
+						$nextLinkText = $nextPost->title;
+		}
+
+		else {
+
+				$prevLinkText = $prevPostText;
+				$nextLinkText = $nextPostText;
+		}		
 
 		$out = "<div class='next-prev-posts'>"; 
 		
-		if($prevPost->id > 0) $out .= "<p class='prev-post'><span>&lt;</span> <a href='{$prevPost->url}'>{$prevPost->title}</a></p>";
-		if($nextPost->id > 0) $out .= "<p class='next-post'><a href='{$nextPost->url}'>{$nextPost->title}</a> <span>&gt;</span></p>";
+		//show next/prev post links if available
+		if($prevPost->id > 0) $out .= "<p class='prev-post'>" . $prev . "<a href='" . $prevPost->url . "'>" . $prevLinkText . "</a></p>";
+		if($nextPost->id > 0) $out .= "<p class='next-post'><a href='" . $nextPost->url . "'>" . $nextLinkText . "</a>" . $next . "</p>";
 		
 		$out .= "</div>";
 		
-		return $out; 
+		return $out;
+
 	}
 
 	/**
@@ -158,7 +219,6 @@ class MarkupBlog  extends WireData implements Module {
 	 * @param int $limit
 	 *
 	 */
-
 	public function renderCommentsRSS($limit) {
 
 		//selector to locate the comments we want
@@ -199,11 +259,24 @@ class MarkupBlog  extends WireData implements Module {
 	 * @access public
 	 * @param PageArray $categories
 	 * @param int $showNumPosts Number of posts to show from each category (default=0)
+	 * @param array $options Options to configure rendered categories output
 	 * @return $out string
 	 *
 	 */
-	public function renderCategories(PageArray $categories, $showNumPosts = 0) {
+	public function renderCategories(PageArray $categories, $showNumPosts = 0, Array $options = null) {
 		
+		//default options for categories
+		$defaultOptions = array(
+
+							'categories_posts_text' =>$this->_('post,posts'),//come in the format 'singular,plural' for e.g. October 5 'posts'
+							'categories_not_found' => $this->_('No categories to display.'),//message when no posts found
+							'categories_more_text' => $this->_('View More'),//link text to view all posts in that category
+		);
+
+		//merge user options with default categories options
+		if($options != null && is_array($options)) $options = array_merge($defaultOptions, $options);
+		else $options = $defaultOptions;
+
 		foreach($categories as $category) {
 					$category->posts = wire('pages')->find("template=blog-post, blog_categories=$category, limit=$showNumPosts, sort=-blog_date"); 
 		}
@@ -212,6 +285,10 @@ class MarkupBlog  extends WireData implements Module {
 		
 		if(count($categories)){ 
 
+				list($singular, $plural) = explode(',', $options['categories_posts_text']);//come in the format 'singular,plural'	
+				$cpost = '%d ' . $singular;
+				$cposts = '%d ' . $plural;
+
 				foreach($categories as $category) {
 
 							$out .= "<div class='category'>
@@ -219,7 +296,7 @@ class MarkupBlog  extends WireData implements Module {
 
 							$n = $category->posts->getTotal();
 							
-							$out .= "<span class='num-posts'>" . sprintf(_n('%d post', '%d posts', $n), $n);
+							$out .= "<span class='num-posts'>" . sprintf(_n($cpost, $cposts, $n), $n);
 							$out .= "<a class='rss' href='$category->url" . "rss'>" . $this->_('RSS') . "</a></span>";
 							
 							if($n){
@@ -231,7 +308,7 @@ class MarkupBlog  extends WireData implements Module {
 
 									//if more posts available than the limit we have set, show "view more" link
 									if($n > count($category->posts)){
-												$out .= "<li><a class='more' href='$category->url'>" . $this->_('View More') . "</a></li>";
+												$out .= "<li><a class='more' href='$category->url'>" . $options['categories_more_text'] . "</a></li>";
 									}
 									
 									$out .= "</ul>";
@@ -245,11 +322,12 @@ class MarkupBlog  extends WireData implements Module {
 		}//end if count $categories
 		
 		else {
-				$out .= "<p class='no-categories'>" . $this->_('No categories to display') . "</p>";
+				$out .= "<p class='no-categories'>" . $options['categories_not_found'] . "</p>";
 			
 		}
 		
 		return $out;
+
 	}
 	
 	/**
@@ -257,7 +335,7 @@ class MarkupBlog  extends WireData implements Module {
 	 *
 	 * @access public
 	 * @param int $year Retrieve archives for a specific year (default=retrieve all years)
-	 * @param int $limit Max number of posts to show for each month, default=0 which means don't show any
+	 * @param int $limit Max number of posts titles to show for each month, default=0 which means don't show any
 	 * @return $years array() in this format:
 	 *
 	 * array(
@@ -280,7 +358,7 @@ class MarkupBlog  extends WireData implements Module {
 	 * );
 	 *
 	 */
-	public function getArchives($year = 0, $limit = 0) {
+	public function getArchives($year = 0, $limit = 1) {
 
 		if($year) {
 			
@@ -315,8 +393,10 @@ class MarkupBlog  extends WireData implements Module {
 				if(!$numPosts) continue; 
 				$numPostsYear += $numPosts;
 
+				$archivesPath = $this->archives->url;
+
 				$months[$month] = array(
-					'url' => wire('config')->urls->root . "blog/archives/$y/$month/",//note our Blog pages live under the page 'blog'
+					'url' => $archivesPath . "$y/$month/",//note where our blog pages live vary depending on blogStyle
 					'name' => strftime('%B', $firstDay),
 					'posts' => $limit > 0 ? $posts : array(),
 					'total' => $numPosts
@@ -326,54 +406,71 @@ class MarkupBlog  extends WireData implements Module {
 			if(!$numPostsYear) continue; 
 
 			$years[$y] = array(
-				'url' => wire('config')->urls->root . "blog/archives/$y/", //note our Blog pages live under the page 'blog'
+				'url' => $archivesPath . "$y/",//note where our blog pages live vary depending on blogStyle
 				'name' => $y,
 				'total' => $numPostsYear,
 				'months' => $months
 				);
 		}
 
-		return $years; 
+		return $years;
+
 	}
 
 	/**
 	 * Render blog archives for a given year.
 	 *
-	 * Used by the /site/templates/archives.php template.
+	 * Used by the /site/templates/blog-archives.php template.
 	 * Render archives returned by the getArchives() method.
 	 * Archives links include a year headline followed by a list of months in that year with posts,
 	 * and the number of posts in each month. 
 	 *
 	 * @access public
 	 * @param array $years as returned by the getArchives() method
+	 * @param array $options Options to configure rendered archives output
 	 * @return $out string
 	 *
 	 */
-	public function renderArchives(array $years) {
+	public function renderArchives(Array $years, Array $options = null) {
 
 		$out = '';
+
+		//default options for archives
+		$defaultOptions = array(
+
+							'archives_posts_text' =>$this->_('post,posts'),//come in the format 'singular,plural' for e.g. October 5 'posts'
+							'archives_month_view_all_text' => $this->_('View All'),//'view all' that month's archives if limit set on amount to list
+		);
+
+		//merge user options with default archives options
+		if($options != null && is_array($options)) $options = array_merge($defaultOptions, $options);
+		else $options = $defaultOptions;
+
+		list($singular, $plural) = explode(',', $options['archives_posts_text']);//come in the format 'singular,plural'	
+		$post = '%d ' . $singular;
+		$posts = '%d ' . $plural;
 
 		foreach($years as $year=>$y) {
 			
 				$year 	=  $y['name'];
 				$total 	=  $y['total']; 
-				$months =  $y['months']; 
+				$months =  $y['months'];//this is an array
 				$url 	=  $y['url']; 
+
 
 				$out .= "<div class='archive'>
 						<h3><a href='$url'>$year</a></h3>
-						<span class='num-posts'>" . sprintf(_n('%d post', '%d posts', $total), $total) . "</span>";
+						<span class='num-posts'>" . sprintf(_n($post, $posts, $total), $total) . "</span>";
+						
 
 				$out .= "<ul class='posts-group'>";
 
 				foreach($months as $monthNum => $month){
 
 							$out .= "<li><a href='" . $month['url'] . "'>" . $month['name'] . "</a>";
-							$out .=  "<span class='num-posts'>" . sprintf(_n('%d post', '%d posts', $month['total']), $month['total']) . "</span>";
+							$out .=  "<span class='num-posts'>" . sprintf(_n($post, $posts, $month['total']), $month['total']) . "</span>";
 
-
-
-							if(count($month['posts'])) {// posts will be empty if $blog->archives() call specified 0 for limit;
+							if(count($month['posts'])) {//posts will be empty if $blog->archives() call specified 0 for limit;
 
 									$out .= "<ul>";
 
@@ -384,7 +481,7 @@ class MarkupBlog  extends WireData implements Module {
 
 									if($month['total'] > count($month['posts'])){
 											
-											$out .= "<li><a class='more' href='" . $month['url'] . "'>" . $this->_('View All') . "</a></li>";
+											$out .= "<li><a class='more' href='" . $month['url'] . "'>" . $options['archives_month_view_all_text'] . "</a></li>";
 									}
 
 									$out .=  "</ul>";
@@ -400,7 +497,8 @@ class MarkupBlog  extends WireData implements Module {
 
 		}//end foreach $years as $year
 
-		return $out; 
+		return $out;
+
 	}
 
 	/**
@@ -417,20 +515,23 @@ class MarkupBlog  extends WireData implements Module {
 
 		foreach($authors as $author) {
 					$numPosts = wire('pages')->count("template=blog-post, created_users_id=$author, limit=2");
-					$numPostsStr = sprintf(_n('%d post', '%d posts', $author->numPosts), $author->numPosts);
+					//$numPostsStr = sprintf(_n('%d post', '%d posts', $author->numPosts), $author->numPosts);//not in use
 					
 					//Note: $author->url2 is the blog-generated version, since $author->url is in the admin.
-					$out .= "<li><a href='{$author->url2}'>" . $author->get('title|name') . "</a> <span class='num-posts'>$numPosts</span></li>";
+					$authorName = $author->get('title') ? $author->get('title') : 'Author Name';//use generic 'Author Name' if author title not set
+					$out .= "<li><a href='{$author->url2}'>" . $authorName . "</a> <span class='num-posts'>$numPosts</span></li>";
 		}
 
 		$out .= "</ul>";
 		
-		return $out; 
+		return $out;
 
 	}
 
 	/**
 	 * Find comments from the given selector string
+	 * 
+	 * Used internally in this class
 	 *
 	 * @access public
 	 * @param string $selector
@@ -439,15 +540,25 @@ class MarkupBlog  extends WireData implements Module {
 	 */
 	public function findComments($selector) {
 		
-		$comments = FieldtypeComments::findComments('blog_comments', $selector);//parameter 1 = our comments field 
+		$comments = FieldtypeComments::findComments('blog_comments', $selector);//1st argument is our comments field
+		$blogComments = $this->comments;
+		$gComments = $blogComments->blog_comments_view;//global comments/comments form visibility setting [only kicks in when selected AND post setting='']
+		$page = wire('page');//Page being viewed (Page)
+		$admin = $page->editable();	
 		
-		foreach($comments as $comment) {
+		foreach($comments as $c) {
 				
 				//if this comment is not viewable for current user, remove it from the array
-				if(!$comment->page->viewable()) $comments->remove($comment);
+				if(!$c->page->viewable()) $comments->remove($c);
+
+				//remove comments whose pages are set to 'disable-comments' if user is not admin
+				if($c->page->blog_comments_view && $c->page->blog_comments_view->id==$this->dc->id && !$admin) $comments->remove($c);
+				
+				//visibility: empty/no selection in post comments && global disable comments set to dc but user not admin
+				if(!$c->page->blog_comments_view && $gComments && $gComments->id==$this->dc->id && !$admin) $comments->remove($c);
 		}
 		
-		return $comments; 
+		return $comments;
 
 	}
 
@@ -475,13 +586,13 @@ class MarkupBlog  extends WireData implements Module {
 		}
 
 		//we show pending and spam comments when page is editable
-		if(is_null($admin)) $admin = wire('page')->editable();
+		if(is_null($admin)) $admin = wire('page')->editable();//we assign variable $admin the value $page->editable() method if argument $admin = null
 
 		//build selector to locate comments
 		$selector = "limit=$_limit, start=$start, sort=-created, ";
 
-		if($admin) $selector .= "status>=" . Comment::statusSpam . ", ";
-			else $selector .= "status>=" . Comment::statusApproved . ", ";
+		if($admin) $selector .= "status>=" . Comment::statusSpam . ", ";//if argument $admin = true OR if page is editable. [Note: statusSpam = -2, statusApproved = 1, statusPending = 0]
+			else $selector .= "status>=" . Comment::statusApproved . ", ";//if argument $admin = false
 
 		//find the comments we want to output
 		$comments = $this->findComments($selector);
@@ -496,10 +607,11 @@ class MarkupBlog  extends WireData implements Module {
 	 * @access public
 	 * @param PageArray|Page $posts The entries to generate output for
 	 * @param bool $small Set to true if you want summarized versions of posts (default = false)
+	 * @param array $options Options to configure posts' output
 	 * @return $out string The generated output
 	 *
 	 */
-	public function renderPosts($posts, $small = false) {
+	public function renderPosts($posts, $small = false, Array $options = null) {
 
 		if(!$posts instanceof PageArray) {
 
@@ -527,141 +639,397 @@ class MarkupBlog  extends WireData implements Module {
 		
 		}//end if(!$posts instanceof PageArray)
 
+		//excerpt/post truncated length
+		$limit = $this->settings->blog_small;
 
+		$summaryLimit = $limit ? $limit : 450;
+
+		//default options for various aspects of posts
+		$defaultOptions = array(
+
+							'post_count' => 1,//0=off, 1=on - for the count in: Posts 1 to 5 of 15
+							'post_count_text' =>$this->_('Post'),//e.g. Posts 1 to 5 of 15
+							'post_not_found' => $this->_('No posts found.'),//message when no posts found
+							'post_author' => 1,//display name of post author: 0=off,1=top(below post-headline),2=bottom(in post-foot)
+							'post_author_text' => $this->_('Posted by'),//
+							'post_date' => 1,//display post's date: 0=off,1=top(below post-headline),2=bottom(in post-foot)
+							'post_date_text' => '',//e.g. Posted by author 'on' date
+							'post_more_text' => $this->_('View More'),//for $small posts - link text to full post
+							'post_categories' => 2,//display post's categories: 0=off,1=top(below post-byline),2=bottom(in post-foot)
+							'post_categories_text' => $this->_('Categories:'),//e.g. 'Categories', 'In', 'Filed under', etc
+							'post_tags' => 2,//display post's tags: 0=off,1=top(below post-byline),2=bottom(in post-foot)
+							'post_tags_text' => $this->_('Tags:'),//e.g. 'Tagged', 'Related', etc
+							'post_small_allowable_tags' => '',//holds string of HTML tags for strip_tags $allowable_tags. Needs to be in format '<code><p><img>'
+							'post_small_headline_tag' => 'h4',
+							'post_large_headline_tag' => 'h2',
+							'post_small_tag' => 'p',
+							
+							//post comments
+							'post_comments' => 1,//show comments info? 0=off,1=comments count top,2=comments count bottom,3=comments count top & bottom
+							'post_zero_comments_text' => $this->_('No comments yet'),
+							'post_comments_text' => $this->_('Comment,Comments'),//title in anchor comments icon + post-foot comments text, e.g. '2 Comments' or '1 Comment'. Must be in 'singular,plural' format
+							'post_comments_label' => $this->_('Comments:'),//this appears in post-foot, e.g. 'Comments': 2 Comments
+							
+							//## featured images ##
+							'post_image_alt' => 'description',//defaults to $image->description. Otherwise other stated field on the page, e.g. = 'title'
+							'post_image_tag' => 'featured',//string: image tag to look for in blog_images
+							
+							//** small/truncated post featured image **
+							'post_small_image' => 0,//display post's featured image: 0=off,1=top(above post-headline),2=bottom(first item in post-body)
+							'post_small_image_width' => '',//no width manipulation of featured image if this is blank or 0
+							'post_small_image_height' => '',//no height manipulation if this is blank or 0. Note, if size is true and both width and height > 0, use size() instead
+	
+							/*size: 
+								-	image will be resized to exact dimensions -> $img = $image->size($x, $y)
+								-	where $x = 'width' and $y = 'height'*/
+							'post_small_image_size' => false,//if 'size' = true AND both width and height > 0, this kicks in
+							
+							//** large/full post featured image **
+							'post_large_image' => 0,//display post's featured image: 0=off,1=top(above post-headline),2=bottom(first item in post-body)
+							'post_large_image_width' => '',//no width manipulation of featured image if this is blank or 0
+							'post_large_image_height' => '',//no height manipulation if this is blank or 0. Note, if size is true and both width and height > 0, use size() instead				
+							'post_large_image_size' => false,//if 'size' = true AND both width and height > 0, this kicks in
+
+		);
+
+		//merge user options with default posts' options
+		if($options != null && is_array($options)) $options = array_merge($defaultOptions, $options);
+		else $options = $defaultOptions;
+
+
+		# ** prepare post-foot variables for later use. we need to do this earlier to determine how/if post-foot will be output ** #
+
+		//When $small = false, i.e. we want 'LARGE' POSTS [not-truncated]. NOTE: We don't show post categories and tags if $small = true
+		if(!$small) {
+					
+				foreach($posts as $page) {
+
+							//if user wants to show categories in post
+							if($options['post_categories'] != 0) {
+								
+									$page->categories = '';
+									if(count($page->blog_categories)) {
+
+												$page->categories = "<p class='categories'><span>" . $options['post_categories_text'] . " " . "</span>";											
+												foreach($page->blog_categories as $category) $page->categories .= "<a href='{$category->url}'>{$category->title}</a>, ";
+												$page->categories = rtrim($page->categories, ", ") . "</p>";
+									}
+							}
+
+							//if user wants to show tags in post
+							if($options['post_tags'] != 0) {
+
+									$page->tag = '';
+									if(count($page->blog_tags)) {
+
+												$page->tags = "<p class='tags'><span>" . $options['post_tags_text'] . " " . "</span>";
+												foreach($page->blog_tags as $tag) $page->tags .= "<a href='{$tag->url}'>{$tag->title}</a>, ";
+												$page->tags = rtrim($page->tags, ", ") . "</p>";
+
+									}
+							}					
+
+				}//end foreach $posts as $page		
+
+		}//END if(!$small) for post-foot
+
+
+		#----------------------------------------- END determine if/how post-foot will be output -----------------------------------------#
+
+		
 		foreach($posts as $page) {
-
 		
 					//Note:we don't have a summary field for 'post' pages but left code here just in case we need it in future
 					if(empty($page->summary)) {
-								// summary is blank so we auto-generate a summary from the body [note: blog body field is 'blog_body']
-								$summary = strip_tags(substr($page->blog_body, 0, 450));
+								//summary is blank so we auto-generate a summary from the body [note: blog body field is 'blog_body']
+								//note: second paramenter of strip_tags $allowable_tags is configurable!
+								$summary = strip_tags(substr($page->blog_body, 0, $summaryLimit), $options['post_small_allowable_tags']);								
 							
 								$page->summary = substr($summary, 0, strrpos($summary, ' '));
 								
 					
 					}//end if(empty($page->summary))
 
-					// set a couple new fields that our output will use
-					$page->set('authorName', $page->createdUser->get('title|name')); 
-					$page->set('authorURL', wire('config')->urls->root . 'blog/authors/' . $page->createdUser->name . '/'); //set the correct authorURL! Blog pages are under the page 'blog'
-		
-			}//end foreach($posts as $page)
+					//set a couple new fields that our output will use					
+					if($page->createdUser->get('title')) {
+							
+							$authorTitle = $page->createdUser->get('title');
+							$page->set('authorName', $authorTitle);							
+							$page->set('authorURL', $this->authors->url . $this->sanitizer->pageName($authorTitle) . '/');//use pageName sanitized author title in author page URL
 
+					}
+					
+					else {
+							
+							$page->set('authorName', 'Author Name');//use generic 'Author Name' if author title not set
+							$page->set('authorURL', '');//no link to author page until user sets author title
+
+					}
+
+		
+		}//end foreach($posts as $page)
+
+		//start output
 		$out = '';
 
-		//Small means show truncated body text. Large just means show the whole body text
-		if($small) {
+		//Small means show truncated body text. 'Large' just means show the whole/full body text
+		if($small && $options['post_count'] !=0) {
 					
-					// display a headline indicating quantities
+					//display a headline indicating quantities
 					$start = $posts->getStart()+1;
 					$end = $start + count($posts)-1;
 					$total = $posts->getTotal();
 
-					if($total) $out .= "<h3>" . sprintf(__('Posts %1$d to %2$d of %3$d'), $start, $end, $total) . "</h3>";
+					if($total) $out .= "<h3 class='posts-count'>" . $options['post_count_text'] . " " . sprintf(__('%1$d to %2$d of %3$d'), $start, $end, $total) . "</h3>";
 		
 		}//end if($small)
 
+		
+		#------------------------------------------- POSTS WRAPPER ------------------------------------------- #
 
-		$out .= $small ? "<div class='posts posts-small'>" : "<div class='posts'>" ;
+		$out .= $small ? "<div class='posts posts-small'>" : "<div class='posts'>";
 
-		foreach($posts as $page) {
-			
-					$numComments = $page->blog_comments->count();
+		//COMMENTS COUNT: for post comments count
+		$commentsCountTop = false;
+		$commentsCountBottom = false;
+
+		//post comments - only if commentsUse == 1
+		if($this->commentsUse == 1 && $options['post_comments'] !=0) {
 
 					//if we found comments
-					if($numComments > 0) $numCommentsStr = sprintf(_n('%d Comment', '%d Comments', $numComments), $numComments);
+					list($singular, $plural) = explode(',', $options['post_comments_text']);//come in the format 'singular,plural'	
+					$comment = '%d ' . $singular;
+					$comments = '%d ' . $plural;
+
+					if($options['post_comments'] == 1 || $options['post_comments'] == 3) $commentsCountTop = true;
+					if($options['post_comments'] == 2 || $options['post_comments'] == 3) $commentsCountBottom = true;
+		}
+
+		//FEATURED IMAGE: determine if to output featured image in posts
+		$showFeaturedImage = false;
+		$featuredImageTop = false;//for positioning featured image (top/bottom)		
+
+		//if featured image is to be output
+		if (($small && $options['post_small_image'] !=0) || (!$small && $options['post_large_image'] !=0)) $showFeaturedImage = true;//we will be outputting a featured image
+
+		//loop through and output posts
+		foreach($posts as $page) {
+			
+					//post comments - only if commentsUse == 1
+					if($commentsCountTop == true || $commentsCountBottom == true) {
+
+							$numComments = $page->blog_comments->count();
+
+							if($numComments > 0) $numCommentsStr = sprintf(_n($comment, $comments, $numComments), $numComments);
+							else $numCommentsStr = $options['post_zero_comments_text'];//used as both title of icon anchor tag when no comments + in post-foot when no comments yet
+					}
+
 					
-					else $numCommentsStr = __('No comments yet'); 
+					#------------------------------------------- SINGLE POST START + POST HEAD ------------------------------------------- #
 
 					$out .= "<div class='post' id='{$page->id}'>
-								<div class='post-head'>
-								<a class='num-comments-icon' href='{$page->url}#comments' title='$numCommentsStr'>$numComments</a>";
+								<div class='post-head'>";
+								
+					//if($commentsCountTop == true) $out .= "<a class='num-comments-icon' href='{$page->url}#comments' title='$numCommentsStr'>$numComments</a>";//moved below $featuredImageTop
 							
 					//headline size
-					$h = $small ? "h4" : "h2";
-					
-					$out .= "<$h class='post-headline'><a href='{$page->url}'>{$page->title}</a></$h>
-							 	<p class='post-byline'>";
+					$h = $small ? $options['post_small_headline_tag'] : $options['post_large_headline_tag'];
 
-					// meta/byline
-					$out .= "<span class='author'>" . sprintf(__('Posted by %s'), "<a href='{$page->authorURL}'>{$page->authorName}</a></span>, ");
-					$out .= "<span class='date'>{$page->blog_date}</span>";
+					############################
+
+					$featuredImage = '';//will contain featured image string		
+
+					//if featured image is to be output
+					if ($showFeaturedImage == true) {
+
+							########### if user specified they want to show a featured image we first attempt to find it in the page's blog_images. ###########
+							########### if that fails, we check for it in the post's first embedded image in blog_body ###########
+
+							//** featured image dimensions ** 
+							$size 	= $small ? $options['post_small_image_size'] : $options['post_large_image_size'];
+							$width 	= $small ? (int) $options['post_small_image_width'] : (int) $options['post_large_image_width'];
+							$height = $small ? (int) $options['post_small_image_height'] : (int) $options['post_large_image_height'];
+
+							//retrieve first image with the tag 'featured' or user-specified 'tag'
+							$image = $page->blog_images->getTag($options['post_image_tag']);
+
+							//if we found the image
+							if($image) {
+																							
+										$alt = $options['post_image_alt'] == 'description' ? $image->description : $page->{$options['post_image_alt']};
+
+										if ($height > 0 && $width > 0 && $size == true) $thumb = $image->size($width, $height);
+										elseif ($width > 0) $thumb = $image->width($width);
+										elseif ($height > 0) $thumb = $image->height($height);
+										else $thumb = $image;
+
+										$featuredImage .=  "<img class='post-featured-image' src='{$thumb->url}' alt='{$alt}' width='{$thumb->width}' height='{$thumb->height}' />";
+    						
+    						}//end if $image found
+
+    						//if we didn't find an image in $page->blog_images, we check for the first embedded image in blog_body if blog_body is not blank!
+    						//only for small posts! no need to get embedded image if large/full post! otherwise it will be displayed twice!
+    						elseif($small && $page->blog_body !='') {
+
+										/*for each summarised post, we use PHP's DOMDocument class to find the first image and use that as the featured image*/
+
+										//parse the html string into a DOMDocument
+								        $dom = new DOMDocument();
+								        $dom->loadHTML($page->blog_body);
+
+								        //this grabs just the nth img found. we want the first one so item(0)
+								        //we grab the first img found in blog_body
+								        $image = $dom->getElementsByTagName('img')->item(0);//returns an object
+						        
+								        //if an image found, we grab its 'src' attribute
+								        if ($image !=null) {
+
+								        		$imageURL = $image->getAttribute('src');//string;
+								        		$alt = $page->{$options['post_image_alt']};
+								        		$width = $width > 0 ? "width={$width}" : '';
+								        		$height = $height > 0 ? "height={$height}" : '';
+								        		
+								        		$featuredImage .=  "<img class='post-featured-image' src='{$imageURL}' alt='{$alt}' {$width} {$height} />";
+
+								        }
+
+    						}//end else grab image from first image embedded in post
+
+							//determine featured image position. in here we already know there is an image; we just don't know if user wants it at the top or bottom						
+							if(($featuredImage !='' && $options['post_small_image'] == 1) || ($featuredImage !='' && $options['post_large_image'] == 1)) $featuredImageTop = true;
+
+
+					}//end if featured image specified
+					
+
+					#------------------------------------------- POST HEADLINE ------------------------------------------- #
+
+					//if featured image to be output above post-headline
+					if($featuredImageTop == true) $out .= $featuredImage;
+					if($commentsCountTop == true) $out .= "<a class='num-comments-icon' href='{$page->url}#comments' title='$numCommentsStr'>$numComments</a>";
+
+					$out .= "<$h class='post-headline'><a href='{$page->url}'>{$page->title}</a></$h>";
+
+					//meta/byline post_author_text
+					$author = $options['post_author'] == 1 ? "<span class='author'>" . $options['post_author_text'] . " " . "<a href='{$page->authorURL}'>{$page->authorName}</a></span> " : '';
+					$date = $options['post_date'] == 1 ? "<span class='date'>" . $options['post_date_text'] . " " . $page->blog_date . "</span>" : '';
 					
 					//if page is editable (i.e., appropriate person logged in), let's show an edit link to the post
-					if($page->editable()) $out .= "<span class='edit'>(<a href='" . wire('config')->urls->admin . "page/edit/?id={$page->id}'>" . __('edit') . "</a>)</span>";
-							
-					$out .=	"</p></div><div class='post-body'>";
+					$edit = $page->editable() ? "<span class='edit'>(<a href='" . wire('config')->urls->admin . "page/edit/?id={$page->id}'>" . $this->_('edit') . "</a>)</span>" : '';				
 
+					if(!empty($author) || !empty($date) || !empty($edit)) $out .= "<p class='post-byline'>" . $author . $date . $edit . "</p>";//end p.post-byline
+
+					//show post categories and tags if user wants them at the 'top'
+					if($options['post_categories'] == 1) $out .= $page->categories;
+					if($options['post_tags'] == 1) $out .= $page->tags;
+
+					$out .= "</div>";/*end div.post-head*/
+
+					
+					#------------------------------------------- POST BODY ------------------------------------------- #
+
+					$out .=	"<div class='post-body'>";
+
+					//if featured image to be output below post-body
+					if($featuredImageTop == false) $out .= $featuredImage;
+
+					//if to output 'View More' link (if post $small)
 					if($small) {
-
-								$out .= "<p>" . $page->summary . "&hellip; <a class='more' href='{$page->url}'>" . __('View More') . "</a></p>";
-					} 
-
-					else {
-								$out .= $page->blog_body; 
-						
-						// if the post has images and no <img> tags in the body, then make it a gallery
-						//Note: Left here from old code. We are not including a gallery in this version
-						//if(count($page->images) && strpos($page->body, '<img ') === false) include("./gallery.php");
+						$tag = $options['post_small_tag'];
+						$out .= "<$tag  class='post-small'>" . $page->summary . "&hellip; <a class='more' href='{$page->url}'>" . $options['post_more_text'] . "</a></$tag>";
 					}
 					
-					$out .= "</div><div class='post-foot'>";
+					else {
+						$out .= $page->blog_body;
+					}
+						
+					//Note: Left here for posterity. We are not including a gallery in this version
+					//if the post has images and no <img> tags in the body, then make it a gallery
+					//if(count($page->images) && strpos($page->body, '<img ') === false) include("./gallery.php");				
+					
+					$out .= "</div>";/*end div.post-body*/
 
-							
-					//When $small = false, i.e. we want 'LARGE' POSTS [not-truncated]
+
+					#------------------------------------------- POST FOOT ------------------------------------------- #
+
 					if(!$small) {
-								
-								// display categories & tags when doing large posts
-								if(count($page->blog_categories)) {
-									
-												$out .= "<p class='categories'><span>" . __('Categories:') . "</span>";
-									
-												foreach($page->blog_categories as $category) {
-													
-															$out .= "<a href='{$category->url}'>{$category->title}</a>, ";	
-												}
-									
-												$out = rtrim($out, ", ") . "</p>";
-											
 
-								}//end if(count($page->categories))
+						//if post author OR post date are to be displayed at the 'bottom' == 2
+						$author = $options['post_author'] == 2 ? $author = "<span class='author'>" . $options['post_author_text'] . " " . "<a href='{$page->authorURL}'>{$page->authorName}</a></span> " : '';
+						$date = $options['post_date'] == 2 ? $date = "<span class='date'>{$page->blog_date}</span>" : '';
 
-								if(count($page->blog_tags)) {
-									
-												$out .= "<p class='tags'><span>" . __('Tags:') . "</span>"; 
+						//if post_categories OR post_tags are to be displayed at the 'bottom' == 2 + number of comments	in 'large' posts
+						$categories = $options['post_categories'] == 2 ? $page->categories : '';
+						$tags = $options['post_tags'] == 2 ? $page->tags : '';						
+	
+						$comments = $commentsCountBottom == true ? "<p class='num-comments'><span>" . $options['post_comments_label'] . "</span> <a href='{$page->url}#comments'>$numCommentsStr</a></p>" : '';
+						if(!empty($author) || !empty($date) || !empty($categories) || !empty($tags) || !empty($comments)) {
+								$out .= "<div class='post-foot'>" . $author . $date . $categories . $tags . $comments . "</div>";//end div.post-foot
+						}
 
-												foreach($page->blog_tags as $tag) {
-
-															$out .= "<a href='{$tag->url}'>{$tag->title}</a>, ";
-
-												}
-
-												$out = rtrim($out, ", ") . "</p>";//
-
-
-								} //end if(count($page->tags))
-
-								
-								$out .= "<p class='num-comments'><span>" . __('Comments:') . "</span> <a href='{$page->url}#comments'>$numCommentsStr</a></p>";
 
 					}//END if(!$small) 
 
-							
-					$out .= "</div></div>";
+
+					$out .= "</div>";/*end div.post => single post*/
 				 
 
 		}//end 	foreach($posts as $page)
 			
-		if(!count($posts)) $out .= "<h5>" . __("No posts found.") . "</h5>"; //<!--/.posts-->
+		if(!count($posts)) $out .= '<h4 id="no-posts">' . $options['post_not_found'] . '</h4>'; //<!--/.posts-->
 		
-		$out .= "</div>";
+		$out .= "</div>";/*end div.posts => posts wrapper*/
+
+		
+		#------------------------------------------- POST PAGINATION ------------------------------------------- #
 
 		// if there are more posts than the specified limit, then output pagination
-		if($posts->getLimit() < $posts->getTotal()) $out .= $posts->renderPager(); 
+		if($posts->getLimit() < $posts->getTotal()) $out .= $posts->renderPager();//@@todo - consider making renderPager configurable?
 		
-		return $out;	
-
+		return $out;
 	
+	}
+
+	/**
+	 * Return PageArray of posts related to the current post.
+	 *
+	 * The returned PageArray can then be used with renderNav() to list the related posts.
+	 *
+	 * @access public
+	 * @param int $limit limit of maximum related posts to find
+	 * @param int $relatedBy criteria for finding  related posts
+	 * @param string $sort prioritise related posts to find, especially when limit set
+	 * @return PageArray|null $related Related posts or null if none found
+	 *
+	 */
+	public function renderRelatedPosts(Page $post = null, $relatedBy = null, $limit = null, $sort = null) {
+
+		if(is_null($post)) $page = wire('page');
+		else $page = $post;
+		if(!$page instanceof Page) throw new WireException('renderRelatedPosts requires a Page'); 
+		
+		$pages = wire('pages');
+		$related = null;
+		$selector = '';
+
+		//set defaults
+		$relatedBy = $relatedBy === null ? $relatedBy = 1 : $relatedBy;		
+		$limit = $limit === null ? $limit = 3 : $limit;
+		$sort = $sort === null ? $sort = '-blog_date' : $sort;
+
+		//sanitize submitted sort selector value. Default is sort by latest post
+		$sort = $this->sanitizer->selectorValue($sort);
+
+		//find related posts by given criteria. Default is to relate by both tags AND categories
+		if($relatedBy == 1 && count($page->blog_tags) && count($page->blog_categories)) $selector = "blog_tags=$page->blog_tags, blog_categories=$page->blog_categories";
+		elseif($relatedBy == 2 && count($page->blog_tags)) $selector = "blog_tags=$page->blog_tags";//relate by tags only
+		elseif($relatedBy == 3 && count($page->blog_categories)) $selector = "blog_categories=$page->blog_categories";//relate by categories only
+
+		//find related posts
+		if($selector) $related = $pages->find("template=blog-post, id!=$page->id, limit=$limit, sort=$sort, $selector");
+
+		return $related;
+
 	}
 
 	/**
@@ -672,10 +1040,11 @@ class MarkupBlog  extends WireData implements Module {
 	 * @access public
 	 * @param CommentArray $comments
 	 * @param int $limit Optional limit of maximum comments to show
+	 * @param array $options Optional text describing a post's commenting status (e.g. 'comments not allowed')
 	 * @return $out string
 	 *
 	 */
-	public function renderComments(CommentArray $comments, $limit = 0) {
+	public function renderComments(CommentArray $comments, $limit = 0, Array $options = null) {
 
 		$out = '';
 		$page = wire('page');//Page being viewed (Page)
@@ -685,6 +1054,48 @@ class MarkupBlog  extends WireData implements Module {
 		$commentArray = new CommentArray();
 		$prevURL = '';//URL for previous pagination, if applicable (string)
 		$nextURL = '';//URL for next pagination, if applicable (string)
+
+		//global AND post's comments/comments form visibility state. Note: post's comments/comments form SELECTED visibility status overrides global setting
+		$noCommentsForm = false;
+		$noNewComments = '';
+		$blogComments = $this->comments;
+
+		$gComments = $blogComments->blog_comments_view;//global comments/comments form visibility setting [only kicks in when selected AND post setting='']
+		$gCmntsCnt = $blogComments->blog_comments_max;//global: maximum comments allowed per post [form will be hidden if this limit exceeded]. Note: this overrides post's 'always show comments' form
+		$pComments = $page->blog_comments_view;//post comments/comments form visibility setting [only kicks in when SELECTED]
+		$pCmntsCnt = count($page->blog_comments);
+		$defaultOptions = array(
+							'comments_closed' => $this->_('Comments closed for this post.'),//string: message when comments closed
+							'comments_disallowed' => $this->_('Comments not allowed for this post.'),//string: message when comments not allowed for post
+							'comments_empty' => $this->_('Be the first to comment'),//string: message when there are no comments for post
+							'comments_login' => $this->_('You need to log in to comment.'),//string: message when comment form hidden until user logs in
+							'comments_login_required' => false,//bool: if user needs to login before commenting [default is false - they don't need to log in first]
+							'comments_success' => $this->_('Thank you, your submission has been saved.'),
+							'comments_error' => $this->_('Your submission was not saved due to one or more errors. Try again.'),
+							'comments_text' => $this->_('Comment,Comments'),//comments text, e.g. 2 'Comments' or 1 'Comment' next to comments count (div#comments). Must be in 'singular,plural' format
+							'comments_list_empty' => $this->_('No comments found.'),
+							'comments_list_reply_text' => $this->_('replied to'),
+							'comments_by_text' => $this->_('Comment by'),
+							'comments_post_text' => $this->_('Post a comment'),
+							'comments_prev_text' => $this->_('Back'),
+							'comments_next_text' => $this->_('Next'),
+		);
+
+		//merge user options with default comments options
+		if($options != null && is_array($options)){$options = array_merge($defaultOptions, $options);} 
+		else {$options = $defaultOptions;}
+
+		if (($pComments && $pComments->id==$this->dnc->id) || ($gComments && $gComments->id==$this->dnc->id && !$pComments) || ($gCmntsCnt && $pCmntsCnt > $gCmntsCnt)) {
+
+				$noCommentsForm = true;//will use later to disable showing comments form
+				//only need to show this on 'blog-post' pages not in 'blog-comments'!
+				if($page->template == 'blog-post') $noNewComments =  '<h4 id="comments-closed">' . $options['comments_closed'] . '</h4>';//save to a variable; will use later below
+		}
+
+		elseif (($pComments && $pComments->id==$this->dc->id) || ($gComments && $gComments->id==$this->dc->id && !$pComments)) {
+
+				if ($page->template=='blog-post') return '<div id="comments"><h4 id="comments-disallowed">' . $options['comments_disallowed'] . '</h4></div><!--/#comments-->';
+		}
 
 		//check if we should introduce pagination
 		if($limit && (count($comments) > $limit || $pageNum > 1)) {
@@ -701,103 +1112,122 @@ class MarkupBlog  extends WireData implements Module {
 		}
 
 		//setup comments for output, copying all comments we will display into $commentArray
-		foreach($comments as $comment) { 
-					if(!$admin && $comment->status != Comment::statusApproved) continue; 
-					$comment->date = $this->formatDate($comment->created); 
-					$commentArray->add($comment); 
+		foreach($comments as $c) { 
+					if(!$admin && $c->status != Comment::statusApproved) continue; 
+					$c->date = $this->formatDate($c->created); 
+					$commentArray->add($c); 
 					$cnt++;
 					if($limit && $cnt >= $limit) break;
 		} 
 
+		
+		$out .= "<div id='comments'>";
+
 		if($page->template == 'blog-post') {
 			
-				//if we are viewing a post page, then start with a headline
-				$out .= "<div id='comments'>"; //for jumplinks
-
-				$n = count($comments); 
+				//if we are viewing a post page, then start with a headline	
+				$n = count($commentArray); 
 
 				if($n) {
 
 					$out .= "<span class='num-comments-icon'>$n</span>"; 	
-					$out .= "<h4>" . sprintf(_n('Comment', 'Comments', $n), $n) . "</h4>";
+					
+					list($comment, $comments) = explode(',', $options['comments_text']);//come in the format 'singular,plural'	
+					$out .= "<h4>" . sprintf(_n($comment, $comments, $n), $n) . "</h4>";
 				}
 		}
 
-		if(count($comments)) {
+		if(count($commentArray)) {
 			
-				//output the individual comments
+				//output the individual comments if comments found
 				$out .= "<ul class='comments CommentList'>";
 
-				foreach($comments as $comment) {
+				foreach($commentArray as $c) {
 
-							$out .= "<li class='comment CommentListItem' id='comment" . $comment->id . "'>
+							$out .= "<li class='comment CommentListItem' id='comment" . $c->id . "'>
 										<p class='comment-head CommentHeader'>";
 
-							$cite = htmlentities($comment->cite, ENT_QUOTES, "UTF-8"); 
-							$website = htmlentities($comment->website, ENT_QUOTES, "UTF-8");
+							$cite = htmlentities($c->cite, ENT_QUOTES, "UTF-8"); 
+							$website = htmlentities($c->website, ENT_QUOTES, "UTF-8");
 
 							if($website) $cite = "<a href='$website' rel='nofollow' target='_blank'>$cite</a>";
 
 							if($page->template == 'blog-post') {
 
-									$out .= sprintf(__('Comment by %1$s on %2$s'), $cite, $comment->date); 
+									$out .= sprintf(__('%1$s %2$s on %3$s'), $options['comments_by_text'], $cite, $c->date);
 							} 
 
 							else {
 
-									$out .= "<a href='{$comment->page->url}#comment{$comment->id}'>";
-									$out .= sprintf(__('%1$s replied to %2$s on %3$s'), $cite, $comment->page->title, $comment->date); 
+									$out .= "<a href='{$c->page->url}#comment{$c->id}'>";
+									$out .= sprintf(__('%1$s  %2$s %3$s on %4$s'), $cite, $options['comments_list_reply_text'], $c->page->title, $c->date);
 									$out .= "</a>";
 							}
-
-							if($comment->status == Comment::statusPending) {
-
-									$out .= " <span class='comment-status-pending'>" . __('PENDING') . "</span>";
-							} 
-
-							elseif($comment->status == Comment::statusSpam) {
-								
-									$out .= " <span class='comment-status-spam'>" . __('SPAM') . "</span>";
 							
-							}
-						
+							if($c->status == Comment::statusPending) $out .= " <span class='comment-status-pending'>" . $this->_('PENDING') . "</span>";
+							elseif($c->status == Comment::statusSpam) $out .= " <span class='comment-status-spam'>" . $this->_('SPAM') . "</span>";
+							elseif($c->page->blog_comments_view && $c->page->blog_comments_view->id == $this->dc->id || !$c->page->blog_comments_view && $gComments && $gComments->id==$this->dc->id)
+									$out .= " <span class='comment-status-hidden'>" . $this->_('HIDDEN') . "</span>";
 			
 							$out .= "</p>
 										<div class='comment-body CommentText'>";
 
-							$text = htmlentities($comment->text, ENT_QUOTES, "UTF-8"); 
+							$text = htmlentities($c->text, ENT_QUOTES, "UTF-8");//grab the comment text
 							$text = str_replace("\n\n", "</p><p>", $text);
 							$text = str_replace("\n", "<br />", $text);
 							
 							$out .=  "<p>$text</p>
 									</div></li>";
 
-				}//end foreach the include '/site/templates/markup/comment.php'
+				}//end foreach commentArray
 
 				$out .= "</ul>";
 		
 
-		}//end if(count($comments)) 
+		}//end if(count($commentArray))
 
-		//@@kongondo
-		elseif ($page->template=='blog-comments') {
+		//if comments count == 0
+		elseif(!count($commentArray)) {
 
-				$out .= $this->_('No comments yet');
+				//prevents output of 'be the first to comment' when comments closed but there are no comments yet
+				if(($page->template=='blog-post' && $pComments && $pComments->id !=$this->dnc->id) || ($page->template=='blog-post' && !$pComments && !$gComments)) {
+							$out .= '<h4 id="comments-empty">' . $options['comments_empty'] . '</h4>';
+				}
+				
+				elseif ($page->template=='blog-comments') $out .= '<h4 id="comments-empty">' .  $options['comments_list_empty'] . '</h4>';
+				
+				#$prevURL  = '';@@todo - necessary?
+				#$nextURL = '';
 			
 		}
 
-		if($page->template == 'blog-post') {
+		if($page->template == 'blog-post' && $noCommentsForm == false) {
+				
+				if (($options['comments_login_required'] && wire('user')->isLoggedin()) || (!$options['comments_login_required'])) {
+					
+							//if we are viewing a post page, then output a comments form
+							$out .= $page->blog_comments->renderForm(array(
+								'headline' => '<h4>' . $options['comments_post_text'] . '</h4>', //Post comment headline
+								'attrs' => array(),
+								'successMessage' => "<div class='alert-box success'>" . $options['comments_success'] . "</div>",
+								'errorMessage' => "<div class='alert-box error'>" . $options['comments_error'] . "</div>",
+								'redirectAfterPost' => true
+								));
 
-				//if we are viewing a post page, then output a comments form
-				$out .= $page->blog_comments->renderForm(array(
-					'headline' => '<h4>' . __('Post a comment') . '</h4>', // Post comment headline
-					'attrs' => array(),
-					'successMessage' => "<div class='alert-box success'>" . __('Thank you, your submission has been saved.') . "</div>",
-					'errorMessage' => "<div class='alert-box error'>" . __('Your submission was not saved due to one or more errors. Try again.') . "</div>",
-					'redirectAfterPost' => true
-					));
+							$out .=  "</div><!--/#comments-->";
+				
+				}
 
-				$out .=  "</div><!--/#comments-->";
+				else {
+
+							$out .=  '<h4 id="comments-login">' . $options['comments_login'] . '</h4></div><!--/#comments-->';
+				}
+
+		}//end if $page->template == "blog-post" && $noCommentsForm == false
+
+		else {
+-
+				$out .= $noNewComments . '</div><!--/#comments-->';
 		}
 
 		//output pagination if necessary
@@ -805,8 +1235,8 @@ class MarkupBlog  extends WireData implements Module {
 			
 				$out .= "<p class='comments-pagination'>";
 
-				if($prevURL) $out .= "<a class='button button-prev' href='$prevURL'>" . __('Back') . "</a> "; 
-				if($nextURL) $out .= "<a class='button button-next' href='$nextURL'>" . __('Next') . "</a> ";
+				if($prevURL) $out .= "<a class='button button-prev' href='$prevURL'>" . $options['comments_prev_text'] . "</a> ";
+				if($nextURL) $out .= "<a class='button button-next' href='$nextURL'>" . $options['comments_next_text'] . "</a> ";
 
 				$out .= "</p>";
 		}
@@ -817,10 +1247,78 @@ class MarkupBlog  extends WireData implements Module {
 	}
 
 	/**
+	 * Render a Blog post's author widget.
+	 *
+	 * @access public
+	 * @param array $options Options to configure post author widget
+	 * @return $out string
+	 *
+	 */
+	public function postAuthor(Array $options = null) {
+
+		$postAuthor = $this->pauthor;
+
+		//default options for author widget
+		$defaultOptions = array(
+							'author_text' => $this->_('Author'),//text next to author title|name
+							'author_thumb_width' => 100,//no width manipulation of author thumb if this is blank or 0
+							'author_thumb_height' => '',//no height manipulation of author thumb if this is blank or 0
+							'author_thumb_alt' => 'title',//defaults to $author->title. Otherwise other stated field on the page, e.g. = 'title' or if 'description' then $image->description
+
+		);
+
+		//merge user options with default author widget options
+		if($options != null && is_array($options)) $options = array_merge($defaultOptions, $options);
+		else $options = $defaultOptions;
+
+		$out = '';
+
+		//if widget is available [i.e. published]...
+	    if (!$postAuthor->is(Page::statusUnpublished)) {
+
+	                $author = wire('page')->createdUser;
+	                $authorName = $author->get('title') ? $author->get('title') : 'Author Name';//if no author title not set use generic 'Author Name'
+
+	                $image = $author->blog_images->first();
+
+	                $authorText = $options['author_text'] !='' ? "<small> " . $options['author_text'] . "</small>" : '';
+
+	                if($image) {
+	                            
+								$alt = $options['author_thumb_alt'] == 'description' ? $image->description : $author->{$options['author_thumb_alt']};
+
+								$width 	= (int) $options['author_thumb_width'];
+								$height = (int) $options['author_thumb_height'];
+
+								if ($width > 0) $thumb = $image->width($width);
+								elseif ($height > 0) $thumb = $image->height($height);
+								else $thumb = $image;
+
+	                            $photo =  "<a title='$authorName'>
+	                                       	<img class='author-photo' src='{$thumb->url}' alt='{$alt}' width='{$thumb->width}' height='{$thumb->height}' >
+	                                   	  </a>";								
+
+	                } 
+
+	                else {
+	                            $photo = '';
+
+	                }
+
+	                $out .= "<div id='post-author' class='clearfix'>" . $photo . "<h4 class='post-author-name'>" . $authorName . $authorText . "</h4>" . $author->blog_body . "</div>";
+
+	    }
+
+		return $out;
+
+	}
+
+
+	/**
 	 * Return a date formatted as specified in the Blog post's 'blog_date' field.
 	 *
 	 * @access public
-	 * @param int|string $date If given a timestamp, it will be automatically formatted according to the 'date' field in PW
+	 * @param int|string $date If given a timestamp, it will be automatically formatted according to the 'blog_date' field in PW
 	 *	If given a string, then whatever format it is in will be kept. 
 	 * @return $date string
 	 *
@@ -828,7 +1326,7 @@ class MarkupBlog  extends WireData implements Module {
 	public function formatDate($date) {
 
 		if(is_int($date)) {
-			//get date format from our 'date' field, for consistency
+			//get date format from our 'blog_date' field, for consistency
 			$dateFormat = wire('fields')->get('blog_date')->dateOutputFormat; 
 			$date = FieldtypeDatetime::formatDate($date, $dateFormat);
 		}
@@ -852,7 +1350,7 @@ class MarkupBlog  extends WireData implements Module {
 
 		$page = wire('page');
 		if(empty($title)) $title = $page->get('headline|title') . ' - ' . wire('pages')->get('/')->headline;
-		if(empty($description)) $description = $page->get('summary|meta_description');
+		if(empty($description)) $description = $page->get('summary|meta_description');//@@ todo - no page summary so change to get from blog_body instead!
 
 		$rss = wire('modules')->get('MarkupRSS');
 		$rss->title = $title;
@@ -861,6 +1359,7 @@ class MarkupBlog  extends WireData implements Module {
 		$rss->itemDescriptionLength = 0; // no maxlength
 		$rss->itemDateField = 'date';
 		$rss->render($items);
+
 	}
 
 	/**
@@ -876,7 +1375,7 @@ class MarkupBlog  extends WireData implements Module {
 	 * @param string $headline Headline to display above nav
 	 * @param array|PageArray $items May be an array of Page objects or array of ($url => $label)
 	 * @param Page|string $currentURL Current item that should be highlighted, may be Page or $url
-	 * @param bool $mobileSelect Replace the nav with a <select> when at mobile width?
+	 * @param bool $mobile Replace the nav with a <select> when at mobile width?
 	 * @return $out string
 	 *
 	 */
@@ -896,8 +1395,8 @@ class MarkupBlog  extends WireData implements Module {
 
 		$nav = array();
 
-		//we add this for use in selector below [code amendment to suit this Blog's Page Tree]
-		$blogParentId = wire('pages')->get('/blog/')->id;
+		if ($this->blogStyle == 1 || $this->blogStyle == 2) $blogParentId = $this->blog->id;
+		elseif ($this->blogStyle == 3 || $this->blogStyle == 4) $blogParentId = 1;
 
 		foreach($items as $url => $title) {
 				
@@ -907,10 +1406,10 @@ class MarkupBlog  extends WireData implements Module {
 						$title = $page->title;
 						$url = $page->url;
 
-						// if nav item is root-level and $currentPage shares this root parent, then 
-						// make it the currentURL so that it is still highlighted in the nav
+						//if nav item is root-level and $currentPage shares this root parent, then 
+						//make it the currentURL so that it is still highlighted in the nav
 						
-						/* ORIG CODE in Blog Profile. My Page Tree is different, hence amended below */
+						/* ORIGINAL CODE in Blog Profile. My Page Tree is different, hence amended below */
 						//if($page->parent_id == 1 && $currentPage && $currentPage->rootParent === $page) $currentURL = $currentPage->rootParent->url;
 
 						/* @@kongondo above amendment */
@@ -952,7 +1451,7 @@ class MarkupBlog  extends WireData implements Module {
 		 * has the class 'mobile' so it is only visible when at mobile width. 
 		 *
 		 */
-		if($mobile)
+		if($mobile) {
 
 				$out .= "<form class='mobile'>
 							<select class='nav'><option value='./'></option>";
@@ -965,9 +1464,9 @@ class MarkupBlog  extends WireData implements Module {
 				
 				$out .= "</select>
 						</form>";
-
+		}
+		
 		return $out;
-
 
 	}
 
