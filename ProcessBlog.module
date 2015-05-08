@@ -951,18 +951,18 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 				<thead>
 					<tr>
 						<th>' . $this->_("Year") . '</th>
-						<th>Jan</th>
-						<th>Feb</th>
-						<th>Mar</th>
-						<th>Apr</th>
-						<th>May</th>
-						<th>Jun</th>
-						<th>Jul</th>
-						<th>Aug</th>
-						<th>Sep</th>
-						<th>Oct</th>
-						<th>Nov</th>
-						<th>Dec</th>
+						<th>' . $this->_("Jan") . '</th>
+						<th>' . $this->_("Feb") . '</th>
+						<th>' . $this->_("Mar") . '</th>
+						<th>' . $this->_("Apr") . '</th>
+						<th>' . $this->_("May") . '</th>
+						<th>' . $this->_("Jun") . '</th>
+						<th>' . $this->_("Jul") . '</th>
+						<th>' . $this->_("Aug") . '</th>
+						<th>' . $this->_("Sep") . '</th>
+						<th>' . $this->_("Oct") . '</th>
+						<th>' . $this->_("Nov") . '</th>
+						<th>' . $this->_("Dec") . '</th>
 					</tr>
 				</thead>
 				<tbody>';
@@ -1101,7 +1101,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		//asm select for categories for quick post
 		$as = $this->modules->get('InputfieldAsmSelect');
 		$as->label = sprintf(__('%s'), $this->categories->title);
-		$as->description = "Select one or more " . sprintf(__('%s'), strtolower($this->categories->title)) . " below and drag to sort them in order of relevance.";
+		$as->description = $this->_('Select one or more categories below and drag to sort them in order of relevance.');
 
 		$as->attr('id+name', 'quickpost_categories_add');//set an id and name[] to this inputfield page select; in our $input->post, we'll loop through the name[] array
 
@@ -1470,7 +1470,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		//using custom checkbox as checkbox created via API is "misbehaving" [css-wise]
 		$chx = "
 		<input type=checkbox id='add_and_publish' name='add_and_publish' value='1'>
-		<label id='add_new' for='add_and_publish'>Check box to save and publish</label>";
+		<label id='add_new' for='add_and_publish'>".$this->_('Check box to save and publish')."</label>'";
 
 		//$m->add($s);
 
@@ -1666,7 +1666,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		//use checkbox instead
 		$chx = "
 		<input type=checkbox id='add_and_publish' name='add_and_publish' value='1'>
-		<label id='add_new' for='add_and_publish'>Check box to save and publish</label>";
+		<label id='add_new' for='add_and_publish'>".$this->_('Check box to save and publish')."</label>";
 
 		//$m->attr('value', $txa->render() . $chx->render() . $s->render());//need to be rendered together otherwise duplicates will occur
 		$m->attr('value', $txa->render() . $s->render() . $chx);//need to be rendered together otherwise duplicates will occur
@@ -1988,25 +1988,25 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$twitterScreenName->attr('value', $this->tweets->blog_note);
 
 		$settings = array(
-							'Blog Title' => $blogTitle,
-							'Tagline' => $blogTagline,
-							'Blog Homepage: Total Posts' => $postsBlogPage,
-							'Posts: Summary length (default=450)' => $postsLength,
-							'Comments: Per comments page' => $commentsPerPage,
-							'Comments: Maximum per Post' => $commentsMaxPerPost,
-							'Comments: Visibility' => $commentsVisibility,
-							'Widget: Recent Posts to show' => $recentPostsNumber,
-							'Widget: Recent Comments to show' => $recentCommentsNumber,
-							'Widget: Recent Tweets to show' => $recentTweetsNumber,
-							'Twitter screen name' => $twitterScreenName
+							$this->_('Blog Title') => $blogTitle,
+							$this->_('Tagline') => $blogTagline,
+							$this->_('Blog Homepage: Total Posts') => $postsBlogPage,
+							$this->_('Posts: Summary length (default=450)') => $postsLength,
+							$this->_('Comments: Per comments page') => $commentsPerPage,
+							$this->_('Comments: Maximum per Post') => $commentsMaxPerPost,
+							$this->_('Comments: Visibility') => $commentsVisibility,
+							$this->_('Widget: Recent Posts to show') => $recentPostsNumber,
+							$this->_('Widget: Recent Comments to show') => $recentCommentsNumber,
+							$this->_('Widget: Recent Tweets to show') => $recentTweetsNumber,
+							$this->_('Twitter screen name') => $twitterScreenName
 		);
 
 		//if commentusUse !=1, unset comments-related input
 		if ($this->commentsUse !=1) {
-			unset($settings['Comments: Per comments page']);
-			unset($settings['Comments: Maximum per Post']);
-			unset($settings['Comments: Visibility']);
-			unset($settings['Widget: Recent Comments to show']);
+			unset($settings[$this->_('Comments: Per comments page')]);
+			unset($settings[$this->_('Comments: Maximum per Post')]);
+			unset($settings[$this->_('Comments: Visibility')]);
+			unset($settings[$this->_('Widget: Recent Comments to show')]);
 		}
 
 		foreach ($settings as $key => $value) {
@@ -2132,7 +2132,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		//CREATE AN INPUTFIELD MARKUP
 		$m = $this->modules->get('InputfieldMarkup');
 		$m->label = $this->_('Please read carefully');
-		$m->description = $this->_('The installed Blog Style is #' . $this->blogStyle);
+		$m->description = $this->_('The installed Blog Style is #') . $this->blogStyle;
 		#$m->collapsed = Inputfield::collapsedYes;
 
 		//array of blog fields. We'll use this to delete each, one by one as applicable
