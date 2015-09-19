@@ -739,6 +739,7 @@ class MarkupBlog  extends WireData implements Module {
 		
 		foreach($posts as $page) {
 		
+					//@@todo - should only run if post small == true!!!
 					//Note:we don't have a summary field for 'post' pages but left code here just in case we need it in future
 					if(empty($page->summary)) {
 								//summary is blank so we auto-generate a summary from the body [note: blog body field is 'blog_body']
