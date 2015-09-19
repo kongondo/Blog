@@ -797,6 +797,9 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 */
  	public function blogDashboard() {
 
+ 		//@@todo - delete when done
+ 		$time = Debug::timer();
+
 		//default blog view = dashboard
 
 		//CREATE A NEW FORM
@@ -815,34 +818,47 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		
 		$qn = array();
 
-		foreach ($selector as $k => $v) {$qn [$k] = count(wire('pages')->find("template={$k}, parent!=7"));}//exclude pages in trash
+		foreach ($selector as $k => $v) {$qn [$k] = wire('pages')->count("template={$k}, parent!=7");}//exclude pages in trash
 
 		//add count of unpublished posts to array
-		$qn ['unpublished'] = count(wire('pages')->find("template=blog-post, status=unpublished, parent!=7"));
+		$qn ['unpublished'] = wire('pages')->count("template=blog-post, status=unpublished, parent!=7");
 
 		//################ - Comments count for Blog Dashborad - ####################
 		
-		$posts = wire('pages')->find('template=blog-post, include=all, sort=-blog_date, parent!=7');//@@todo - might need to limit here eventually!
+		$numApproved = '';
+		$numPending = '';
+		$numSpam = '';
 
-		$numApproved = 0; 
-		$numPending = 0; 
-		$numSpam = 0;
+		$approvedComment = 1;
+		$pendingComment = 0;
+		$spamComment	= -2;
 
-		foreach ($posts as $p) {
+		$database = $this->wire('database');
+		$table = $database->escapeTable('field_blog_comments');//see /wire/core/Fieldtype.php. returns 'field_name_of_field' (i.e. as in the database)
 
-			if ($this->commentsUse == 1) {
-					foreach($p->blog_comments as $comment) {
-								if($comment->isApproved()) $numApproved++; 
-								elseif($comment->status == Comment::statusPending) $numPending++;
-								elseif($comment->status == Comment::statusSpam) $numSpam++; 
-					}
+		$sql = "SELECT COUNT(*) FROM `$table` WHERE status=:status";
 
-			}//end if comments
+		$query = $database->prepare($sql);//prepare LOAD DATA INFILE statement
+
+		//@@todo - check if below ok to do - i.e. chain queries by changing bound variables -> also, if there's a bettere way to do it
 		
-		}
+		//approved comments count
+		$query->bindValue(":status", $approvedComment, PDO::PARAM_INT);
+		$query->execute();//execute our count
+		$numApproved = $query->fetchColumn();//fetch the count
+
+		//pending comments count
+		$query->bindValue(":status", $pendingComment, PDO::PARAM_INT);
+		$query->execute();//execute our count
+		$numPending = $query->fetchColumn();//fetch the count
+
+		//spam comments count
+		$query->bindValue(":status", $spamComment, PDO::PARAM_INT);
+		$query->execute();//execute our count
+		$numSpam = $query->fetchColumn();//fetch the count
 		
 		$numTotal = $numApproved + $numPending + $numSpam;
-
+		
 		//TABLE for quick view of posts
 
 		//prepare some variables we'll use here
@@ -918,6 +934,12 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		$years = array();
 
+		#prepare for looping over years and months
+
+		//prepare blog_date table
+		$table = $database->escapeTable('field_blog_date');//see /wire/core/Fieldtype.php. returns 'field_name_of_field' (i.e. as in the database)		
+		$templateID = wire('templates')->get('blog-post')->id;//we need the ID of the template 'blog-post' for our sql query below
+
 		for($y = $lastYear; $y >= $firstYear; $y--) {
 
 			$months = array();
@@ -928,17 +950,35 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 				$firstDay = strtotime("$y-$month-01");// 01 Jan 201x
 				$lastDay = strtotime("+1 month", $firstDay)-1;//31 Jan 201x
 
-				$posts = wire('pages')->find("template=blog-post, blog_date>=$firstDay, blog_date<=$lastDay, sort=-blog_date");
+				//'data' field in FieldtypeDatetime in PW is hardcoded to Y-m-d H:i:s - see the FieldtypeDatetime line#426 (___sleepValue)
+				//we make sure that is the format we'll use for comparison in the sql query below (blog_date is saved as datetime)
+				$firstDay = date('Y-m-d H:i:s', $firstDay);
+				$lastDay = date('Y-m-d H:i:s', $lastDay);
+
+				//our count based on data in two tables - 'pages' and 'field_blog_date'
+				$sql = 	"SELECT COUNT(*) FROM `$table` " .
+						"INNER JOIN pages ON pages.id=$table.pages_id " .
+						"WHERE pages.templates_id=:templates_id " .
+						"AND $table.data>=:first_day " .
+						"AND $table.data<=:last_day";
+
+				$query = $database->prepare($sql);
+				$query->bindValue(":first_day", $firstDay);//bind our named parameters
+				$query->bindValue(":last_day", $lastDay);
+				$query->bindValue(':templates_id', $templateID, PDO::PARAM_INT);
+				
+				$query->execute();
 			
-				$numPosts = $posts->getTotal();
-		
+				//fetch count
+				$numPosts = $query->fetchColumn();
+
 				$months[] = $numPosts;//@@kongondo - build a $months array to be added to $years array
 			
 				if(!$numPosts) continue; 
 					
 				$numPostsYear += $numPosts;//counter; adding to the total of the number of posts per year.
 
-			}
+			}//end inner for (for months)
 
 		if(!$numPostsYear) continue;//takes care of years where there are no posts
 
@@ -970,6 +1010,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 			
 				$archivesTable .= "<tr><td>" . $y . "</td>";
 
+				//months
 				foreach ($total as $t) {
 					
 					//if no posts for the month, don't output '0' but '-'. Otherwise, output total posts for month
@@ -1002,6 +1043,9 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$form->add($w); 
 		$form->attr('value', $this->blogMenu());//add the Blog Menu
 
+		//@@todo - delete when done
+		$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
+
 		return $form->render();
 
  	}
@@ -1019,6 +1063,10 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *
 	 */
 	protected function ___executePosts() {
+
+		$time = Debug::timer();
+ 		#$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
+ 		#$this->session->redirect(wire('page')->url . "posts/");//redirect to page where we were
 
 		//CREATE A NEW FORM
 		$form = $this->modules->get('InputfieldForm'); 
@@ -1216,7 +1264,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		foreach ($posts as $p) {
 
-			if (!$posts) break;//if no posts found, break			
+			if (!$posts) break;//if no posts found, break//@@TODO - THIS SHOULD COME EARLIER AND SHOULD REALLY BE A COUNT!	
 			
 			//initialise some comments variables
 			$commentsVisibility = '';
@@ -1406,6 +1454,9 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		//send input->post values to the Method save();
 		if($post->posts_action_btn || $post->quickpost_save_unpublished_btn || $post->quickpost_publish_btn) $this->save($form);
 		
+		
+		$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
+
 		//render the final form
 		return $form->render();
 	
@@ -1424,6 +1475,10 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *
 	 */
 	protected function ___executeCategories() {
+
+		$time = Debug::timer();
+ 		#$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
+ 		#$this->session->redirect(wire('page')->url . "posts/");//redirect to page where we were
 
 		//CREATE A NEW FORM
 		$form = $this->modules->get('InputfieldForm'); 
@@ -1593,6 +1648,8 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		//send input->post values to the Method save();
 		if($post->categories_delete_btn || $post->categories_add_btn || $post->categories_add_publish_btn) $this->save($form);
 
+		$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
+
 		//render the final form
 		return $form->render();
 	
@@ -1611,6 +1668,11 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *
 	 */
 	protected function ___executeTags() {
+
+
+		$time = Debug::timer();
+ 		#$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
+ 		#$this->session->redirect(wire('page')->url . "posts/");//redirect to page where we were
 
 		//CREATE A NEW FORM
 		$form = $this->modules->get('InputfieldForm'); 
@@ -1790,6 +1852,8 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		//send input->post values to the Method save();
 		if($post->tags_delete_btn || $post->tags_add_btn || $post->tags_add_publish_btn) $this->save($form);//
 
+		$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
+
 		//render the final form
 		return $form->render();
 
@@ -1807,6 +1871,10 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *
 	 */
 	protected function ___executeAuthors() {
+
+		$time = Debug::timer();
+ 		#$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
+ 		#$this->session->redirect(wire('page')->url . "posts/");//redirect to page where we were
 							
 		//CREATE A NEW WRAPPER
 		$w = new InputfieldWrapper;
@@ -1843,8 +1911,26 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		foreach ( $authors as $author) {
 					
 					$authorPhoto = count($author->blog_images) ? "<img src ='" . $author->blog_images->first->size(75, 75)->url ."'>"  : "<span class='red' >" . $this->_('No photo') . "</span>";
-					$authorPublishedCnt = count(wire('pages')->find("template=blog-post, created_users_id={$author->id}"));//count number of posts by this author
-					$authorPendingCnt = count(wire('pages')->find("template=blog-post, status=unpublished, created_users_id={$author->id}"));//count number of posts by this author
+					
+					/*
+
+						@@kongondo-stress test => 5000 blog posts
+
+						- PROBLEM: SLOW AUTHOR DASHBOARD LOAD TIME - 2.5 SECONDS
+						- SOLUTION: USE $pages->count('selector') RATHER THAN count(wire('pages')->find('selector')) - LOAD TIME = 0.05 seconds
+
+
+					*/
+					$authorPublishedCnt = wire('pages')->count("template=blog-post, created_users_id={$author->id}");//count number of posts by this author
+
+					#@@NOTE - WHY NOT COUNT IN ARRAY HERE? BUT THAT WOULD BE SLOWER SINCE WILL HAVE TO LOAD THE PAGES?
+					$authorPendingCnt = wire('pages')->count("template=blog-post, status=unpublished, created_users_id={$author->id}");//count number of posts by this author
+
+					#$authorPublishedCnt = count(wire('pages')->find("template=blog-post, created_users_id={$author->id}"));//count number of posts by this author
+					#$authorPendingCnt = count(wire('pages')->find("template=blog-post, status=unpublished, created_users_id={$author->id}"));//count number of posts by this author
+					#@@kongondo-stress test
+
+
 					$t->row(array(
 						$authorPhoto,
 						$authorTitle = $author->title ? $author->title : $author->name . ": <span class='red'>" . $this->_('please enter your first and last names in your profile') . "</span>",
@@ -1860,6 +1946,8 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$w->add($fs1);//fieldset added to wrapper
 
 		$w->attr('value', $this->blogMenu());//add the Blog Menu
+
+		$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
 		
 		return $w->render();
 	
@@ -1878,6 +1966,11 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *
 	 */
 	protected function ___executeSettings() {
+
+
+		$time = Debug::timer();
+ 		#$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
+ 		#$this->session->redirect(wire('page')->url . "posts/");//redirect to page where we were
 			
 		//CREATE A NEW FORM
 		$form = new InputfieldForm; 
@@ -2087,6 +2180,8 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		
 		//send input->post values to the Method save();
 		if($post->widgets_save_status_btn || $post->general_settings_save_btn) $this->save($form);//
+
+		$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
 
 		return $form->render();
 	
