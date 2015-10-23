@@ -82,6 +82,11 @@ Uninstalling Blog is a two-step process. If you are logged in as a superuser, yo
 
 ##Changelog
 
+####Version 2.3.5
+1. Fixed issue where dashboards were loading very slowly on sites with lots of posts.
+2. Added some missing translation strings.
+3. Some code optimisations.
+
 ####Version 2.3.4
 Preserve all line breaks as paragraphs for posts created via ProcessBlog's quickpost.
 
