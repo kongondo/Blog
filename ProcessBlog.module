@@ -40,7 +40,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 			'title' => 'Blog',
 			'summary' => 'Blog Manager module inspired by the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 234,
+			'version' => 235,
 			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false, 
@@ -797,9 +797,6 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 */
  	public function blogDashboard() {
 
- 		//@@todo - delete when done
- 		$time = Debug::timer();
-
 		//default blog view = dashboard
 
 		//CREATE A NEW FORM
@@ -838,10 +835,8 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		$sql = "SELECT COUNT(*) FROM `$table` WHERE status=:status";
 
-		$query = $database->prepare($sql);//prepare LOAD DATA INFILE statement
-
-		//@@todo - check if below ok to do - i.e. chain queries by changing bound variables -> also, if there's a bettere way to do it
-		
+		$query = $database->prepare($sql);//prepare statement
+	
 		//approved comments count
 		$query->bindValue(":status", $approvedComment, PDO::PARAM_INT);
 		$query->execute();//execute our count
@@ -991,18 +986,18 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 				<thead>
 					<tr>
 						<th>' . $this->_("Year") . '</th>
-						<th>Jan</th>
-						<th>Feb</th>
-						<th>Mar</th>
-						<th>Apr</th>
-						<th>May</th>
-						<th>Jun</th>
-						<th>Jul</th>
-						<th>Aug</th>
-						<th>Sep</th>
-						<th>Oct</th>
-						<th>Nov</th>
-						<th>Dec</th>
+						<th>' . $this->_("Jan") . '</th>
+						<th>' . $this->_("Feb") . '</th>
+						<th>' . $this->_("Mar") . '</th>
+						<th>' . $this->_("Apr") . '</th>
+						<th>' . $this->_("May") . '</th>
+						<th>' . $this->_("Jun") . '</th>
+						<th>' . $this->_("Jul") . '</th>
+						<th>' . $this->_("Aug") . '</th>
+						<th>' . $this->_("Sep") . '</th>
+						<th>' . $this->_("Oct") . '</th>
+						<th>' . $this->_("Nov") . '</th>
+						<th>' . $this->_("Dec") . '</th>
 					</tr>
 				</thead>
 				<tbody>';
@@ -1043,9 +1038,6 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$form->add($w); 
 		$form->attr('value', $this->blogMenu());//add the Blog Menu
 
-		//@@todo - delete when done
-		$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
-
 		return $form->render();
 
  	}
@@ -1063,10 +1055,6 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *
 	 */
 	protected function ___executePosts() {
-
-		$time = Debug::timer();
- 		#$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
- 		#$this->session->redirect(wire('page')->url . "posts/");//redirect to page where we were
 
 		//CREATE A NEW FORM
 		$form = $this->modules->get('InputfieldForm'); 
@@ -1149,7 +1137,9 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		//asm select for categories for quick post
 		$as = $this->modules->get('InputfieldAsmSelect');
 		$as->label = sprintf(__('%s'), $this->categories->title);
-		$as->description = "Select one or more " . sprintf(__('%s'), strtolower($this->categories->title)) . " below and drag to sort them in order of relevance.";
+		$as->description = $this->_("Select one or more ") . 
+							sprintf(__('%s'), strtolower($this->categories->title)) . 
+							$this->_(" below and drag to sort them in order of relevance.");
 		
 		$as->attr('id+name', 'quickpost_categories_add');//set an id and name[] to this inputfield page select; in our $input->post, we'll loop through the name[] array
 
@@ -1264,7 +1254,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		foreach ($posts as $p) {
 
-			if (!$posts) break;//if no posts found, break//@@TODO - THIS SHOULD COME EARLIER AND SHOULD REALLY BE A COUNT!	
+			if (!count($posts)) break;//if no posts found, break early
 			
 			//initialise some comments variables
 			$commentsVisibility = '';
@@ -1326,7 +1316,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 			//set table rows
 			$postsTable = array(
 									"<input type='checkbox' name='posts_action[]' value='{$p->id}' class='toggle'>",//disabled sorting on this in .js file
-									"<a href='{$this->config->urls->admin}page/edit/?id={$p->id}' class='editBlog iframe'>$p->title</a>",
+									"<a href='{$this->config->urls->admin}page/edit/?id={$p->id}&modal=1' class='editBlog iframe'>$p->title</a>",
 									$commentsVisibility,//total approved comments
 									$approvedTotal,//total approved comments
 									$pendingTotal,//total pending comments
@@ -1452,10 +1442,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$post = $this->input->post; 
 
 		//send input->post values to the Method save();
-		if($post->posts_action_btn || $post->quickpost_save_unpublished_btn || $post->quickpost_publish_btn) $this->save($form);
-		
-		
-		$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
+		if($post->posts_action_btn || $post->quickpost_save_unpublished_btn || $post->quickpost_publish_btn) $this->save($form);		
 
 		//render the final form
 		return $form->render();
@@ -1475,10 +1462,6 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *
 	 */
 	protected function ___executeCategories() {
-
-		$time = Debug::timer();
- 		#$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
- 		#$this->session->redirect(wire('page')->url . "posts/");//redirect to page where we were
 
 		//CREATE A NEW FORM
 		$form = $this->modules->get('InputfieldForm'); 
@@ -1525,7 +1508,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		//using custom checkbox as checkbox created via API is "misbehaving" [css-wise]
 		$chx = "
 		<input type=checkbox id='add_and_publish' name='add_and_publish' value='1'>
-		<label id='add_new' for='add_and_publish'>Check box to save and publish</label>";
+		<label id='add_new' for='add_and_publish'>" . $this->_("Check box to save and publish") .  "</label>";
 
 		//$m->add($s);
 
@@ -1591,7 +1574,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 				$t->row(array(
 					"<input type='checkbox' name='categories_delete[]' value='{$c->id}' class='toggle'>",//sorting disabled in .js file
-					"<a href='{$this->config->urls->admin}page/edit/?id={$c->id}' class='editBlog iframe'>$c->title</a>",
+					"<a href='{$this->config->urls->admin}page/edit/?id={$c->id}&modal=1' class='editBlog iframe'>$c->title</a>",
 					$status,//category published or not
 					$numPosts,
 							
@@ -1648,8 +1631,6 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		//send input->post values to the Method save();
 		if($post->categories_delete_btn || $post->categories_add_btn || $post->categories_add_publish_btn) $this->save($form);
 
-		$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
-
 		//render the final form
 		return $form->render();
 	
@@ -1668,11 +1649,6 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *
 	 */
 	protected function ___executeTags() {
-
-
-		$time = Debug::timer();
- 		#$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
- 		#$this->session->redirect(wire('page')->url . "posts/");//redirect to page where we were
 
 		//CREATE A NEW FORM
 		$form = $this->modules->get('InputfieldForm'); 
@@ -1728,7 +1704,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		//use checkbox instead
 		$chx = "
 		<input type=checkbox id='add_and_publish' name='add_and_publish' value='1'>
-		<label id='add_new' for='add_and_publish'>Check box to save and publish</label>";
+		<label id='add_new' for='add_and_publish'>" . $this->_("Check box to save and publish") . "</label>";
 
 		//$m->attr('value', $txa->render() . $chx->render() . $s->render());//need to be rendered together otherwise duplicates will occur
 		$m->attr('value', $txa->render() . $s->render() . $chx);//need to be rendered together otherwise duplicates will occur
@@ -1794,7 +1770,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 				$t->row(array(
 					"<input type='checkbox' name='tags_delete[]' value='{$tag->id}' class='toggle'>",//sorting disable in .js file
-					"<a href='{$this->config->urls->admin}page/edit/?id={$tag->id}' class='editBlog iframe'>$tag->title</a>",
+					"<a href='{$this->config->urls->admin}page/edit/?id={$tag->id}&modal=1' class='editBlog iframe'>$tag->title</a>",
 					$status,//tag published or not
 					$numPosts,
 							
@@ -1850,9 +1826,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$post = $this->input->post; 
 		
 		//send input->post values to the Method save();
-		if($post->tags_delete_btn || $post->tags_add_btn || $post->tags_add_publish_btn) $this->save($form);//
-
-		$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
+		if($post->tags_delete_btn || $post->tags_add_btn || $post->tags_add_publish_btn) $this->save($form);
 
 		//render the final form
 		return $form->render();
@@ -1871,11 +1845,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *
 	 */
 	protected function ___executeAuthors() {
-
-		$time = Debug::timer();
- 		#$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
- 		#$this->session->redirect(wire('page')->url . "posts/");//redirect to page where we were
-							
+						
 		//CREATE A NEW WRAPPER
 		$w = new InputfieldWrapper;
 		//$w->attr('title', $this->_('Blog Title')); 
@@ -1912,24 +1882,9 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 					
 					$authorPhoto = count($author->blog_images) ? "<img src ='" . $author->blog_images->first->size(75, 75)->url ."'>"  : "<span class='red' >" . $this->_('No photo') . "</span>";
 					
-					/*
-
-						@@kongondo-stress test => 5000 blog posts
-
-						- PROBLEM: SLOW AUTHOR DASHBOARD LOAD TIME - 2.5 SECONDS
-						- SOLUTION: USE $pages->count('selector') RATHER THAN count(wire('pages')->find('selector')) - LOAD TIME = 0.05 seconds
-
-
-					*/
 					$authorPublishedCnt = wire('pages')->count("template=blog-post, created_users_id={$author->id}");//count number of posts by this author
 
-					#@@NOTE - WHY NOT COUNT IN ARRAY HERE? BUT THAT WOULD BE SLOWER SINCE WILL HAVE TO LOAD THE PAGES?
 					$authorPendingCnt = wire('pages')->count("template=blog-post, status=unpublished, created_users_id={$author->id}");//count number of posts by this author
-
-					#$authorPublishedCnt = count(wire('pages')->find("template=blog-post, created_users_id={$author->id}"));//count number of posts by this author
-					#$authorPendingCnt = count(wire('pages')->find("template=blog-post, status=unpublished, created_users_id={$author->id}"));//count number of posts by this author
-					#@@kongondo-stress test
-
 
 					$t->row(array(
 						$authorPhoto,
@@ -1946,9 +1901,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$w->add($fs1);//fieldset added to wrapper
 
 		$w->attr('value', $this->blogMenu());//add the Blog Menu
-
-		$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
-		
+	
 		return $w->render();
 	
 	}
@@ -1966,11 +1919,6 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *
 	 */
 	protected function ___executeSettings() {
-
-
-		$time = Debug::timer();
- 		#$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
- 		#$this->session->redirect(wire('page')->url . "posts/");//redirect to page where we were
 			
 		//CREATE A NEW FORM
 		$form = new InputfieldForm; 
@@ -2081,25 +2029,26 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$twitterScreenName->attr('value', $this->tweets->blog_note);
 	
 		$settings = array(
-							'Blog Title' => $blogTitle, 
-							'Tagline' => $blogTagline, 
-							'Blog Homepage: Total Posts' => $postsBlogPage, 
-							'Posts: Summary length (default=450)' => $postsLength,
-							'Comments: Per comments page' => $commentsPerPage,
-							'Comments: Maximum per Post' => $commentsMaxPerPost,
-							'Comments: Visibility' => $commentsVisibility,
-							'Widget: Recent Posts to show' => $recentPostsNumber, 
-							'Widget: Recent Comments to show' => $recentCommentsNumber, 
-							'Widget: Recent Tweets to show' => $recentTweetsNumber,
-							'Twitter screen name' => $twitterScreenName
+						
+							$this->_('Blog Title') => $blogTitle,
+							$this->_('Tagline') => $blogTagline,
+							$this->_('Blog Homepage: Total Posts') => $postsBlogPage,
+							$this->_('Posts: Summary length (default=450)') => $postsLength,
+							$this->_('Comments: Per comments page') => $commentsPerPage,
+							$this->_('Comments: Maximum per Post') => $commentsMaxPerPost,
+							$this->_('Comments: Visibility') => $commentsVisibility,
+							$this->_('Widget: Recent Posts to show') => $recentPostsNumber,
+							$this->_('Widget: Recent Comments to show') => $recentCommentsNumber,
+							$this->_('Widget: Recent Tweets to show') => $recentTweetsNumber,
+							$this->_('Twitter screen name') => $twitterScreenName
 		);
 
 		//if commentusUse !=1, unset comments-related input
 		if ($this->commentsUse !=1) {
-			unset($settings['Comments: Per comments page']);
-			unset($settings['Comments: Maximum per Post']);
-			unset($settings['Comments: Visibility']);
-			unset($settings['Widget: Recent Comments to show']);
+			unset($settings[$this->_('Comments: Per comments page')]);
+			unset($settings[$this->_('Comments: Maximum per Post')]);
+			unset($settings[$this->_('Comments: Visibility')]);
+			unset($settings[$this->_('Widget: Recent Comments to show')]);
 		}
 
 		foreach ($settings as $key => $value) {
@@ -2153,7 +2102,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 				if ($widget->is(Page::statusUnpublished)) $checked = " checked='checked'";
 
 				$t->row(array(
-						"<a href='{$this->config->urls->admin}page/edit/?id={$widget->id}' class='editBlog iframe'>$widget->title</a>",
+						"<a href='{$this->config->urls->admin}page/edit/?id={$widget->id}&modal=1' class='editBlog iframe'>$widget->title</a>",
 						$widget->blog_summary,
 						"<input type='checkbox' name='widgets_save_status[]' value='{$widget->id}' class='toggle' {$checked}>",
 				));
@@ -2180,8 +2129,6 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		
 		//send input->post values to the Method save();
 		if($post->widgets_save_status_btn || $post->general_settings_save_btn) $this->save($form);//
-
-		$this->message(Debug::timer($time));//tell user how many posts were 'actioned'
 
 		return $form->render();
 	
@@ -2227,7 +2174,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		//CREATE AN INPUTFIELD MARKUP
 		$m = $this->modules->get('InputfieldMarkup');
 		$m->label = $this->_('Please read carefully');
-		$m->description = $this->_('The installed Blog Style is #' . $this->blogStyle);
+		$m->description = $this->_('The installed Blog Style is #'). $this->blogStyle;
 		#$m->collapsed = Inputfield::collapsedYes;
 
 		//array of blog fields. We'll use this to delete each, one by one as applicable
@@ -2258,11 +2205,22 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 					unset($fields[4]);//blog_comments_max
 		}
 
-		$tf = $this->templateFilesInstall == 1 || $this->templateFilesInstall == 2 ? ' and optionally (tick checkbox below) <strong>Template Files</strong> (in case you installed the blank/demo Template Files)' : '';
+		$tf = $this->templateFilesInstall == 1 || $this->templateFilesInstall == 2 ? 
+						$this->_(' and optionally (tick checkbox below)') . ' <strong>' .
+						$this->_('Template Files') . '</strong>' . 
+						$this->_(' (in case you installed the blank/demo Template Files)') : '';
 		
 		$info = '';
-		$info.= '<div id="components"><div><p>This utility will <strong>irreversibly delete</strong> all the following Blog Components in case you wish to afterward uninstall OR reinstall Blog: <strong>Fields, Templates</strong>' . $tf  .  ', <strong>Pages</strong> and <strong>Role</strong> listed below. Before you start, make sure to empty the trash of any Blog pages.</p></div>
-				<div class="block"><h4>Fields</h4>
+		$info.= '<div id="components"><div><p>' . 
+					$this->_('This utility will') . '<strong> ' . 
+					$this->_('irreversibly delete') . '</strong> ' . 
+					$this->_('all the following Blog Components in case you wish to afterward uninstall OR reinstall Blog: ') . '<strong>' . 
+					$this->_('Fields, Templates') . '</strong>' . $tf  .  ', <strong>' .
+					$this->_('Pages') . '</strong> ' .
+					$this->_('and') . '<strong> ' . 
+					$this->_('Role') . '</strong> ' . 
+					$this->_('listed below. Before you start, make sure to empty the trash of any Blog pages.') . '</p></div>				
+				<div class="block"><h4>' . $this->_('Fields') . '</h4>
 				<ol>';
 
 		foreach ($fields as $field) {$info .= '<li>' . $field . '</li>';}
@@ -2301,13 +2259,14 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 					unset($templates[17]);//blog-basic
 		}
 
-		$info .= '<div class="block"><h4>Templates</h4><ol>';
+		$info .= '<div class="block"><h4>' . $this->_('Templates') . '</h4><ol>';
 
 		foreach ($templates as $template) {$info .= '<li>' . $template . '</li>';}
 
 		$info .='</ol></div>';		
-		$info .='<div class="block"><h4>Pages</h4><p>All pages using the listed templates</p></div>';
-		$info .='<div class="block"><h4>Role</h4><p>blog-author</p></div>';
+		$info .='<div class="block"><h4>' . $this->_('Pages') . '</h4><p>' . 
+					$this->_('All pages using the listed templates') . '</p></div>';
+		$info .='<div class="block"><h4>' . $this->_('Role') . '</h4><p>blog-author</p></div>';
 		
 		$templateFiles = array(
 								'blog.php',
@@ -2349,9 +2308,9 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 				$chx = "
 				<input type=checkbox id='remove_tpl_files' name='remove_tpl_files' value='1'>
-				<label id='remove_tf' for='remove_tpl_files'>Check box to also remove Template Files</label>";
+				<label id='remove_tf' for='remove_tpl_files'>" . $this->_("Check box to also remove Template Files") . "</label>";
 
-				$info .= '<div class="block"><h4>Template Files (optional)</h4><ol>';
+				$info .= '<div class="block"><h4>' . $this->_('Template Files (optional)') . '</h4><ol>';
 
 				foreach ($templateFiles as $templateFile) {$info .= '<li>' . $templateFile . '</li>';}
 
