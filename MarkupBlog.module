@@ -38,7 +38,7 @@ class MarkupBlog  extends WireData implements Module {
 			'title' => 'Markup Blog',
 			'summary' => 'Markup module to output a Blog based on the Blog Profile by Ryan Cramer',
 			'author' => 'Kongondo',
-			'version' => 234,
+			'version' => 235,
 			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false,
@@ -739,9 +739,9 @@ class MarkupBlog  extends WireData implements Module {
 		
 		foreach($posts as $page) {
 		
-					//@@todo - should only run if post small == true!!!
 					//Note:we don't have a summary field for 'post' pages but left code here just in case we need it in future
-					if(empty($page->summary)) {
+					//only run this if post small == true
+					if(empty($page->summary) && $small) {
 								//summary is blank so we auto-generate a summary from the body [note: blog body field is 'blog_body']
 								//note: second paramenter of strip_tags $allowable_tags is configurable!
 								$summary = strip_tags(substr($page->blog_body, 0, $summaryLimit), $options['post_small_allowable_tags']);								
@@ -1351,7 +1351,7 @@ class MarkupBlog  extends WireData implements Module {
 
 		$page = wire('page');
 		if(empty($title)) $title = $page->get('headline|title') . ' - ' . wire('pages')->get('/')->headline;
-		if(empty($description)) $description = $page->get('summary|meta_description');//@@ todo - no page summary so change to get from blog_body instead!
+		if(empty($description)) $description = $page->get('summary|meta_description');//@@ todo - no page summary so change to get from blog_body instead?
 
 		$rss = wire('modules')->get('MarkupRSS');
 		$rss->title = $title;
