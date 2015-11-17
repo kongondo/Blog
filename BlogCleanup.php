@@ -12,7 +12,7 @@
 *	Role
 *
 * @author Kongondo
-* @version 2.3.4
+* @version 2.3.5
 *
 * https://github.com/kongondo/Blog
 * Created February 2014
