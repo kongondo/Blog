@@ -6,7 +6,7 @@
 * This small autoload module sets a Blog Post's published date (field = 'blog_date')
 * Based on the code here: https://processwire.com/talk/topic/2448-show-date-published-on-a-page/ by SiNNuT and Soma
 *
-* @author Kongondo <kongondo@gmail.com>
+* @author Francis Otieno (Kongondo) <kongondo@gmail.com>
 * @author Some code from SiNNuT, Soma
 * 
 * https://github.com/kongondo/Blog
@@ -34,8 +34,8 @@ class BlogPublishDate extends WireData implements Module {
 		return array(
 			'title' => 'Blog Post Publish Date',
 			'summary' => 'Automatically set a Blog Post publish date on publish',
-			'author' => 'Kongondo',
-			'version' => 235,
+			'author' => 'Francis Otieno (Kongondo)',
+			'version' => 236,
 			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => true,
@@ -56,7 +56,7 @@ class BlogPublishDate extends WireData implements Module {
 	 */
 	public function init() {
 
-		 //add a hook after $page->save (only on Blog Posts pages)
+		 // add a hook after $page->save (only on Blog Posts pages)
          $this->pages->addHookAfter('save', $this, 'afterSave');
 		
 	}
@@ -72,10 +72,10 @@ class BlogPublishDate extends WireData implements Module {
 	 */
 	public function afterSave($event) {
 	
-		//get the page object saved
+		// get the page object saved
 	    $page = $event->argumentsByName('page');
 
-	    //only on pages that use the template 'blog-post	    
+	    // only on pages that use the template 'blog-post	    
 	    if($page->template !='blog-post' ) return;
 	    
 	    /*	- we don't want to touch unpublished pages ['pending' and 'expired']
@@ -85,7 +85,7 @@ class BlogPublishDate extends WireData implements Module {
 	    
 	    if($page->is(Page::statusUnpublished) || $page->blog_date || !$page->template->hasField('blog_date')) return;	    
 	    	    
-	    //if page is published and blog_field not populated, add current timestamp
+	    // if page is published and blog_field not populated, add current timestamp
 	    $page->blog_date = time();
 	    $page->save('blog_date');
 					
@@ -99,7 +99,7 @@ class BlogPublishDate extends WireData implements Module {
 	 */	
 	public function ___install() {
 
-		//Don't need to add anything here...
+		// Don't need to add anything here...
 		
 	}
 

@@ -2,7 +2,7 @@
 *
 * CSS styles for ProcessBlog.
 *
-* @author Kongondo <kongondo@gmail.com>
+* @author Francis Otieno (Kongondo) <kongondo@gmail.com>
 *
 * https://github.com/kongondo/Blog
 * Created February 2014
@@ -10,9 +10,7 @@
 */
 
 /* Prevent "jump" on shorter pages */
-html {
-	overflow-y:scroll;
-}
+html {overflow-y:scroll;}
 
 /* #### BLOG MENU #### */
 
@@ -76,20 +74,10 @@ table#archives td:nth-child(1), table#archives th:nth-child(1) {text-align: left
 table#archives th {font-weight: bold;}
 
 /*** posts table ***/
-table#posts_overview td {
-	font-size: 1em;
-	padding-bottom: 0.75em;
-}
-
+table#posts_overview td {font-size: 1em; padding-bottom: 0.75em;}
 table#posts_overview  td:nth-child(1), table#posts_overview  td:nth-child(3) {width:20%;}
-
-table#posts_overview td.large {
-	font-weight: bold;
-	font-size: 1.15em;
-}
-
+table#posts_overview td.large {font-weight: bold; font-size: 1.15em;}
 table.postsTable span.date-sorter {display: none;}
-
 span.limit-select {float: right;}
 
 /*** tags table ***/
@@ -129,11 +117,7 @@ label#add_new, label#remove_tf {
 
 span.unpublished, span.red {color: red;}/* for highlighting some text */
 
-div.block {
-		width: 20%;
-		float: left;
-}
-
+div.block {width: 20%; float: left;}
 
 div#components:after {/* clear blog-style div's float */
 	content: '\0020'; 
@@ -143,9 +127,6 @@ div#components:after {/* clear blog-style div's float */
 	clear: both;
 }
 
-div.block ol li {
-	margin: 0 0 0 20px;
-	padding: 0;
-}
+div.block ol li {margin: 0 0 0 20px; padding: 0;}
 
 	
