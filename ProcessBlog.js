@@ -2,7 +2,7 @@
 *
 * Javascript file for PW Module ProcessBlog
 *
-* @author Kongondo <kongondo@gmail.com>
+* @author Francis Otieno (Kongondo) <kongondo@gmail.com>
 *
 * https://github.com/kongondo/Blog
 * Created February 2014

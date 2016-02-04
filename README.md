@@ -82,6 +82,9 @@ Uninstalling Blog is a two-step process. If you are logged in as a superuser, yo
 
 ##Changelog
 
+####Version 2.3.6
+1. Added option to use Rich Text Editor (CKEditor) in Quick Post. Setting is configurable in ProcessBlog module settings (both pre- and post-install).
+
 ####Version 2.3.5
 1. Fixed issue where dashboards were loading very slowly on sites with lots of posts.
 2. Added some missing translation strings.
