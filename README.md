@@ -83,7 +83,7 @@ Uninstalling Blog is a two-step process. If you are logged in as a superuser, yo
 ## Changelog
 
 #### Version 2.3.7
-1. All MarkupPageNav (used in renderPosts()) [options]() can now be passed to renderPosts(https://processwire.com/api/modules/markup-pager-nav/) to customise pagination of posts.
+1. All MarkupPageNav (used in renderPosts()) [options](https://processwire.com/api/modules/markup-pager-nav/) can now be passed to renderPosts() to customise pagination of posts.
 
 #### Version 2.3.6
 1. Added option to use Rich Text Editor (CKEditor) in Quick Post. Setting is configurable in ProcessBlog module settings (both pre- and post-install).
