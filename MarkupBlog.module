@@ -989,14 +989,8 @@ class MarkupBlog  extends WireData implements Module {
 		#------------------------------------------- POST PAGINATION ------------------------------------------- #
 
 		// if there are more posts than the specified limit, then output pagination
-		if($posts->getLimit() < $posts->getTotal()) {
-			
+		if($posts->getLimit() < $posts->getTotal()) {			
 			$markupPagerNavOptions = is_array($options['post_pagination']) && count($options['post_pagination']) ? $options['post_pagination'] : '';
-			#echo gettype($markupPagerNavOptions);
-			/*echo '<pre>';
-			print_r($markupPagerNavOptions);
-			echo '</pre>';*/
-			#exit;
 			$out .= $posts->renderPager($markupPagerNavOptions);// @todo - consider making renderPager configurable?
 		}
 		
