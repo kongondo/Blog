@@ -38,7 +38,7 @@ class MarkupBlog  extends WireData implements Module {
 			'title' => 'Markup Blog',
 			'summary' => 'Markup module to output a Blog based on the Blog Profile by Ryan Cramer',
 			'author' => 'Francis Otieno (Kongondo)',
-			'version' => 236,
+			'version' => 237,
 			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false,
@@ -57,18 +57,18 @@ class MarkupBlog  extends WireData implements Module {
 	 */
 	public function init() {
 
-		$blogConfigs = wire('modules')->getModuleConfigData('ProcessBlog');
+		$blogConfigs = $this->wire('modules')->getModuleConfigData('ProcessBlog');
 
 		// intialise some properties we'll use throught the class. These contain objects made up of the main blog pages and the main children
-		$this->blog	 =		wire('pages')->get($blogConfigs['blog']);
-		$this->posts =      wire('pages')->get($blogConfigs['blog-posts']);
-		$this->comments =   wire('pages')->get($blogConfigs['blog-comments']);
-		$this->authors =    wire('pages')->get($blogConfigs['blog-authors']);
-		$this->archives =   wire('pages')->get($blogConfigs['blog-archives']);
-		$this->settings =   wire('pages')->get($blogConfigs['blog-settings']);
-		$this->dnc =        wire('pages')->get($blogConfigs['blog-dnc']);// disable-new-comments
-		$this->dc =         wire('pages')->get($blogConfigs['blog-dc']);// disable-comments
-		$this->pauthor =    wire('pages')->get($blogConfigs['blog-pauthor']);
+		$this->blog	 =		$this->wire('pages')->get($blogConfigs['blog']);
+		$this->posts =      $this->wire('pages')->get($blogConfigs['blog-posts']);
+		$this->comments =   $this->wire('pages')->get($blogConfigs['blog-comments']);
+		$this->authors =    $this->wire('pages')->get($blogConfigs['blog-authors']);
+		$this->archives =   $this->wire('pages')->get($blogConfigs['blog-archives']);
+		$this->settings =   $this->wire('pages')->get($blogConfigs['blog-settings']);
+		$this->dnc =        $this->wire('pages')->get($blogConfigs['blog-dnc']);// disable-new-comments
+		$this->dc =         $this->wire('pages')->get($blogConfigs['blog-dc']);// disable-comments
+		$this->pauthor =    $this->wire('pages')->get($blogConfigs['blog-pauthor']);
 
 		$this->blogStyle = $blogConfigs['blogStyle'];
 		$this->commentsUse = $blogConfigs['commentsUse'];	
@@ -105,7 +105,7 @@ class MarkupBlog  extends WireData implements Module {
 
 		// count the number of posts using each tag
 		foreach($tags as $tag) {
-			$tag->numPosts = wire('pages')->count("template=blog-post, blog_tags=$tag");
+			$tag->numPosts = $this->wire('pages')->count("template=blog-post, blog_tags=$tag");
 		}
 
 		$lastLetter = '';
@@ -232,7 +232,7 @@ class MarkupBlog  extends WireData implements Module {
 
 		foreach($comments as $comment) {
 
-			$p = wire('pages')->get($comment->pages_id);
+			$p = $this->wire('pages')->get($comment->pages_id);
 			if(!$p->id) continue; 
 
 			$p = clone $p;
@@ -243,8 +243,8 @@ class MarkupBlog  extends WireData implements Module {
 			$commentPages->add($p);
 		}
 
-		$rss = wire('modules')->get('MarkupRSS');
-		$rss->title = wire('pages')->get('/')->headline . ' - ' . wire('page')->get('headline|title'); 
+		$rss = $this->wire('modules')->get('MarkupRSS');
+		$rss->title = $this->wire('pages')->get('/')->headline . ' - ' . $this->wire('page')->get('headline|title'); 
 		$rss->itemTitleField = 'comment_title';
 		$rss->itemDescriptionField = 'comment_body';
 		$rss->itemDescriptionLength = 0; 
@@ -278,7 +278,7 @@ class MarkupBlog  extends WireData implements Module {
 		else $options = $defaultOptions;
 
 		foreach($categories as $category) {
-					$category->posts = wire('pages')->find("template=blog-post, blog_categories=$category, limit=$showNumPosts, sort=-blog_date"); 
+					$category->posts = $this->wire('pages')->find("template=blog-post, blog_categories=$category, limit=$showNumPosts, sort=-blog_date"); 
 		}
 		
 		$out = '';
@@ -367,8 +367,8 @@ class MarkupBlog  extends WireData implements Module {
 		} 
 
 		else {
-					$oldest = wire('pages')->get("template=blog-post, blog_date>0, sort=blog_date");
-					$newest = wire('pages')->get("template=blog-post, blog_date>0, sort=-blog_date");
+					$oldest = $this->wire('pages')->get("template=blog-post, blog_date>0, sort=blog_date");
+					$newest = $this->wire('pages')->get("template=blog-post, blog_date>0, sort=-blog_date");
 			
 					if(!$newest->id) return '';
 					$firstYear = date('Y', $oldest->getUnformatted('blog_date'));
@@ -388,7 +388,7 @@ class MarkupBlog  extends WireData implements Module {
 				$firstDay = strtotime("$y-$month-01");
 				$lastDay = strtotime("+1 month", $firstDay)-1;
 
-				$posts = wire('pages')->find("template=blog-post, blog_date>=$firstDay, blog_date<=$lastDay, limit=$_limit, sort=-blog_date");
+				$posts = $this->wire('pages')->find("template=blog-post, blog_date>=$firstDay, blog_date<=$lastDay, limit=$_limit, sort=-blog_date");
 				$numPosts = $posts->getTotal();
 				if(!$numPosts) continue; 
 				$numPostsYear += $numPosts;
@@ -514,7 +514,7 @@ class MarkupBlog  extends WireData implements Module {
 		$out = "<ul class='authors posts-group'>";
 
 		foreach($authors as $author) {
-					$numPosts = wire('pages')->count("template=blog-post, created_users_id=$author, limit=2");
+					$numPosts = $this->wire('pages')->count("template=blog-post, created_users_id=$author, limit=2");
 					// $numPostsStr = sprintf(_n('%d post', '%d posts', $author->numPosts), $author->numPosts);// not in use
 					
 					// Note: $author->url2 is the blog-generated version, since $author->url is in the admin.
@@ -543,7 +543,7 @@ class MarkupBlog  extends WireData implements Module {
 		$comments = FieldtypeComments::findComments('blog_comments', $selector);// 1st argument is our comments field
 		$blogComments = $this->comments;
 		$gComments = $blogComments->blog_comments_view;// global comments/comments form visibility setting [only kicks in when selected AND post setting='']
-		$page = wire('page');// Page being viewed (Page)
+		$page = $this->wire('page');// Page being viewed (Page)
 		$admin = $page->editable();	
 		
 		foreach($comments as $c) {
@@ -577,7 +577,7 @@ class MarkupBlog  extends WireData implements Module {
 		$limit = (int) $limit; 
 		$_limit = is_null($start) ? $limit : $limit+1;
 		$out = '';
-		$pageNum = wire('input')->pageNum; 
+		$pageNum = $this->wire('input')->pageNum; 
 
 		// auto-determine $start if not specified
 		if(is_null($start)) {
@@ -586,7 +586,7 @@ class MarkupBlog  extends WireData implements Module {
 		}
 
 		// we show pending and spam comments when page is editable
-		if(is_null($admin)) $admin = wire('page')->editable();// we assign variable $admin the value $page->editable() method if argument $admin = null
+		if(is_null($admin)) $admin = $this->wire('page')->editable();// we assign variable $admin the value $page->editable() method if argument $admin = null
 
 		// build selector to locate comments
 		$selector = "limit=$_limit, start=$start, sort=-created, ";
@@ -628,7 +628,7 @@ class MarkupBlog  extends WireData implements Module {
 							// selector string
 							$selector = $posts; 
 
-							$posts = wire('pages')->find("template=blog-post, sort=-blog_date, $selector"); 
+							$posts = $this->wire('pages')->find("template=blog-post, sort=-blog_date, $selector"); 
 							
 					} 
 
@@ -689,6 +689,10 @@ class MarkupBlog  extends WireData implements Module {
 							'post_large_image_width' => '',// no width manipulation of featured image if this is blank or 0
 							'post_large_image_height' => '',// no height manipulation if this is blank or 0. Note, if size is true and both width and height > 0, use size() instead				
 							'post_large_image_size' => false,// if 'size' = true AND both width and height > 0, this kicks in
+
+							// MarkupPagerNav options
+
+							'post_pagination' => array(),
 
 		);
 
@@ -916,7 +920,7 @@ class MarkupBlog  extends WireData implements Module {
 					$date = $options['post_date'] == 1 ? "<span class='date'>" . $options['post_date_text'] . " " . $page->blog_date . "</span>" : '';
 					
 					// if page is editable (i.e., appropriate person logged in), let's show an edit link to the post
-					$edit = $page->editable() ? "<span class='edit'>(<a href='" . wire('config')->urls->admin . "page/edit/?id={$page->id}'>" . $this->_('edit') . "</a>)</span>" : '';				
+					$edit = $page->editable() ? "<span class='edit'>(<a href='" . $this->wire('config')->urls->admin . "page/edit/?id={$page->id}'>" . $this->_('edit') . "</a>)</span>" : '';				
 
 					if(!empty($author) || !empty($date) || !empty($edit)) $out .= "<p class='post-byline'>" . $author . $date . $edit . "</p>";// end p.post-byline
 
@@ -985,7 +989,16 @@ class MarkupBlog  extends WireData implements Module {
 		#------------------------------------------- POST PAGINATION ------------------------------------------- #
 
 		// if there are more posts than the specified limit, then output pagination
-		if($posts->getLimit() < $posts->getTotal()) $out .= $posts->renderPager();// @todo - consider making renderPager configurable?
+		if($posts->getLimit() < $posts->getTotal()) {
+			
+			$markupPagerNavOptions = is_array($options['post_pagination']) && count($options['post_pagination']) ? $options['post_pagination'] : '';
+			#echo gettype($markupPagerNavOptions);
+			/*echo '<pre>';
+			print_r($markupPagerNavOptions);
+			echo '</pre>';*/
+			#exit;
+			$out .= $posts->renderPager($markupPagerNavOptions);// @todo - consider making renderPager configurable?
+		}
 		
 		return $out;
 	
@@ -1005,11 +1018,11 @@ class MarkupBlog  extends WireData implements Module {
 	 */
 	public function renderRelatedPosts(Page $post = null, $relatedBy = null, $limit = null, $sort = null) {
 
-		if(is_null($post)) $page = wire('page');
+		if(is_null($post)) $page = $this->wire('page');
 		else $page = $post;
 		if(!$page instanceof Page) throw new WireException('renderRelatedPosts requires a Page'); 
 		
-		$pages = wire('pages');
+		$pages = $this->wire('pages');
 		$related = null;
 		$selector = '';
 
@@ -1048,10 +1061,10 @@ class MarkupBlog  extends WireData implements Module {
 	public function renderComments(CommentArray $comments, $limit = 0, Array $options = null) {
 
 		$out = '';
-		$page = wire('page');// Page being viewed (Page)
+		$page = $this->wire('page');// Page being viewed (Page)
 		$admin = $page->editable(); 
 		$cnt = 0;
-		$pageNum = wire('input')->pageNum;
+		$pageNum = $this->wire('input')->pageNum;
 		$commentArray = new CommentArray();
 		$prevURL = '';// URL for previous pagination, if applicable (string)
 		$nextURL = '';// URL for next pagination, if applicable (string)
@@ -1204,7 +1217,7 @@ class MarkupBlog  extends WireData implements Module {
 
 		if($page->template == 'blog-post' && $noCommentsForm == false) {
 				
-				if (($options['comments_login_required'] && wire('user')->isLoggedin()) || (!$options['comments_login_required'])) {
+				if (($options['comments_login_required'] && $this->wire('user')->isLoggedin()) || (!$options['comments_login_required'])) {
 					
 							// if we are viewing a post page, then output a comments form
 							$out .= $page->blog_comments->renderForm(array(
@@ -1227,7 +1240,7 @@ class MarkupBlog  extends WireData implements Module {
 		}// end if $page->template == "blog-post" && $noCommentsForm == false
 
 		else {
--
+
 				$out .= $noNewComments . '</div><!--/#comments-->';
 		}
 
@@ -1277,7 +1290,7 @@ class MarkupBlog  extends WireData implements Module {
 		// if widget is available [i.e. published]...
 	    if (!$postAuthor->is(Page::statusUnpublished)) {
 
-	                $author = wire('page')->createdUser;
+	                $author = $this->wire('page')->createdUser;
 	                $authorName = $author->get('title') ? $author->get('title') : 'Author Name';// if no author title not set use generic 'Author Name'
 
 	                $image = $author->blog_images->first();
@@ -1328,7 +1341,7 @@ class MarkupBlog  extends WireData implements Module {
 
 		if(is_int($date)) {
 			// get date format from our 'blog_date' field, for consistency
-			$dateFormat = wire('fields')->get('blog_date')->dateOutputFormat; 
+			$dateFormat = $this->wire('fields')->get('blog_date')->dateOutputFormat; 
 			$date = FieldtypeDatetime::formatDate($date, $dateFormat);
 		}
 
@@ -1349,11 +1362,11 @@ class MarkupBlog  extends WireData implements Module {
 	 */
 	public function renderRSS(PageArray $items, $title = '', $description = '') {
 
-		$page = wire('page');
-		if(empty($title)) $title = $page->get('headline|title') . ' - ' . wire('pages')->get('/')->headline;
+		$page = $this->wire('page');
+		if(empty($title)) $title = $page->get('headline|title') . ' - ' . $this->wire('pages')->get('/')->headline;
 		if(empty($description)) $description = $page->get('summary|meta_description');// @todo - no page summary so change to get from blog_body instead?
 
-		$rss = wire('modules')->get('MarkupRSS');
+		$rss = $this->wire('modules')->get('MarkupRSS');
 		$rss->title = $title;
 		$rss->description = $description;
 		$rss->itemDescriptionField = 'body';

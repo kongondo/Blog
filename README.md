@@ -1,4 +1,4 @@
-#Blog
+# Blog
 
 This Blog module enables you to easily create and manage a Blog in ProcessWire. It is based on the [Blog Profile module](http://mods.pw/2M) by Ryan Cramer. The module consists of three separate modules:  
 
@@ -6,9 +6,9 @@ This Blog module enables you to easily create and manage a Blog in ProcessWire. 
 **MarkupBlog**: Display Blog in the frontend.  
 **BlogPublishDate**: Automatically sets a publish date when you publish a Blog Post.
 
-##Features
+## Features
 
-###ProcessBlog
+### ProcessBlog
 *	Dashboard with quick stats about your Blog.
 *	Quick post.
 *	Full view, create, edit, delete, update (CRUD) Posts, Categories and Tags within a single interface.
@@ -19,18 +19,18 @@ This Blog module enables you to easily create and manage a Blog in ProcessWire. 
 * Fully uninstall/cleanup Blog templates, fields, pages and optionally template files.
 
 
-###MarkupBlog
+### MarkupBlog
 *	Easily output your Blog in the frontend, where and how you wish (e,g, only output part of the Blog).
 *	Use any CSS framework (or not!) you wish.
 * PocketGrid CSS included with the demo Template Files (fully responsive).
 
 <img src='https://github.com/kongondo/Blog/raw/master/screenshot-demo-frontend.png' />
 
-##How to Install
+## How to Install
 
 Install via ProcessWire modules' screen. Once installed, there's two steps involved to finalise the install:
 
-#####A. Configure Blog settings in its module's configuration screen. 
+##### A. Configure Blog settings in its module's configuration screen. 
 
 Here you will have to choose from 4 Blog styles to match the Blog URL structure you want:
 
@@ -46,7 +46,7 @@ On this screen, you also select:
 * Whether to install 'no template files', 'blank template files', or 'demo template files'; and
 * Optionally specify a tag for grouping Blog Templates and Fields in their respective ProcessWire admin pages
 
-#####B. Install Blog Templates, Pages, Fields, Role and optionally Template Files. 
+##### B. Install Blog Templates, Pages, Fields, Role and optionally Template Files. 
 
 * In this second step, via the Blog dashboard (**admin/blog/**), you will see an overview of the settings you selected in the first step above. Here you install Blog's components. Before you click the button to run the install wizard, nothing will happen yet. You can still go back and change the module configuration settings. Until you run the install wizard in this second step, you will have no Blog Pages, Fields, Templates, etc. 
 
@@ -58,14 +58,14 @@ On this screen, you also select:
 
 * If you chose to install the demo Template Files, also manually copy over the **/css/** and **/js/** folders present in Blog module's folder to your **/site/templates/** folder.
 
-#####Please note:
+##### Please note:
 If you need to change some configurations, you can go back to the module settings and do it **BEFORE** you finalise step two of the installation. It is important that once the installation is finalised, in case you had left the ProcessBlog's module configuration's browser window open, **NOT** to press submit again. Otherwise, MarkupBlog may not function as expected. However, if you reload the module configurations screen once the second-part of the installer has finished, you will not be able to change the configuration settings. Instead, you will be presented with an overview of your installed settings.
 
-##How to Use
+## How to Use
 
 Full documentation is available [here](http://kongondo.com/tutorials/specific-features/creating-a-blog-in-processwire/).
 
-##Notes
+## Notes
 
 * The module Dashboard **will not work** with Blog Profile installs!  
 * MarkupBlog replicates the Blog Profile. Hence, the 'items' Fields, Templates, Template Files and a couple of Pages are installed where such, with similar names, do not already exist, i.e., installation is non-destructive. 
@@ -77,49 +77,52 @@ Full documentation is available [here](http://kongondo.com/tutorials/specific-fe
 * **Until you set 'author titles' for your Blog Authors (in Admin > Access > Users), a generic 'Author Name' will be used as their display names**.
 * In order to use the Recent Tweets Widget, you will need to separately install and setup the module [MarkupTwitterFeed](http://mods.pw/d).
 
-##Uninstall
+## Uninstall
 Uninstalling Blog is a two-step process. If you are logged in as a superuser, you will see a Blog menu item called **Cleanup**. It will lead to a screen with info about all the Fields, Templates, Pages and Role you are about to delete. It will also list the Blog Template Files that, if you wish, you can also delete. This utility is also useful when you want to try out the different Blog styles without uninstalling the whole Blog module. It returns Blog to the state similar to when you first installed the module. Of course, in case you want to remove Blog as well, just go ahead and uninstall in the normal way but **AFTER** you have cleaned-up.
 
-##Changelog
+## Changelog
 
-####Version 2.3.6
+#### Version 2.3.7
+1. All MarkupPageNav (used in renderPosts()) [options]() can now be passed to renderPosts(https://processwire.com/api/modules/markup-pager-nav/) to customise pagination of posts.
+
+#### Version 2.3.6
 1. Added option to use Rich Text Editor (CKEditor) in Quick Post. Setting is configurable in ProcessBlog module settings (both pre- and post-install).
 
-####Version 2.3.5
+#### Version 2.3.5
 1. Fixed issue where dashboards were loading very slowly on sites with lots of posts.
 2. Added some missing translation strings.
 3. Some code optimisations.
 
-####Version 2.3.4
+#### Version 2.3.4
 Preserve all line breaks as paragraphs for posts created via ProcessBlog's quickpost.
 
-####Version 2.3.3
+#### Version 2.3.3
 Added a very visible reminder in Blog's module configuration screen not to uninstall the module BEFORE running the in-built Cleanup Utility.
 
-####Version 2.3.2
+#### Version 2.3.2
 Added a renderRelatedPosts() method.
 
-####Version 2.3.1
+#### Version 2.3.1
 1. Fixed Posts/Categories/Tags dashboard html rendering issue on multilingual sites.
 2. Added 'post_small_tag' option to renderPosts() to specify html tag to wrap summary blog posts (small).
 3. Some code optimisations.
 
-####Version 2.3.0
+#### Version 2.3.0
 1. Use Blog authors' **display names** in author pages url/links rather than their usernames
 2. Fixed renderNextPrevPosts() not sorting/displaying previous/next posts properly
 
-####Version 2.2.2
+#### Version 2.2.2
 1. All main methods that render HTML output are now configurable via a parameter/argument $options.
 2. Ability to add a featured image to a post
 
-####Version 2.0.2
+#### Version 2.0.2
 1. Minor updates to demo template files.
 
-####Version 2.0.1
+#### Version 2.0.1
 1. Fixed a comments' visibility issue.
 2. Enhancement to comments' visibility status (added status **HIDDEN**).
 
-####Version 2.0
+#### Version 2.0
 1. Four Blog styles (URL structures).
 2. Two-step installer/uninstaller.
 3. Configurable module.
@@ -128,41 +131,41 @@ Added a renderRelatedPosts() method.
 6. Commenting feature - enable/disable.
 7. Other various enhancements.
 
-####Version 1.3.0
+#### Version 1.3.0
 1. Added new small autoload module BlogPublishDate as part of the Blog module suite, that saves a Blog Post's publication date.
 2. Enhancements to Posts, Categories and Tags Dashboards: Customisable number of posts/categories/tags to show per page (via a drop-down select). Selected value is preserved via a cookie per context (i.e. can have different values for posts, categories and tags dashboard) and per user.
 3. Date column: shows 'Pending' for unpublished posts (never before published ones), 'Expired' (published then unpublished posts) and published Date for currently published posts.
 4. Date shown is formatted according to the format set in **'blog_date'**.
 5. Fixed sorting by date column.
 
-####Version 1.2.2
+#### Version 1.2.2
 1. Changes to **renderComments()**. Added a 4th **Array $options** argument for customising the texts describing the various comments' statuses.
 
-####Version 1.2.1
+#### Version 1.2.1
 1. Minor styling issues updates.
 
-####Version 1.2
+#### Version 1.2
 1. Added comments visibility settings at post and global level.
 2. Added Posts' Bulk Actions.
 
-####Version 1.1
+#### Version 1.1
 1. Added new widget **'Post Author'**. The widget allows to add a post's author's biography with each post (above or below the post).
 2. Made 'posts truncate length' configurable.
 
-####Version 1.0.1
+#### Version 1.0.1
 1. Several strings made translatable
 
-##Resources
+## Resources
 * [Support Forum](https://processwire.com/talk/topic/7403-module-blog/)
 * Full [announcement](https://processwire.com/talk/topic/7403-module-blog/page-7#entry74237) about Blog version 2
 * Video [ProcessBlog demo](http://youtu.be/64XMGLuniqU) (Blog version 1)
 * Video [MarkupBlog demo](http://youtu.be/k7aSeL29JPE) (Blog version 1)
 
-##Upgrading from Blog version 1 to version 2
+## Upgrading from Blog version 1 to version 2
 Please refer to this [post](https://processwire.com/talk/topic/7403-module-blog/?p=74245) for full instructions and an upgrade script.
 
-##License
+## License
 GPL2
 
-##Credits
+## Credits
 Ryan Cramer
