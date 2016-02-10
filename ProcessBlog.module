@@ -40,7 +40,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 			'title' => 'Blog',
 			'summary' => 'Blog Manager module inspired by the Blog Profile by Ryan Cramer',
 			'author' => 'Francis Otieno (Kongondo)',
-			'version' => 237,
+			'version' => 238,
 			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false, 

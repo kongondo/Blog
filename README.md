@@ -82,6 +82,9 @@ Uninstalling Blog is a two-step process. If you are logged in as a superuser, yo
 
 ## Changelog
 
+#### Version 2.3.8
+1. Fixed [bug](https://processwire.com/talk/topic/7403-module-blog/page-30#entry112992) where comments' date were not being correctly output
+
 #### Version 2.3.7
 1. All MarkupPageNav (used in renderPosts()) [options](https://processwire.com/api/modules/markup-pager-nav/) can now be passed to renderPosts() to customise pagination of posts.
 

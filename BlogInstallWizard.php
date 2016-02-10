@@ -12,7 +12,7 @@
 * We don't want to overwrite users files!
 *
 * @author Francis Otieno (Kongondo)
-* @version 2.3.7 
+* @version 2.3.8 
 *
 * https://github.com/kongondo/Blog
 * Created February 2014
