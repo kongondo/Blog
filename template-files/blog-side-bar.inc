@@ -81,7 +81,7 @@
                             $out .= "<ul class='links'>";
                             foreach($comments as $comment) {
                                         $cite = htmlentities($comment->cite, ENT_QUOTES, "UTF-8");
-                                        $date = $blog->formatDate($comment->created); 
+                                        $date = $blog->formatDate($comment->created, 2); 
                                         $out .= "<li><span class='date'>$date</span><br />" . 
                                                     "<a href='{$comment->page->url}#comment{$comment->id}'>$cite &raquo; {$comment->page->title}</a>" . 
                                                 "</li>";

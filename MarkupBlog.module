@@ -38,7 +38,7 @@ class MarkupBlog  extends WireData implements Module {
 			'title' => 'Markup Blog',
 			'summary' => 'Markup module to output a Blog based on the Blog Profile by Ryan Cramer',
 			'author' => 'Francis Otieno (Kongondo)',
-			'version' => 237,
+			'version' => 238,
 			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false,
@@ -1122,7 +1122,7 @@ class MarkupBlog  extends WireData implements Module {
 		// setup comments for output, copying all comments we will display into $commentArray
 		foreach($comments as $c) { 
 					if(!$admin && $c->status != Comment::statusApproved) continue; 
-					$c->date = $this->formatDate($c->created); 
+					$c->date = $this->formatDate($c->created, 2); 
 					$commentArray->add($c); 
 					$cnt++;
 					if($limit && $cnt >= $limit) break;
@@ -1328,14 +1328,17 @@ class MarkupBlog  extends WireData implements Module {
 	 * @access public
 	 * @param int|string $date If given a timestamp, it will be automatically formatted according to the 'blog_date' field in PW
 	 *	If given a string, then whatever format it is in will be kept. 
+	 * @param int $mode Date format to use. If for posts and similar, use blog_date (default). If for comments, use blog_comments dateFormat.
 	 * @return $date string
 	 *
 	 */
-	public function formatDate($date) {
+	public function formatDate($date, $mode = 1) {
 
 		if(is_int($date)) {
 			// get date format from our 'blog_date' field, for consistency
-			$dateFormat = $this->wire('fields')->get('blog_date')->dateOutputFormat; 
+			if($mode == 1) $dateFormat = $this->wire('fields')->get('blog_date')->dateOutputFormat;// for posts, use format specified in field 'blog_date'
+			elseif($mode == 2) $dateFormat = $this->wire('fields')->get('blog_comments')->dateFormat;// for comments, use in-built date format specified in 'blog_comments'
+			
 			$date = FieldtypeDatetime::formatDate($date, $dateFormat);
 		}
 
