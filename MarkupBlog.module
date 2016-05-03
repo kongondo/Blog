@@ -38,7 +38,7 @@ class MarkupBlog  extends WireData implements Module {
 			'title' => 'Markup Blog',
 			'summary' => 'Markup module to output a Blog based on the Blog Profile by Ryan Cramer',
 			'author' => 'Francis Otieno (Kongondo)',
-			'version' => 238,
+			'version' => 239,
 			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
 			'singular' => true, 
 			'autoload' => false,
@@ -1335,9 +1335,12 @@ class MarkupBlog  extends WireData implements Module {
 	public function formatDate($date, $mode = 1) {
 
 		if(is_int($date)) {
-			// get date format from our 'blog_date' field, for consistency
-			if($mode == 1) $dateFormat = $this->wire('fields')->get('blog_date')->dateOutputFormat;// for posts, use format specified in field 'blog_date'
-			elseif($mode == 2) $dateFormat = $this->wire('fields')->get('blog_comments')->dateFormat;// for comments, use in-built date format specified in 'blog_comments'
+			// for posts, use date format specified in field 'blog_date'
+			$dateFormat = $this->wire('fields')->get('blog_date')->dateOutputFormat;
+			// for comments, if specified, use in-built date format in 'blog_comments'
+			if($mode == 2 && $this->wire('fields')->get('blog_comments')->dateFormat) {
+				$dateFormat = $this->wire('fields')->get('blog_comments')->dateFormat;
+			}
 			
 			$date = FieldtypeDatetime::formatDate($date, $dateFormat);
 		}
