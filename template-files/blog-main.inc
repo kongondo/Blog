@@ -46,7 +46,7 @@
 
             <!-- Scripts -->
             <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script> 
-            <script src="<?php echo $config->urls->templates;?>js/blog.js"></script>
+            <script src="<?php echo $config->urls->templates;?>scripts/blog.js"></script>
 
         </head>
 

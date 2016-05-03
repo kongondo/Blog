@@ -56,14 +56,14 @@ On this screen, you also select:
 
 * Note that non-enabled features **cannot** be enabled once the second part of the install is complete. However, using the **'Cleanup'** feature (see below) you can return Blog to the first-step of the installer stage and enable a feature you want or even select a different Blog style.
 
-* If you chose to install the demo Template Files, also manually copy over the **/css/** and **/js/** folders present in Blog module's folder to your **/site/templates/** folder.
+* If you chose to install the demo Template Files, also manually copy over the **/css/** and **/scripts/** folders present in Blog module's folder to your **/site/templates/** folder.
 
 ##### Please note:
 If you need to change some configurations, you can go back to the module settings and do it **BEFORE** you finalise step two of the installation. It is important that once the installation is finalised, in case you had left the ProcessBlog's module configuration's browser window open, **NOT** to press submit again. Otherwise, MarkupBlog may not function as expected. However, if you reload the module configurations screen once the second-part of the installer has finished, you will not be able to change the configuration settings. Instead, you will be presented with an overview of your installed settings.
 
 ## How to Use
 
-Full documentation is available [here](http://kongondo.com/tutorials/specific-features/creating-a-blog-in-processwire/).
+Full documentation is available [here](http://blog.kongondo.com/).
 
 ## Notes
 
@@ -82,8 +82,11 @@ Uninstalling Blog is a two-step process. If you are logged in as a superuser, yo
 
 ## Changelog
 
+#### Version 2.3.9
+1. Fixed [bug](https://processwire.com/talk/topic/7403-module-blog/?p=119070) where comments' date was being output as a raw timestamp (owing to a miss during the last commit).
+
 #### Version 2.3.8
-1. Fixed [bug](https://processwire.com/talk/topic/7403-module-blog/page-30#entry112992) where comments' date were not being correctly output
+1. Fixed [bug](https://processwire.com/talk/topic/7403-module-blog/page-30#entry112992) where comments' date were not being correctly output.
 
 #### Version 2.3.7
 1. All MarkupPageNav (used in renderPosts()) [options](https://processwire.com/api/modules/markup-pager-nav/) can now be passed to renderPosts() to customise pagination of posts.
