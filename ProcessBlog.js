@@ -50,5 +50,11 @@
 		*/
 
 		$('#limit').change(function(){ $(this).closest("form").removeClass("nosubmit").submit(); });//note workaround for PW issue #784 (GitHub)
-
+		
+		// quick fix for #24
+		$('#blog .InputfieldContent > .description').each(function() {
+			var $this = $(this);
+			$this.html($('<div />').html($this.html()).text());
+		});
+		
 	});//end jquery
