@@ -48,7 +48,13 @@
 
 		//broken in PW dev 2.5.7. See issue #784 on GitHub
 		*/
-
+		
+		// quick fix for #24
+		$('#blog .InputfieldContent > .description').each(function() {
+			var $this = $(this);
+			$this.html($('<div />').html($this.html()).text());
+		});
+		
 		$('#limit').change(function(){ $(this).closest("form").removeClass("nosubmit").submit(); });//note workaround for PW issue #784 (GitHub)
 
 	});//end jquery
