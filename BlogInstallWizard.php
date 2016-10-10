@@ -453,7 +453,7 @@ class BlogInstallWizard extends ProcessBlog {
 		$this->quantity = $f->get('blog_quantity');
 		$this->small = $f->get('blog_small');
 		$this->date = $f->get('blog_date');
-		$this->files = $f->get('blog_files');
+		$this->blogfiles = $f->get('blog_files');
 		$this->headline = $f->get('blog_headline');
 		$this->href = $f->get('blog_href');
 		$this->images = $f->get('blog_images');
@@ -509,7 +509,7 @@ class BlogInstallWizard extends ProcessBlog {
 		$quantity = $this->quantity;
 		$small = $this->small;
 		$date = $this->date;
-		$files = $this->files;
+		$files = $this->blogfiles;
 		$headline = $this->headline;
 		$href = $this->href;
 		$images = $this->images;

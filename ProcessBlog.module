@@ -171,7 +171,11 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		if ($this->permissions->get('blog')->id && !$this->user->hasPermission('blog')) throw new WirePermissionException("You have no permission to use this module");
 		parent::init();
 
-		$this->modules->get('JqueryFancybox');
+		//$this->modules->get('JqueryFancybox');
+		$this->modules->get("Jquery");
+		$ui = $this->modules->get("JqueryUI");
+		$ui->use("modal");
+		$this->modules->get("JqueryMagnific");
 
 		// cookie per user and per relevant blog dashboard (posts, categories or tags) context
 		$this->cookieName = $this->user->id . '-processBlog-' . $this->wire('input')->urlSegment1;
@@ -1103,6 +1107,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		
 		// quick post code
 		$m = $this->modules->get('InputfieldMarkup');
+		$m->set("entityEncodeText", false);
 		// $m->columnWidth = 50;
 		$m->label = $this->_('Add');
 		$m->collapsed = Inputfield::collapsedYes;
@@ -1224,6 +1229,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		// CREATE AN INPUTFIELD MARKUP: Will hold list of posts table
 		$m = $this->modules->get('InputfieldMarkup');
+		$m->set("entityEncodeText", false);
 		// $m->label = $this->_('Edit');
 		// $m->description = $this->_('Click on a title to edit the item.');// moved down; to first check if posts found and adapt description accordingly
 		// $m->collapsed = Inputfield::collapsedYes; 
@@ -1346,7 +1352,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 			// set table rows
 			$postsTable = array(
 									"<input type='checkbox' name='posts_action[]' value='{$p->id}' class='toggle'>",// disabled sorting on this in .js file
-									"<a href='{$this->config->urls->admin}page/edit/?id={$p->id}&modal=1' class='editBlog iframe'>$p->title</a>",
+									"<a href='{$this->config->urls->admin}page/edit/?id={$p->id}&modal=1' class='editBlog pw-modal pw-modal-medium'>$p->title</a>",
 									$commentsVisibility,// total approved comments
 									$approvedTotal,// total approved comments
 									$pendingTotal,// total pending comments
@@ -1558,6 +1564,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		// CREATE AN INPUTFIELD MARKUP
 		$m = $this->modules->get('InputfieldMarkup');
+		$m->set("entityEncodeText", false);
 		// $m->columnWidth = 65;
 		// $m->label = $this->_('Edit');
 		// $m->collapsed = Inputfield::collapsedYes; 
@@ -1605,7 +1612,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 				$t->row(array(
 					"<input type='checkbox' name='categories_delete[]' value='{$c->id}' class='toggle'>",// sorting disabled in .js file
-					"<a href='{$this->config->urls->admin}page/edit/?id={$c->id}&modal=1' class='editBlog iframe'>$c->title</a>",
+					"<a href='{$this->config->urls->admin}page/edit/?id={$c->id}&modal=1' class='editBlog pw-modal pw-modal-medium'>$c->title</a>",
 					$status,// category published or not
 					$numPosts,
 							
@@ -1754,6 +1761,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		// CREATE AN INPUTFIELD MARKUP
 		$m = $this->modules->get('InputfieldMarkup');
+		$m->set("entityEncodeText", false);
 		// $m->columnWidth = 65;
 		// $m->label = $this->_('Edit');
 		// $m->description = $this->_('Click on a title to edit the item');
@@ -1802,7 +1810,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 				$t->row(array(
 					"<input type='checkbox' name='tags_delete[]' value='{$tag->id}' class='toggle'>",// sorting disable in .js file
-					"<a href='{$this->config->urls->admin}page/edit/?id={$tag->id}&modal=1' class='editBlog iframe'>$tag->title</a>",
+					"<a href='{$this->config->urls->admin}page/edit/?id={$tag->id}&modal=1' class='editBlog pw-modal pw-modal-medium'>$tag->title</a>",
 					$status,// tag published or not
 					$numPosts,
 							
@@ -2135,7 +2143,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 				if ($widget->is(Page::statusUnpublished)) $checked = " checked='checked'";
 
 				$t->row(array(
-						"<a href='{$this->config->urls->admin}page/edit/?id={$widget->id}&modal=1' class='editBlog iframe'>$widget->title</a>",
+						"<a href='{$this->config->urls->admin}page/edit/?id={$widget->id}&modal=1' class='editBlog pw-modal pw-modal-medium'>$widget->title</a>",
 						$widget->blog_summary,
 						"<input type='checkbox' name='widgets_save_status[]' value='{$widget->id}' class='toggle' {$checked}>",
 				));

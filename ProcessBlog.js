@@ -11,17 +11,8 @@
 
 	$(document).ready(function(){
 
-		/** Setup fancybox for page edits **/
-		var h = $(window).height()-65;
-	   	var w = $(window).width() > 1150 ? 1150 : $(window).width()-100;
-		
-		$('.editBlog, .addBlog').fancybox({
-			type : 'iframe',
-			frameWidth : w,
-			frameHeight : h,
-			callbackOnClose:function () {
-							window.location.reload(true);//force parent page refresh on modal close [note: option for version 1.2 fancybox]
-			},
+		$('.editBlog').on('pw-modal-closed', function(evt, ui) {
+			window.location.reload(true);//force parent page refresh on modal close [note: option for version 1.2 fancybox]
 		});
 
 		/** Toggle all checkboxes in th for 'posts', 'categories' and 'tags' tables **/

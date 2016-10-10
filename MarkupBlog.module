@@ -72,6 +72,8 @@ class MarkupBlog  extends WireData implements Module {
 
 		$this->blogStyle = $blogConfigs['blogStyle'];
 		$this->commentsUse = $blogConfigs['commentsUse'];	
+		
+		$this->modules->get("FieldtypeComments");
 	}
 	
 	/**
