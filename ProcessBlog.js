@@ -12,7 +12,7 @@
 	$(document).ready(function(){
 
 		$('.editBlog').on('pw-modal-closed', function(evt, ui) {
-			window.location.reload(true);//force parent page refresh on modal close [note: option for version 1.2 fancybox]
+			window.location.reload(true);//force parent page refresh on modal close [note: adapted for magnific popup]
 		});
 
 		/** Toggle all checkboxes in th for 'posts', 'categories' and 'tags' tables **/
