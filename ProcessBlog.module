@@ -863,29 +863,33 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$pendingComment = 0;
 		$spamComment	= -2;
 
+		$numTotal = 0;
 		$database = $this->wire('database');
-		$table = $database->escapeTable('field_blog_comments');// see /wire/core/Fieldtype.php. returns 'field_name_of_field' (i.e. as in the database)
 
-		$sql = "SELECT COUNT(*) FROM `$table` WHERE status=:status";
+		if ($this->commentsUse) {
+			$table = $database->escapeTable('field_blog_comments');// see /wire/core/Fieldtype.php. returns 'field_name_of_field' (i.e. as in the database)
 
-		$query = $database->prepare($sql);// prepare statement
+			$sql = "SELECT COUNT(*) FROM `$table` WHERE status=:status";
+
+			$query = $database->prepare($sql);// prepare statement
 	
-		// approved comments count
-		$query->bindValue(":status", $approvedComment, PDO::PARAM_INT);
-		$query->execute();// execute our count
-		$numApproved = $query->fetchColumn();// fetch the count
+			// approved comments count
+			$query->bindValue(":status", $approvedComment, PDO::PARAM_INT);
+			$query->execute();// execute our count
+			$numApproved = $query->fetchColumn();// fetch the count
 
-		// pending comments count
-		$query->bindValue(":status", $pendingComment, PDO::PARAM_INT);
-		$query->execute();// execute our count
-		$numPending = $query->fetchColumn();// fetch the count
+			// pending comments count
+			$query->bindValue(":status", $pendingComment, PDO::PARAM_INT);
+			$query->execute();// execute our count
+			$numPending = $query->fetchColumn();// fetch the count
 
-		// spam comments count
-		$query->bindValue(":status", $spamComment, PDO::PARAM_INT);
-		$query->execute();// execute our count
-		$numSpam = $query->fetchColumn();// fetch the count
+			// spam comments count
+			$query->bindValue(":status", $spamComment, PDO::PARAM_INT);
+			$query->execute();// execute our count
+			$numSpam = $query->fetchColumn();// fetch the count
 		
-		$numTotal = $numApproved + $numPending + $numSpam;
+			$numTotal = $numApproved + $numPending + $numSpam;
+		}
 		
 		// TABLE for quick view of posts
 
@@ -1107,7 +1111,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		
 		// quick post code
 		$m = $this->modules->get('InputfieldMarkup');
-		$m->set("entityEncodeText", false);
+		$m->textFormat = Inputfield::textFormatNone;// make sure ProcessWire renders the HTML
 		// $m->columnWidth = 50;
 		$m->label = $this->_('Add');
 		$m->collapsed = Inputfield::collapsedYes;
@@ -1229,7 +1233,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		// CREATE AN INPUTFIELD MARKUP: Will hold list of posts table
 		$m = $this->modules->get('InputfieldMarkup');
-		$m->set("entityEncodeText", false);
+		$m->textFormat = Inputfield::textFormatNone;// make sure ProcessWire renders the HTML
 		// $m->label = $this->_('Edit');
 		// $m->description = $this->_('Click on a title to edit the item.');// moved down; to first check if posts found and adapt description accordingly
 		// $m->collapsed = Inputfield::collapsedYes; 
@@ -1564,7 +1568,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		// CREATE AN INPUTFIELD MARKUP
 		$m = $this->modules->get('InputfieldMarkup');
-		$m->set("entityEncodeText", false);
+		$m->textFormat = Inputfield::textFormatNone;// make sure ProcessWire renders the HTML
 		// $m->columnWidth = 65;
 		// $m->label = $this->_('Edit');
 		// $m->collapsed = Inputfield::collapsedYes; 
@@ -1587,14 +1591,12 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		
 		// if user selects a limit ($input->post->show_limit) we set that as the limit and set a cookie {see $this->cookieName} with that value to save state for session.
 		if ($this->input->post->show_limit) {
-
 					$this->showLimit = $this->input->post->show_limit;
 					setcookie($this->cookieName, $this->showLimit , 0, '/');
 		}
 
 		// if no custom limit selected but there is a cookie set, we use the cookie value
 		elseif ($this->input->cookie[$this->cookieName]) {
-
 					$this->showLimit = (int) $this->input->cookie[$this->cookieName];
 		}
 
@@ -1761,7 +1763,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		// CREATE AN INPUTFIELD MARKUP
 		$m = $this->modules->get('InputfieldMarkup');
-		$m->set("entityEncodeText", false);
+		$m->textFormat = Inputfield::textFormatNone;// make sure ProcessWire renders the HTML
 		// $m->columnWidth = 65;
 		// $m->label = $this->_('Edit');
 		// $m->description = $this->_('Click on a title to edit the item');
