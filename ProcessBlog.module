@@ -870,7 +870,6 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 			$table = $database->escapeTable('field_blog_comments');// see /wire/core/Fieldtype.php. returns 'field_name_of_field' (i.e. as in the database)
 
 			$sql = "SELECT COUNT(*) FROM `$table` WHERE status=:status";
-<<<<<<< HEAD
 
 			$query = $database->prepare($sql);// prepare statement
 	
@@ -884,35 +883,14 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 			$query->execute();// execute our count
 			$numPending = $query->fetchColumn();// fetch the count
 
-=======
-
-			$query = $database->prepare($sql);// prepare statement
-	
-			// approved comments count
-			$query->bindValue(":status", $approvedComment, PDO::PARAM_INT);
-			$query->execute();// execute our count
-			$numApproved = $query->fetchColumn();// fetch the count
-
-			// pending comments count
-			$query->bindValue(":status", $pendingComment, PDO::PARAM_INT);
-			$query->execute();// execute our count
-			$numPending = $query->fetchColumn();// fetch the count
-
->>>>>>> BitPoet-dev-3x-compat
 			// spam comments count
 			$query->bindValue(":status", $spamComment, PDO::PARAM_INT);
 			$query->execute();// execute our count
 			$numSpam = $query->fetchColumn();// fetch the count
-<<<<<<< HEAD
-=======
 		
 			$numTotal = $numApproved + $numPending + $numSpam;
 		}
->>>>>>> BitPoet-dev-3x-compat
 		
-			$numTotal = $numApproved + $numPending + $numSpam;
-		}		
-
 		// TABLE for quick view of posts
 
 		// prepare some variables we'll use here
