@@ -82,6 +82,11 @@ Uninstalling Blog is a two-step process. If you are logged in as a superuser, yo
 
 ## Changelog
 
+#### Version 2.4.0
+1. Fixed sql [error](https://github.com/kongondo/Blog/pull/23) thrown when comments disabled and accessed blog dashboard.
+2. Added capability to copy demo JS and CSS files on blog install as well as remove them on uninstall.
+3. Full compatibility with ProcessWire 2.8.x and ProcessWire 3.x. See [PR](https://github.com/kongondo/Blog/pull/30).
+
 #### Version 2.3.9
 1. Fixed [bug](https://processwire.com/talk/topic/7403-module-blog/?p=119070) where comments' date was being output as a raw timestamp (owing to a miss during the last commit).
 

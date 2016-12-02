@@ -12,7 +12,7 @@
 * We don't want to overwrite users files!
 *
 * @author Francis Otieno (Kongondo)
-* @version 2.3.9 
+* @version 2.4.0 
 *
 * https://github.com/kongondo/Blog
 * Created February 2014
@@ -33,6 +33,12 @@ class BlogInstallWizard extends ProcessBlog {
 
 	// type of template files to install (blank, demo, don't install)
 	private $templateFilesInstall;
+
+	// whether to copy over the demo 'blog.js' javascript file to /site/templates/scripts/
+	private $demoBlogScriptsInstall;
+
+	// whether to copy over the demo css folder and its contents to /site/templates/css/
+	private $demoBlogCSSInstall;
 
 	// tag for templates and fields
 	private $tagTemplatesFields;
@@ -67,16 +73,22 @@ class BlogInstallWizard extends ProcessBlog {
 				style 3: top most parent = root; There is no 'blog'. Check Posts, Categories, Tags, Comments, Widgets, Authors and Archives - NOTE: Comments only applicable if feature was selected
 				style 4: top most parent = root; similar to #3 except there is no 'Posts' too: Check Example Post, Categories, Tags, Comments, Widgets, Authors and Archives				
 		*/
-		
-		$form->processInput($this->input->post);
 
-		$installWizardBtn = $this->input->post->install_wizard_btn;
+		$sanitizer = $this->wire('sanitizer');
+		$input = $this->wire('input')->post;
+		$pages = $this->wire('pages');
+		$templates = $this->wire('templates');
+		$fields = $this->wire('fields');
+		
+		$form->processInput($input);
+
+		$installWizardBtn = $input->install_wizard_btn;
 
 		// posts bulk actions
 		if($installWizardBtn && $installWizardBtn == 'Run install wizard') {// was the right button pressed
 
 			// Get the module config data
-			$data = wire('modules')->getModuleConfigData(get_parent_class($this));
+			$data = $this->wire('modules')->getModuleConfigData(get_parent_class($this));
 
 			// selected blog style (1-4)
 			$this->blogStyle = $data['blogStyle'];
@@ -87,16 +99,17 @@ class BlogInstallWizard extends ProcessBlog {
 			// sanitized titles of parent pages
 			$parents = array();
 
-			// $k = template and $v = title - saves time later. Also $k = our identifier when saving IDs to module config settings. See below in createPages() $blogPagesIDs
-			$parents['blog'] = $this->sanitizer->text($this->input->post->blog);
-			$parents['blog-posts'] = $this->sanitizer->text($this->input->post->posts);
-			$parents['blog-categories'] = $this->sanitizer->text($this->input->post->categories);
-			$parents['blog-tags'] = $this->sanitizer->text($this->input->post->tags);
-			$parents['blog-comments'] = $this->sanitizer->text($this->input->post->comments);
-			$parents['blog-widgets'] = $this->sanitizer->text($this->input->post->widgets);
-			$parents['blog-authors'] = $this->sanitizer->text($this->input->post->authors);
-			$parents['blog-archives'] = $this->sanitizer->text($this->input->post->archives);
-			$parents['blog-settings'] = $this->sanitizer->text($this->input->post->settings);
+			// $k = template and $v = title - saves time later. Also $k = our identifier when saving IDs to module config settings. See below in createPages() $blogPagesIDs	
+			
+			$parents['blog'] = $sanitizer->text($input->blog);
+			$parents['blog-posts'] = $sanitizer->text($input->posts);
+			$parents['blog-categories'] = $sanitizer->text($input->categories);
+			$parents['blog-tags'] = $sanitizer->text($input->tags);
+			$parents['blog-comments'] = $sanitizer->text($input->comments);
+			$parents['blog-widgets'] = $sanitizer->text($input->widgets);
+			$parents['blog-authors'] = $sanitizer->text($input->authors);
+			$parents['blog-archives'] = $sanitizer->text($input->archives);
+			$parents['blog-settings'] = $sanitizer->text($input->settings);
 
 			// remove irrelevant parent titles/pages depending on blogStyle
 			if ($this->blogStyle == 2 || $this->blogStyle == 4) unset($parents['blog-posts']);
@@ -120,29 +133,24 @@ class BlogInstallWizard extends ProcessBlog {
 					# check only for 'blog' as child of root
 					# BUT REMEMBER - we may be checking against the title set by the user! so, we grab value from $parents array
 			
-						foreach ($parents as $key => $value) {
-	
+						foreach ($parents as $key => $value) {	
 									$pTitle = $value;
-
 									// if no title provided throw an error
 									if (!$pTitle ) {
-
 										$this->error($this->_("Parent pages titles are required.")); 
 										return false;
-
 									}
-
 						}
 
 					// here we only need to check for existence of a similarly named 'blog' page
 					$bTitle = $parents['blog'];
 					
 					// if a title was provided, we sanitize it and convert it to a URL friendly page name to later check if such a page already exists under this parent page			
-					$bName = $this->sanitizer->pageName($bTitle);
+					$bName = $sanitizer->pageName($bTitle);
 
-					$pageID = wire('pages')->get('/')->child("name={$bName}, include=all")->id;// check by ID to be absolutely sure
+					$pageID = $pages->get('/')->child("name={$bName}, include=all")->id;// check by ID to be absolutely sure
 
-					if($pageID) $pagesCheck [] = wire('pages')->get($pageID)->title;// show them the title since this is what they would have entered in form	
+					if($pageID) $pagesCheck [] = $pages->get($pageID)->title;// show them the title since this is what they would have entered in form	
 					
 					$pagesExist = count($pagesCheck) ? true : false;// we'll use this later + $pagesCheck to show errors
 
@@ -169,11 +177,11 @@ class BlogInstallWizard extends ProcessBlog {
 									}
 					
 									// if a title was provided, we sanitize it and convert it to a URL friendly page name to later check if such a page already exists under this parent page
-									$pName = $this->sanitizer->pageName($pTitle);
+									$pName = $sanitizer->pageName($pTitle);
 
-									$pageID = wire('pages')->get('/')->child("name={$pName}, include=all")->id;// check by ID to be absolutely sure
+									$pageID = $pages->get('/')->child("name={$pName}, include=all")->id;// check by ID to be absolutely sure
 
-									if($pageID) $pagesCheck [] = wire('pages')->get($pageID)->title;// show them the title since this is what they would have entered in form							
+									if($pageID) $pagesCheck [] = $pages->get($pageID)->title;// show them the title since this is what they would have entered in form							
 						
 						}// end foreach checks of all parent pages (i.e. posts, categories, tags,comments [if applicable], widgets, authors, archives and settings)
 
@@ -187,7 +195,7 @@ class BlogInstallWizard extends ProcessBlog {
 			################################ fields check################################
 
 			// check if fields 'blog_images', etc, already exist
-			$fields  = array(
+			$fieldsArray  = array(
 							'body' => 'blog_body',
 							'categories' => 'blog_categories',
 							'comments' => 'blog_comments',
@@ -209,17 +217,16 @@ class BlogInstallWizard extends ProcessBlog {
 			
 			// remove comments fields if $commentsUse!=1
 			if ($this->commentsUse != 1) {
-
-						unset($fields['comments']);
-						unset($fields['comments view']);
-						unset($fields['comments max']);
+						unset($fieldsArray['comments']);
+						unset($fieldsArray['comments view']);
+						unset($fieldsArray['comments max']);
 			}
 
 			$fieldsCheck = array();
-			foreach ($fields as $key=> $value) {if(wire('fields')->get($value))	$fieldsCheck [] = wire('fields')->get($value)->name;}
+			foreach ($fieldsArray as $key => $value) {if($fields->get($value)) $fieldsCheck [] = $fields->get($value)->name;}
 			$fieldsExist = count($fieldsCheck) ? true : false;
 
-			$templates = array(
+			$templatesArray = array(
 								'blog' => 'blog',
 								'archives' => 'blog-archives',
 								'authors' => 'blog-authors',
@@ -243,25 +250,23 @@ class BlogInstallWizard extends ProcessBlog {
 			);      
 
 			// remove irrelevant templates depending on blogStyle
-			if ($this->blogStyle == 2 || $this->blogStyle == 4) unset($templates['posts']);
-			if ($this->blogStyle == 3 || $this->blogStyle == 4) unset($templates['blog']);
+			if ($this->blogStyle == 2 || $this->blogStyle == 4) unset($templatesArray['posts']);
+			if ($this->blogStyle == 3 || $this->blogStyle == 4) unset($templatesArray['blog']);
 
 
 			// remove comment-related templates if $commentsUse!=1
 			if ($this->commentsUse != 1) {
-
-						unset($templates['comments']);
-						unset($templates['recent comments']);
-						unset($templates['basic']);
-						
+						unset($templatesArray['comments']);
+						unset($templatesArray['recent comments']);
+						unset($templatesArray['basic']);						
 			}
 
 			$templatesCheck = array();
-			foreach ($templates as $template) {if(wire('templates')->get($template)) $templatesCheck [] = wire('templates')->get($template)->name;}
+			foreach ($templatesArray as $tpl) {if($templates->get($tpl)) $templatesCheck [] = $templates->get($tpl)->name;}
 			$templatesExist = count($templatesCheck) ? true : false;
 
 			// check if role 'blog-author' already exists
-			$r = wire('roles')->get('blog-author');
+			$r = $this->wire('roles')->get('blog-author');
 			$roleExists = $r->id ? true : false;
 
 			if($pagesExist == true){
@@ -288,9 +293,11 @@ class BlogInstallWizard extends ProcessBlog {
 				$this->error($this->_('Due to the above errors, the install wizard did not run. Make necessary changes and try again.'));
 				
 				// due to above errors, we stop executing install of the following 'role', 'templates', 'template files', 'fields' and 'pages'
-				#return false;
+				return false;
 
 			}
+
+			### GOOD TO GO ###
 
 			/* ############## - set some properties and pass on to $this->createRole() - ############## */
 
@@ -298,6 +305,8 @@ class BlogInstallWizard extends ProcessBlog {
 			$this->parents = $parents;// array of final parents: set to use later down
 			$this->schedulePages = $data['schedulePages'];// install auto-publishing/unpublishing scheduling feature?				
 			$this->templateFilesInstall = $data['templateFilesInstall'];// type of template files to install (blank, demo, don't install)
+			$this->demoBlogScriptsInstall = $data['demoJS'];// install js script for demo
+			$this->demoBlogCSSInstall = $data['demoCSS'];// install css for demo
 			$this->tagTemplatesFields = $data['tagTemplatesFields'];// tag for templates and fields
 			
 			// pass on to first step of install
@@ -325,7 +334,7 @@ class BlogInstallWizard extends ProcessBlog {
 
 		// create an array of guest and author roles IDs to later add to our new templates
 		/*
-		foreach (wire('roles')->find('name=guest|author') as $r) {
+		foreach ($this->wire('roles')->find('name=guest|author') as $r) {
 				$templateRoles[] = $r->id;// EDIT; DON'T REALLY NEED THIS ARRAY. I ONLY NEED TO GIVE VIEW ACCESS TO 'guest' FOR ALL OTHER ROLES TO ALSO GET ACCESS
 		}
 		*/
@@ -346,6 +355,7 @@ class BlogInstallWizard extends ProcessBlog {
 	private function createFields() {
 
 		// 3. ###### We create the fields we will need to add to our templates ######
+		$fields = $this->wire('fields');
 
 		/*
 				Prepare the array (with properties) we will use to create fields.
@@ -356,61 +366,60 @@ class BlogInstallWizard extends ProcessBlog {
 					*	The Page Fields will need to be configured right at the end after creating blog fields, templates and pages
 		*/
 
-		$fields = array(
+		$fieldsArray = array(
 
-				'body' => array('name'=>'blog_body', 'type'=> 'FieldtypeTextarea', 'label'=>'Body'),
-				'categories' => array('name'=>'blog_categories', 'type'=> 'FieldtypePage', 'label'=>'Categories', 'description'=>'Select one or more categories below and drag to sort them in order of relevance. If you want a category that doesn\'t already exist, create a new one.'),
-				'comments' => array('name'=>'blog_comments', 'type'=> 'FieldtypeComments', 'label'=>'Comments', 'collapsed'=>2),
+				'body' => array('name'=>'blog_body', 'type'=>'FieldtypeTextarea', 'label'=>'Body'),
+				'categories' => array('name'=>'blog_categories', 'type'=>'FieldtypePage', 'label'=>'Categories', 'description'=>'Select one or more categories below and drag to sort them in order of relevance. If you want a category that doesn\'t already exist, create a new one.'),
+				'comments' => array('name'=>'blog_comments', 'type'=>'FieldtypeComments', 'label'=>'Comments', 'collapsed'=>2),
 				'comments view' => array('name'=>'blog_comments_view', 'type'=> 'FieldtypePage', 'label'=>'Comments visibility'),
 				'comments max' => array('name'=>'blog_comments_max', 'type'=> 'FieldtypeInteger', 'label'=>'Maximum comments allowed per post', 'autojoin'=>1),
-				'quantity' => array('name'=>'blog_quantity', 'type'=> 'FieldtypeInteger', 'label'=>'Quantity of items to show', 'autojoin'=>1),
-				'date' => array('name'=>'blog_date', 'type'=> 'FieldtypeDatetime', 'label'=>'Date', 'description'=>'This field will be automatically filled with the current time and date when your post is published. Unpublishing your post will not change the date. You can do so manually.', 'autojoin'=>1 ),
-				'files' => array('name'=>'blog_files', 'type'=> 'FieldtypeFile', 'label'=>'Files',  'collapsed'=>2, 'entityencodedesc'=>1),
-				'headline' => array('name'=>'blog_headline', 'type'=> 'FieldtypeText', 'label'=>'Headline', 'textformatters'=>'TextformatterEntities', 'collapsed'=>2, 'maxlength'=>1024),
-				'href' => array('name'=>'blog_href', 'type'=> 'FieldtypeURL', 'label'=>'Website URL', 'autojoin'=>1, 'maxlength'=>1024),
-				'images' => array('name'=>'blog_images', 'type'=> 'FieldtypeImage', 'label'=>'Images',  'collapsed'=>2, 'entityencodedesc'=>1),
-				'links' => array('name'=>'blog_links', 'type'=> 'FieldtypeRepeater', 'label'=>'Links'),
-				'note' => array('name'=>'blog_note', 'type'=> 'FieldtypeText', 'label'=>'Note', 'textformatters'=>'TextformatterEntities', 'autojoin'=>1, 'maxlength'=>1024),
-				'summary' => array('name'=>'blog_summary', 'type'=> 'FieldtypeTextarea', 'label'=>'Summary', 'textformatters'=>'TextformatterEntities', 'collapsed'=>2, 'autojoin'=>1),
-				'tags' => array('name'=>'blog_tags', 'type'=> 'FieldtypePage', 'label'=>'Tags'),
-				'small' => array('name'=>'blog_small', 'type'=> 'FieldtypeInteger', 'label'=>'Posts truncate length', 'autojoin'=>1),
+				'quantity' => array('name'=>'blog_quantity', 'type'=>'FieldtypeInteger', 'label'=>'Quantity of items to show', 'autojoin'=>1),
+				'date' => array('name'=>'blog_date', 'type'=>'FieldtypeDatetime', 'label'=>'Date', 'description'=>'This field will be automatically filled with the current time and date when your post is published. Unpublishing your post will not change the date. You can do so manually.', 'autojoin'=>1 ),
+				'files' => array('name'=>'blog_files', 'type'=>'FieldtypeFile', 'label'=>'Files',  'collapsed'=>2, 'entityencodedesc'=>1),
+				'headline' => array('name'=>'blog_headline', 'type'=>'FieldtypeText', 'label'=>'Headline', 'textformatters'=>'TextformatterEntities', 'collapsed'=>2, 'maxlength'=>1024),
+				'href' => array('name'=>'blog_href', 'type'=>'FieldtypeURL', 'label'=>'Website URL', 'autojoin'=>1, 'maxlength'=>1024),
+				'images' => array('name'=>'blog_images', 'type'=>'FieldtypeImage', 'label'=>'Images',  'collapsed'=>2, 'entityencodedesc'=>1),
+				'links' => array('name'=>'blog_links', 'type'=>'FieldtypeRepeater', 'label'=>'Links'),
+				'note' => array('name'=>'blog_note', 'type'=>'FieldtypeText', 'label'=>'Note', 'textformatters'=>'TextformatterEntities', 'autojoin'=>1, 'maxlength'=>1024),
+				'summary' => array('name'=>'blog_summary', 'type'=>'FieldtypeTextarea', 'label'=>'Summary', 'textformatters'=>'TextformatterEntities', 'collapsed'=>2, 'autojoin'=>1),
+				'tags' => array('name'=>'blog_tags', 'type'=>'FieldtypePage', 'label'=>'Tags'),
+				'small' => array('name'=>'blog_small', 'type'=>'FieldtypeInteger', 'label'=>'Posts truncate length', 'autojoin'=>1),
 		);
 
 		// remove comments fields if $commentsUse!=1
 		if ($this->commentsUse != 1) {
-
-					unset($fields['comments']);
-					unset($fields['comments view']);
-					unset($fields['comments max']);
+					unset($fieldsArray['comments']);
+					unset($fieldsArray['comments view']);
+					unset($fieldsArray['comments max']);
 		}
 
-		foreach ($fields as $field) {
+		foreach ($fieldsArray as $fld) {
 
 			$f = new Field(); // create new field object
-			$f->type = $this->modules->get($field['type']); // get a field type
-			$f->name = $field['name'];
-			$f->label = $field['label'];
-			if (isset($field['description'])) $f->description = $field['description'];
-			if (isset($field['textformatters'])) $f->textformatters = array($field['textformatters']);// needs to be an array
-			if (isset($field['collapsed'])) $f->collapsed = $field['collapsed'];
-			if (isset($field['autojoin'])) $f->flags = $f->flags | Field::flagAutojoin;
-			if (isset($field['maxlength'])) $f->maxlength = $field['maxlength'];
-			if (isset($field['entityencodedesc'])) $f->entityEncode = $field['entityencodedesc'];
+			$f->type = $this->wire('modules')->get($fld['type']); // get a field type
+			$f->name = $fld['name'];
+			$f->label = $fld['label'];
+			if (isset($fld['description'])) $f->description = $fld['description'];
+			if (isset($fld['textformatters'])) $f->textformatters = array($fld['textformatters']);// needs to be an array
+			if (isset($fld['collapsed'])) $f->collapsed = $fld['collapsed'];
+			if (isset($fld['autojoin'])) $f->flags = $f->flags | Field::flagAutojoin;
+			if (isset($fld['maxlength'])) $f->maxlength = $fld['maxlength'];
+			if (isset($fld['entityencodedesc'])) $f->entityEncode = $fld['entityencodedesc'];
 
 			// additional settings for comments field if commenting feature was selected (i.e. $this->commentsUse ==1)
-			if ($this->commentsUse == 1 && $field['name'] == 'blog_comments') {
+			if ($this->commentsUse == 1 && $fld['name'] == 'blog_comments') {
 					$f->deleteSpamDays = 3;
 					$f->moderate = 2;// moderate new users only
 			}
 
 			// additional settings for body field - changed to CKEditor from TinyMCE after PW 2.5 release! It is now core
-			if ($field['name'] == 'blog_body') {
+			if ($fld['name'] == 'blog_body') {
 					$f->rows = 10;
 					$f->inputfieldClass = 'InputfieldCKEditor';
 			}
 
 			// additional settings for date field
-			if ($field['name'] == 'blog_date') {
+			if ($fld['name'] == 'blog_date') {
 					$f->dateOutputFormat = 'j F Y g:i a';// 8 April 2012 - in the details tab, combines date and time code in this field
 					$f->dateInputFormat = 'j F Y';
 					// $f->timeOutputFormat = 'g:i a';// 5:10 pm - for output, the code fields are combined - no need for this
@@ -421,12 +430,12 @@ class BlogInstallWizard extends ProcessBlog {
 			}
 
 			// additional settings for the blog_summary
-			if($field['name'] == 'blog_summary') $f->rows = 3;
+			if($fld['name'] == 'blog_summary') $f->rows = 3;
 
 			// additional settings for the files and images fields
-			if($field['name'] == 'blog_files') $f->extensions = 'pdf doc docx xls xlsx gif jpg jpeg png mp3 wav';// needs string
+			if($fld['name'] == 'blog_files') $f->extensions = 'pdf doc docx xls xlsx gif jpg jpeg png mp3 wav';// needs string
 			
-			if($field['name'] == 'blog_images') {
+			if($fld['name'] == 'blog_images') {
 					$f->extensions = 'gif jpg jpeg png';
 					$f->adminThumbs = 1;// display thumbnails in page editor
 
@@ -437,30 +446,29 @@ class BlogInstallWizard extends ProcessBlog {
 		
 		}// end foreach fields
 
-		// grab our newly created fields, assigning them to variables. We'll later add the fields to our templates
-		$f = wire('fields');
+		// grab our newly created fields, assigning them to variables. We'll later add the fields to our templates		
 
 		// set some class properties on the fly. We will use this in createTemplates()
-		$this->title = $f->get('title');
-		$this->body = $f->get('blog_body');
-		$this->categories = $f->get('blog_categories');
+		$this->title = $fields->get('title');
+		$this->body = $fields->get('blog_body');
+		$this->categories = $fields->get('blog_categories');
 		
 		// only set if commenting feature available otherwise empty
-		$this->comments = $this->commentsUse == 1 ? $f->get('blog_comments') : '';
-		$this->commentsView = $this->commentsUse == 1 ? $f->get('blog_comments_view') : '';
-		$this->commentsMax = $this->commentsUse == 1 ?  $f->get('blog_comments_max') : '';
+		$this->comments = $this->commentsUse == 1 ? $fields->get('blog_comments') : '';
+		$this->commentsView = $this->commentsUse == 1 ? $fields->get('blog_comments_view') : '';
+		$this->commentsMax = $this->commentsUse == 1 ?  $fields->get('blog_comments_max') : '';
 
-		$this->quantity = $f->get('blog_quantity');
-		$this->small = $f->get('blog_small');
-		$this->date = $f->get('blog_date');
-		$this->blogfiles = $f->get('blog_files');// @note: using 'blogfiles' rather than 'files' to avoid nameclass with ProcessWire
-		$this->headline = $f->get('blog_headline');
-		$this->href = $f->get('blog_href');
-		$this->images = $f->get('blog_images');
-		$this->links = $f->get('blog_links');// repeater field
-		$this->note = $f->get('blog_note');
-		$this->summary = $f->get('blog_summary');
-		$this->tags = $f->get('blog_tags');
+		$this->quantity = $fields->get('blog_quantity');
+		$this->small = $fields->get('blog_small');
+		$this->date = $fields->get('blog_date');
+		$this->blogfiles = $fields->get('blog_files');// @note: using 'blogfiles' rather than 'files' to avoid nameclass with ProcessWire
+		$this->headline = $fields->get('blog_headline');
+		$this->href = $fields->get('blog_href');
+		$this->images = $fields->get('blog_images');
+		$this->links = $fields->get('blog_links');// repeater field
+		$this->note = $fields->get('blog_note');
+		$this->summary = $fields->get('blog_summary');
+		$this->tags = $fields->get('blog_tags');
 
 		// lets create some templates and add our fields to them
 		return $this->createTemplates();
@@ -519,7 +527,7 @@ class BlogInstallWizard extends ProcessBlog {
 		$tags = $this->tags;
 
 		// array for creating new templates: $k=template name; $v=template properties + fields
-		$templates = array(
+		$templatesArray = array(
 
 				'blog' => array('Blog', 0, '', 1, 1, 0, 0, 'fields' => array($title, $body)),// moved $summary, $note and $quantity to settings page
 				'blog-archives' => array('Blog Archives', 0, 1, 1, 1, 1, 0, 'fields' => array($title)),
@@ -544,19 +552,18 @@ class BlogInstallWizard extends ProcessBlog {
 		);		
 			
 		// remove irrelevant templates depending on blogStyle
-		if ($this->blogStyle == 2 || $this->blogStyle == 4) unset($templates['blog-posts']);
-		if ($this->blogStyle == 3 || $this->blogStyle == 4) unset($templates['blog']);
+		if ($this->blogStyle == 2 || $this->blogStyle == 4) unset($templatesArray['blog-posts']);
+		if ($this->blogStyle == 3 || $this->blogStyle == 4) unset($templatesArray['blog']);
 
 		// remove some templates if $commentsUse!=1
 		if ($this->commentsUse != 1) {
-
-					unset($templates['blog-comments']);// for ,comments'
-					unset($templates['blog-recent-comments']);// for 'recent comments'
-					unset($templates['blog-basic']);// for 'comments' page children: 'Always Show Comments'; 'Disable New Comments'; 'Disable Comments'						
+					unset($templatesArray['blog-comments']);// for ,comments'
+					unset($templatesArray['blog-recent-comments']);// for 'recent comments'
+					unset($templatesArray['blog-basic']);// for 'comments' page children: 'Always Show Comments'; 'Disable New Comments'; 'Disable Comments'			
 		}
 
 		// create new fieldgroups and templates and add fields
-		foreach ($templates as $k => $v) {
+		foreach ($templatesArray as $k => $v) {
 
 			// new fieldgroup
 			$fg = new Fieldgroup();
@@ -604,6 +611,8 @@ class BlogInstallWizard extends ProcessBlog {
 	private function extraTemplateSettings() {	
 
 		// 5. ###### post-creating our templates: additional settings for some templates ######
+		$templates = $this->wire('templates');
+		$fields = $this->wire('fields');
 
 		// prepare arrays for some templates' childTemplates AND parentTemplates
 
@@ -622,8 +631,8 @@ class BlogInstallWizard extends ProcessBlog {
 		// add allowed child templates as applicable
 		foreach ($childTemplates as $k => $v) {
 
-					$t = wire('templates')->get($k);
-					$t->childTemplates = array(wire('templates')->get($v)->id);// needs to be added as array of template IDs
+					$t = $templates->get($k);
+					$t->childTemplates = array($templates->get($v)->id);// needs to be added as array of template IDs
 					$t->save();// save the template
 
 		}
@@ -631,7 +640,7 @@ class BlogInstallWizard extends ProcessBlog {
 		// if blogStyle == 2, 'blog' is the parent of 'example-post', $parentTemplate = 'blog';
 		if ($this->blogStyle == 2) {$parentTemplate = 'blog';}
 		// if blogStyle == 4, 'root' is the parent of 'example-post', $parentTemplate = 'template of root' - we have to get this using API;
-		elseif ($this->blogStyle == 4) {$parentTemplate = wire('pages')->get('/')->template->name;}
+		elseif ($this->blogStyle == 4) {$parentTemplate = $this->wire('pages')->get('/')->template->name;}
 		else{$parentTemplate = 'blog-posts';}// else we default to blog-posts = blogStyle=1 || blogStyle=3
 
 		// parentTemplates: key = template name; value = allowed parent templates
@@ -644,8 +653,8 @@ class BlogInstallWizard extends ProcessBlog {
 		// add allowed parent templates as applicable
 		foreach ($parentTemplates as $k => $v) {
 
-					$t = wire('templates')->get($k);
-					$t->parentTemplates = array(wire('templates')->get($v)->id);// needs to be added as array of template IDs
+					$t = $templates->get($k);
+					$t->parentTemplates = array($templates->get($v)->id);// needs to be added as array of template IDs
 					$t->save();// save the template
 		}
 
@@ -655,18 +664,18 @@ class BlogInstallWizard extends ProcessBlog {
 		// add role guest to each in order for view access to be applied
 		foreach ($templatesViewAccess as $template) {
 
-					$t = wire('templates')->get($template);
-					$t->roles = array(wire('roles')->get('guest')->id);// we only need to add 'guest' role for other roles to get view access too
+					$t = $templates->get($template);
+					$t->roles = array($this->wire('roles')->get('guest')->id);// we only need to add 'guest' role for other roles to get view access too
 					$t->save();
 		}
 
 		// add SchedulePages fields to blog-post template if $this->schedulePages==1
 		if ($this->schedulePages == 1) {
 
-				$t = wire('templates')->get('blog-post');
+				$t = $templates->get('blog-post');
 				$fg = $t->fieldgroup;
-				$fg->prepend(wire('fields')->get('publish_until')); // prepend publish_until field at the top
-				$fg->prepend(wire('fields')->get('publish_from')); // prepend publish_until field at the very top
+				$fg->prepend($fields->get('publish_until')); // prepend publish_until field at the top
+				$fg->prepend($fields->get('publish_from')); // prepend publish_until field at the very top
 				$fg->save();
 
 		}
@@ -684,10 +693,14 @@ class BlogInstallWizard extends ProcessBlog {
 	private function inContextFieldSettings() {
 
 		// 6. ###### Set some in-context field widths, labels and descriptions for some templates #####
+		$pages = $this->wire('pages');
+		$templates = $this->wire('templates');
+		$fields = $this->wire('fields');
+		
 
 		// Labels and Descriptions: in-context values of some fields in some templates
 		// $v[0]=template; $v[1]=field; $v[2]=label; $v[3]=description
-		$templates = array(
+		$templatesArray = array(
 							
 							array('blog-settings', 'blog_headline', 'Blog Title', 'You can use this (e.g. in the masthead) as a title for your blog.'),// 0
 							array('blog-settings', 'blog_summary', 'Blog Tagline', 'An optional sentence or two of text that you can use as your blog\'s tagline.'),// 1
@@ -713,25 +726,21 @@ class BlogInstallWizard extends ProcessBlog {
 		
 		// remove blog-post template' in context field setting for field 'blog_comments_view' if $commentsUse!=1
 		if ($this->commentsUse != 1) {
-
-				unset($templates[6]);// unset blog-post: blog_comments_view
-				unset($templates[7]);// unset blog-comments: blog_quantity
-				unset($templates[8]);// unset blog-comments: blog_comments_view
-				unset($templates[9]);// unset blog-recent-comments: blog_quantity
-
+				unset($templatesArray[6]);// unset blog-post: blog_comments_view
+				unset($templatesArray[7]);// unset blog-comments: blog_quantity
+				unset($templatesArray[8]);// unset blog-comments: blog_comments_view
+				unset($templatesArray[9]);// unset blog-recent-comments: blog_quantity
 		}
 
 		// remove blog-post template' in context field settings for field 'publish_from' and 'publish_until' if $this->schedulePages !=1
 		if ($this->schedulePages != 1) {
-
-				unset($templates[4]);// unset blog-post: publish_from
-				unset($templates[5]);// unset blog-post: publish_until
-
+				unset($templatesArray[4]);// unset blog-post: publish_from
+				unset($templatesArray[5]);// unset blog-post: publish_until
 		}
 
-		foreach ($templates as $v) {
+		foreach ($templatesArray as $v) {
 
-				$t = wire('templates')->get($v[0]);
+				$t = $templates->get($v[0]);
 				$f = $t->fieldgroup->getField($v[1], true);
 				if (!empty($v[2])) $f->label = $v[2];
 				if (isset($v[3])) $f->description = $v[3];
@@ -752,56 +761,55 @@ class BlogInstallWizard extends ProcessBlog {
 				a page using the repeater field is added or edited
 				*/
 				
-				wire('fields')->saveFieldgroupContext($f, $t->fieldgroup);// save settings in context
+				$fields->saveFieldgroupContext($f, $t->fieldgroup);// save settings in context
 		}
 
 		// Labels only: only for 'blog_summary' field for widgets templates
-		$templates = array('blog-links', 'blog-recent-comments', 'blog-recent-posts', 'blog-recent-tweets', 'blog-widget-basic');
+		$templatesArray = array('blog-links', 'blog-recent-comments', 'blog-recent-posts', 'blog-recent-tweets', 'blog-widget-basic');
 
-		foreach ($templates as $template) {
+		foreach ($templatesArray as $tpl) {
 
-				if ($this->commentsUse !=1 && $template == 'blog-recent-comments') continue;
+				if ($this->commentsUse !=1 && $tpl == 'blog-recent-comments') continue;
 			
-				$t = wire('templates')->get($template);
+				$t = $templates->get($tpl);
 				$f = $t->fieldgroup->getField('blog_summary', true);// get field in-context
 				$f->label = 'Widget Description';
-				wire('fields')->saveFieldgroupContext($f, $t->fieldgroup);// save the in context label
+				$fields->saveFieldgroupContext($f, $t->fieldgroup);// save the in context label
 		
 		}
 
 		// For the repeater, we need to add the fields for the repeater. We can only do it after those fields have been created and saved (above).
 		// But we need to first create the repeater page (the 'for-field-id' page)
 
-		$adminRoot = wire('config')->adminRootPageID;
+		$adminRoot = $this->wire('config')->adminRootPageID;
 		
 		// get the repeaters page in admin [will only work if repeater module is installed!]
 		
 		$repeaterPage = new Page();
 
-		// $repeaterPage->template = wire('templates')->get(2);// admin template
+		// $repeaterPage->template = $templates->get(2);// admin template
 
-		$repeaterPage->template = wire('pages')->get($adminRoot)->template->id;// admin template
-		$repeaterPage->parent =  wire('pages')->get("name=repeaters, parent_id=$adminRoot");// the "repeaters" page in Admin (parent of all repeaters)
+		$repeaterPage->template = $pages->get($adminRoot)->template->id;// admin template
+		$repeaterPage->parent =  $pages->get("name=repeaters, parent_id=$adminRoot");// the "repeaters" page in Admin (parent of all repeaters)
 		$repeaterPage->title = 'Blog Links';
-		$name = "for-field-" . wire('fields')->get('blog_links')->id;// we'll need this later in a selector so we save to a variable
+		$name = "for-field-" . $fields->get('blog_links')->id;// we'll need this later in a selector so we save to a variable
 		$repeaterPage->name = $name;
 		$repeaterPage->save();
 				
 		// get the repeater field to add to our repeater page
-		$f = wire('fields')->get('blog_links');
-		$f->parent_id = wire('pages')->get("name=$name")->id;// in db stored in 'fields' within the data for the 'FieldtypeRepeater'
-		$f->template_id = wire('templates')->get('repeater_blog-links')->id;
+		$f = $fields->get('blog_links');
+		$f->parent_id = $pages->get("name=$name")->id;// in db stored in 'fields' within the data for the 'FieldtypeRepeater'
+		$f->template_id = $templates->get('repeater_blog-links')->id;
 		$f->repeaterReadyItems = 3;
 
 		// We need the IDs of the fields to add to the repeater [adding as field objects didn't work]
-		$fields = array('blog_headline', 'blog_href');
-		foreach ($fields as $field) {
-
-					$fieldsIDs[] = wire('fields')->get($field)->id;	
+		$repeaterFlds = array('blog_headline', 'blog_href');
+		foreach ($repeaterFlds as $repeaterFld) {
+					$repeaterFieldsIDs[] = $fields->get($repeaterFld)->id;	
 		}
 		
 		// add fields to the repeater page
-		$f->repeaterFields =  $fieldsIDs;// array of field IDs to add to repeater
+		$f->repeaterFields =  $repeaterFieldsIDs;// array of field IDs to add to repeater
 		$f->save();
 
 		// We need to add some fields to 'user' template [for the Blog Authors] + sort fields + some custom labels for some fields
@@ -814,15 +822,14 @@ class BlogInstallWizard extends ProcessBlog {
 								'blog_body' => 'Biography',
 		);
 
-		$t = wire('templates')->get('user');// 
+		$t = $templates->get('user');
 		$fg = $t->fieldgroup;
 		
 		// first, we add the extra fields we need
-		foreach ($userFieldsExtra as $k => $v) {
-			
+		foreach ($userFieldsExtra as $k => $v) {			
 					// if it is the title field, we prepend it (at the top) (it goes before 'pass'); 
-					if ($k == 'title') {$fg->prepend(wire('fields')->get($k));}				
-					else {$fg->add(wire('fields')->get($k));}// images and body fields get added to the bottom					
+					if ($k == 'title') {$fg->prepend($fields->get($k));}				
+					else {$fg->add($fields->get($k));}// images and body fields get added to the bottom					
 		}
 		
 		$fg->save();
@@ -831,7 +838,7 @@ class BlogInstallWizard extends ProcessBlog {
 		foreach ($userFieldsExtra as $k => $v) {
 					$f = $t->fieldgroup->getField($k, true);
 					if (!empty($v)) $f->label = $v;
-					wire('fields')->saveFieldgroupContext($f, $t->fieldgroup);// save in context settings
+					$fields->saveFieldgroupContext($f, $t->fieldgroup);// save in context settings
 
 		}
 
@@ -855,14 +862,16 @@ class BlogInstallWizard extends ProcessBlog {
 
 		$parents = $this->parents;
 		$blogPagesIDs = array();
-		
-		$parent = wire('pages')->get('/');// if $this->blogStyle == 3 || $this->blogStyle == 4 parent is 'root'
+		$pages = $this->wire('pages');
+		$templates = $this->wire('templates');
+				
+		$parent = $pages->get('/');// if $this->blogStyle == 3 || $this->blogStyle == 4 parent is 'root'
 		
 		// the 'Blog' page
 		if ($this->blogStyle == 1 || $this->blogStyle == 2) {
 
 				$p = new Page();
-				$p->template = wire('templates')->get('blog');
+				$p->template = $templates->get('blog');
 				$p->parent = $parent;
 				$p->title = $parents['blog'];// set by user or defaults to 'Blog' - see verifyInstall();
 				$p->save();
@@ -873,7 +882,7 @@ class BlogInstallWizard extends ProcessBlog {
 				// unset $parents['blog'] since we no longer need it here. For blogStyle == 3 || blogStyle == 4 we already unset it earlier in verifyInstall()
 				unset($parents['blog']);
 
-				$parent = wire('pages')->get($blogPagesIDs['blog']);// if $this->blogStyle == 1 || $this->blogStyle == 2 parent is 'blog'
+				$parent = $pages->get($blogPagesIDs['blog']);// if $this->blogStyle == 1 || $this->blogStyle == 2 parent is 'blog'
 
 
 		}
@@ -887,7 +896,7 @@ class BlogInstallWizard extends ProcessBlog {
 		foreach ($parentPages as $k => $v) {
 			
 				$p = new Page();
-				$p->template = wire('templates')->get($k);
+				$p->template = $templates->get($k);
 				$p->parent = $parent;
 				$p->title = $v;
 				if ($k == 'blog-widgets' || $k == 'blog-settings') $p->addStatus(Page::statusHidden);// hidden page - using $k since $v will vary
@@ -944,8 +953,8 @@ class BlogInstallWizard extends ProcessBlog {
 		foreach ($childPages as $k => $v) {
 					
 					$p = new Page();
-					$p->template = wire('templates')->get($v[1]);
-					$p->parent = wire('pages')->get($v[2]);// get parent
+					$p->template = $templates->get($v[1]);
+					$p->parent = $pages->get($v[2]);// get parent
 					$p->title = $v[0];
 					// for 'Example Post' page, we need to add the demo date properly. Otherwise, normally, the date field will be populated when post published
 					if($k == 'Example Post') $p->blog_date = date('j F Y g:i a');// e.g '8 April 2012 11:15 am'
@@ -977,6 +986,10 @@ class BlogInstallWizard extends ProcessBlog {
 		// 8. #### additional settings/values for some page properties and field values ####
 		$blogPagesIDs = array();
 		$blogPagesIDs = $this->blogPagesIDs;
+		$pages = $this->wire('pages');
+		$templates = $this->wire('templates');
+		$fields = $this->wire('fields');
+		
 
 		// set some blog pages IDs for use in adding some extras to their fields
 		$posts = $this->blogStyle == 1 || $this->blogStyle == 3 ? $blogPagesIDs['blog-posts'] : '';
@@ -1032,7 +1045,7 @@ class BlogInstallWizard extends ProcessBlog {
 		// $v[0]=page ID; $v[1]=field/property; $v[2]=field/property value
 		foreach ($pagesExtras as $v) {
 
-				$p = wire('pages')->get($v[0]);
+				$p = $pages->get($v[0]);
 				$p->$v[1] = $v[2];// set the field name $v[1] to have the value $v[2]
 				// $p->set($v[1], $v[2]);// alternative syntax to above
 				$p->save();
@@ -1044,10 +1057,10 @@ class BlogInstallWizard extends ProcessBlog {
 		// we are setting: selectable parent, selectable templates, create new, AsmSelect, PageAutomplete, etc
 		
 		// blog_categories
-		$f = wire('fields')->get('blog_categories');// 
-		#$f->parent_id = wire('pages')->get('name=categories, parent.name=blog')->id;// parent of pages that are selectable: 'categories'
-		$f->parent_id = wire('pages')->get($categories)->id;// parent of pages that are selectable: 'categories'
-		$f->template_id = wire('templates')->get('blog-category')->id;// template of pages that are selectable: 'category'
+		$f = $fields->get('blog_categories');// 
+		#$f->parent_id = $pages->get('name=categories, parent.name=blog')->id;// parent of pages that are selectable: 'categories'
+		$f->parent_id = $pages->get($categories)->id;// parent of pages that are selectable: 'categories'
+		$f->template_id = $templates->get('blog-category')->id;// template of pages that are selectable: 'category'
 		$f->labelFieldName = 'title';
 		$f->addable = 1;// allow new pages to be created from field
 		$f->derefAsPage = 0;// multiple pages (PageArray) - i.e. FieldtypePage::derefAsPageArray;
@@ -1056,10 +1069,10 @@ class BlogInstallWizard extends ProcessBlog {
 		$f->save();
 
 		// blog_tags
-		$f = wire('fields')->get('blog_tags');// 
-		#$f->parent_id = wire('pages')->get('name=tags, parent.name=blog')->id;// parent of pages that are selectable: 'tags'
-		$f->parent_id = wire('pages')->get($tags)->id;// parent of pages that are selectable: 'tags'
-		$f->template_id = wire('templates')->get('blog-tag')->id;// template of pages that are selectable: 'tag'
+		$f = $fields->get('blog_tags');// 
+		#$f->parent_id = $pages->get('name=tags, parent.name=blog')->id;// parent of pages that are selectable: 'tags'
+		$f->parent_id = $pages->get($tags)->id;// parent of pages that are selectable: 'tags'
+		$f->template_id = $templates->get('blog-tag')->id;// template of pages that are selectable: 'tag'
 		$f->addable = 1;// allow new pages to be created from field
 		$f->derefAsPage = 0;// multiple pages (PageArray) - i.e. FieldtypePage::derefAsPageArray;
 		// $f->derefAsPage = FieldtypePage::derefAsPageArray;
@@ -1072,8 +1085,8 @@ class BlogInstallWizard extends ProcessBlog {
 		// blog_comments_view
 		if ($this->commentsUse == 1) {
 					
-					$path = wire('pages')->get($comments)->path;
-					$f = wire('fields')->get('blog_comments_view');// 
+					$path = $pages->get($comments)->path;
+					$f = $fields->get('blog_comments_view');// 
 					$f->derefAsPage = 1;// single page (PageArray) or boolean false when none selected - i.e. FieldtypePage::derefAsPageOrFalse
 					// $f->derefAsPage = FieldtypePage::derefAsPageOrFalse;
 					$f->findPagesCode = 'return $page->path == "' . $path . '" ? $pages->get(' . $comments . ')->children("id!=' . $blogPagesIDs["blog-asc"] . '") : $pages->get(' . $comments . ')->children();';
@@ -1084,7 +1097,7 @@ class BlogInstallWizard extends ProcessBlog {
 
 		return $this->createTemplateFiles();
 
-	}	
+	}		
 	
 	/**
 	* 	Optionally create some template files.
@@ -1099,6 +1112,7 @@ class BlogInstallWizard extends ProcessBlog {
 		// 9. ###### Copy the 'template files' for Blog templates that need them as requested by user.
 		// the demo template files contain example MarkupBlog code for various aspects of the blog, e.g. Show 'Tags', 'Posts', etc.
 		// the blank template files contain only php opening tags.
+		$config = $this->wire('config');
 
 		// array of template files we want to copy to /site/templates/ (we only copy files if they DO NOT exist at destination!!!)
 		$templateFiles = array(
@@ -1137,7 +1151,7 @@ class BlogInstallWizard extends ProcessBlog {
 
 					// copy to destination, then rename blank.txt to 'name-of-template.php' for each $templateFiles
 					$sourcepath = dirname(__FILE__) . '/template-files/';// source of the template files to copy over [this is 'ProcessBlog/template-files/']					
-					$destinationpath = wire('config')->paths->templates;// destination: '/site/templates/'
+					$destinationpath = $config->paths->templates;// destination: '/site/templates/'
 					$blankFile = $sourcepath . 'blank.txt';
 
 					foreach ($templateFiles as $k => $v) {
@@ -1156,16 +1170,58 @@ class BlogInstallWizard extends ProcessBlog {
 		// demo template files
 		elseif ($this->templateFilesInstall == 2) {
 					
-					$sourcepath = dirname(__FILE__) . '/template-files/';// source of the template files to copy over [this is 'ProcessBlog/template-files/']					
-					$destinationpath = wire('config')->paths->templates;// destination: '/site/templates/'
+					// source of the template files to copy over [this is 'ProcessBlog/template-files/']	
+					$sourcepath = dirname(__FILE__) . '/template-files/';				
+					$destinationpath = $config->paths->templates;// destination: '/site/templates/'
 
 					foreach ($templateFiles as $k => $templateFile) {
-
-								if(is_file($destinationpath . $templateFile)) continue;// if a file with the same name already exists, skip to next file. We don't want to overwrite users files!	
-								copy($sourcepath . $templateFile, $destinationpath . $templateFile);// copy only those files that do not yet exist at destination.
+								// if a file with the same name already exists, skip to next file. We don't want to overwrite users files!	
+								if(is_file($destinationpath . $templateFile)) continue;
+								// copy only those files that do not yet exist at destination
+								copy($sourcepath . $templateFile, $destinationpath . $templateFile);
 					}
 
-		}
+					// @TODO...USE WIRECOPY! BUT WILL IT OVERWITE MAYBE CHECK FIRST OR CHECK WITH PHP
+
+					// if also installing demo blog JS file
+					if($this->demoBlogScriptsInstall) {
+						$jsFile = 'blog.js';
+						// source of the demo blog JS files to copy over [this is 'ProcessBlog/scripts/']	
+						$sourcepath = dirname(__FILE__) . '/scripts/';
+						$destinationpath = $config->paths->templates . 'scripts/';// destination: '/site/templates/scripts/'
+						if(!is_dir($destinationpath)) mkdir($destinationpath, 0755);// make the directory if it doesn't exist
+						// if a file with the same name already exists don't copy ours
+						if(!is_file($destinationpath . $jsFile)) copy($sourcepath . $jsFile, $destinationpath . $jsFile);
+					}
+			
+					// if also installing demo blog CSS files
+					if($this->demoBlogCSSInstall) {
+						// source of the demo blog CSS files to copy over [this is 'ProcessBlog/css/']	
+						$sourcepath = dirname(__FILE__) . '/css/';
+						$destinationpath = $config->paths->templates . 'css/';// destination: '/site/templates/css/'
+						if(!is_dir($destinationpath)) mkdir($destinationpath, 0755);// make the directory if it doesn't exist
+						$cssFiles = array('blog.css', 'pocketgrid.css');						
+
+						foreach ($cssFiles as $cssFile) {
+							if(is_file($destinationpath . $cssFile)) continue;// skip if file already exists							
+							copy($sourcepath . $cssFile, $destinationpath . $cssFile);
+						}
+
+						// source of the demo blog CSS files ICONS to copy over [this is 'ProcessBlog/css/images/']	
+						$sourcepath = dirname(__FILE__) . '/css/images/';
+						$destinationpath = $config->paths->templates . 'css/images/';// destination: '/site/templates/css/images/'
+						if(!is_dir($destinationpath)) mkdir($destinationpath, 0755);// make the directory if it doesn't exist				
+						$iconFiles = array('rss-black.png', 'rss-blue.png');
+
+						foreach ($iconFiles as $iconFile) {
+							if(is_file($destinationpath . $iconFile)) continue;// skip if file already exists
+							copy($sourcepath . $iconFile, $destinationpath . $iconFile);
+						}
+
+
+					}
+
+		}// end if installing demo blog files
 
 		return $this->saveModuleConfigs();
 
@@ -1181,26 +1237,28 @@ class BlogInstallWizard extends ProcessBlog {
 	*/	
 	private function saveModuleConfigs() {
 		
-		$data = wire('modules')->getModuleConfigData(get_parent_class($this));
+		$modules = $this->wire('modules');
+
+		$data = $modules->getModuleConfigData(get_parent_class($this));
 
 		// merge ProcessBlog config data with MAIN BLOG pages IDs (these pages should not be deleted but can be renamed)
 		$finalConfig = array_merge($data, $this->blogPagesIDs);
 
 		// we add blogFullyInstall = 1 to finalConfig
-		$finalConfig['blogFullyInstalled'] = 1;
+		$finalConfig['blogFullyInstalled'] = 1;		
 
 		// get ProcessBlog class
-		$pb = wire('modules')->get(get_parent_class($this));
+		$pb = $modules->get(get_parent_class($this));
 
 		// save to ProcessBlog config data
-		wire('modules')->saveModuleConfigData($pb, $finalConfig);
+		$modules->saveModuleConfigData($pb, $finalConfig);
 
 		$tf = $this->templateFilesInstall == 1 || $this->templateFilesInstall == 2 ? ' Template Files,' : '';
 		
 		// if we made it here return success message!
 		$this->message("Blog Module Successfully Installed. Fields, Templates," .  $tf . " Pages and a Role created.");
 		// redirect to landing page// we want the page to reload so that user can now see blog dashboard
-		$this->session->redirect(wire('page')->url);
+		$this->wire('session')->redirect($this->wire('page')->url);
 
 	}
 
