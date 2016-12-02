@@ -658,6 +658,7 @@ class MarkupBlog  extends WireData implements Module {
 							'post_author_text' => $this->_('Posted by'),// 
 							'post_date' => 1,// display post's date: 0=off,1=top(below post-headline),2=bottom(in post-foot)
 							'post_date_text' => '',// e.g. Posted by author 'on' date
+							'post_edit' => 1,// display post's edit: 0=off,1=top(below post-headline),2=bottom(in post-foot)
 							'post_more_text' => $this->_('View More'),// for $small posts - link text to full post
 							'post_categories' => 2,// display post's categories: 0=off,1=top(below post-byline),2=bottom(in post-foot)
 							'post_categories_text' => $this->_('Categories:'),// e.g. 'Categories', 'In', 'Filed under', etc
@@ -924,8 +925,8 @@ class MarkupBlog  extends WireData implements Module {
 					$date = $options['post_date'] == 1 ? "<span class='date'>" . $options['post_date_text'] . " " . $page->blog_date . "</span>" : '';
 					
 					// if page is editable (i.e., appropriate person logged in), let's show an edit link to the post
-					$edit = $page->editable() ? "<span class='edit'>(<a href='" . $this->wire('config')->urls->admin . "page/edit/?id={$page->id}'>" . $this->_('edit') . "</a>)</span>" : '';				
-
+					$edit = $options['post_edit'] == 1 && $page->editable() ? "<span class='edit'>(<a href='" . $this->wire('config')->urls->admin . "page/edit/?id={$page->id}'>" . $this->_('edit') . "</a>)</span>" : '';
+					
 					if(!empty($author) || !empty($date) || !empty($edit)) $out .= "<p class='post-byline'>" . $author . $date . $edit . "</p>";// end p.post-byline
 
 					// show post categories and tags if user wants them at the 'top'
@@ -967,13 +968,15 @@ class MarkupBlog  extends WireData implements Module {
 						$author = $options['post_author'] == 2 ? $author = "<span class='author'>" . $options['post_author_text'] . " " . "<a href='{$page->authorURL}'>{$page->authorName}</a></span> " : '';
 						$date = $options['post_date'] == 2 ? $date = "<span class='date'>{$page->blog_date}</span>" : '';
 
+						$edit = $options['post_edit'] == 2 && $page->editable() ? "<span class='edit'>(<a href='" . $this->wire('config')->urls->admin . "page/edit/?id={$page->id}'>" . $this->_('edit') . "</a>)</span>" : '';
+						
 						// if post_categories OR post_tags are to be displayed at the 'bottom' == 2 + number of comments	in 'large' posts
 						$categories = $options['post_categories'] == 2 ? $page->categories : '';
 						$tags = $options['post_tags'] == 2 ? $page->tags : '';						
 	
 						$comments = $commentsCountBottom == true ? "<p class='num-comments'><span>" . $options['post_comments_label'] . "</span> <a href='{$page->url}#comments'>$numCommentsStr</a></p>" : '';
-						if(!empty($author) || !empty($date) || !empty($categories) || !empty($tags) || !empty($comments)) {
-								$out .= "<div class='post-foot'>" . $author . $date . $categories . $tags . $comments . "</div>";// end div.post-foot
+						if(!empty($author) || !empty($date) || !empty($categories) || !empty($tags) || !empty($comments) || !empty($edit)) {
+								$out .= "<div class='post-foot'>" . $author . $date . $edit . $categories . $tags . $comments . "</div>";// end div.post-foot
 						}
 
 
