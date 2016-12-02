@@ -299,13 +299,6 @@ class BlogCleanup extends ProcessBlog {
 										'blog-tag.php',
 										'blog-tags.php',
 										'blog-main.inc',// will only be present if templateFilesInstall == 2 {demo template files}
-										
-										// demo blog JS and CSS files + icons
-										'blog.js',
-										'blog.css',
-										'pocketgrid.css',
-										'rss-black.png',
-										'rss-blue.png',
 
 				);
 				

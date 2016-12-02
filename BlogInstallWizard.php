@@ -1179,9 +1179,7 @@ class BlogInstallWizard extends ProcessBlog {
 								if(is_file($destinationpath . $templateFile)) continue;
 								// copy only those files that do not yet exist at destination
 								copy($sourcepath . $templateFile, $destinationpath . $templateFile);
-					}
-
-					// @TODO...USE WIRECOPY! BUT WILL IT OVERWITE MAYBE CHECK FIRST OR CHECK WITH PHP
+					}					
 
 					// if also installing demo blog JS file
 					if($this->demoBlogScriptsInstall) {
