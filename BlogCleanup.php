@@ -29,7 +29,7 @@ class BlogCleanup extends ProcessBlog {
 	*
 	*	@access public
 	*
-	*/	
+	*/
 	public function cleanUp($form) {
 
 		$input = $this->wire('input')->post;
@@ -65,11 +65,11 @@ class BlogCleanup extends ProcessBlog {
 		$data = $this->data;
 		$pages = $this->wire('pages');
 
-		// grab the main blog parent pages IDs where blogStyle == 3. 
+		// grab the main blog parent pages IDs where blogStyle == 3.
 		// Similar for if blogStyle == 4 but we'll unset 'blog-posts' in that case
 		$pagesArray = array(
 
-						$data['blog-posts'],			
+						$data['blog-posts'],
 						$data['blog-categories'],
 						$data['blog-tags'],
 						$data['blog-comments'],
@@ -81,7 +81,7 @@ class BlogCleanup extends ProcessBlog {
 		);
 
 		// if blogStyle == 1 or blogStyle == 2: 'blog' is main parent of all blog pages
-		if ($this->blogStyle == 1 || $this->blogStyle == 2) {			
+		if ($this->blogStyle == 1 || $this->blogStyle == 2) {
 				$p = $pages->get($data['blog']);
 				// we only proceed if we found the page /blog/
 				// recursively delete the blog page - i.e., including its children
@@ -89,8 +89,8 @@ class BlogCleanup extends ProcessBlog {
 		}
 
 		// if blogStyle == 3: root is the main parent of all blog pages
-		elseif ($this->blogStyle == 3) {			
-				foreach ($pagesArray as $pageName) {					
+		elseif ($this->blogStyle == 3) {
+				foreach ($pagesArray as $pageName) {
 						$p = $pages->get($pageName);
 						// recursively delete the blog pages - i.e., including their children
 						if ($p->id) $pages->delete($p, true);
@@ -98,18 +98,18 @@ class BlogCleanup extends ProcessBlog {
 		}
 
 		// if blogStyle == 4: root is the main parent of all blog pages but 'blog-post' pages live directly under root
-		elseif ($this->blogStyle == 4) {			
+		elseif ($this->blogStyle == 4) {
 				// remove 'blog-posts' since that page does not exist in this case
 				unset($pagesArray[0]);
-				foreach ($pagesArray as $pageName) {					
+				foreach ($pagesArray as $pageName) {
 							$p = $pages->get($pageName);
 							// recursively delete the blog pages - i.e., including their children
 							if ($p->id) $pages->delete($p, true);
 				}
 
-				// additionally in this case since parent of each blog post is root, 
+				// additionally in this case since parent of each blog post is root,
 				// we delete all pages using the template 'blog-post'
-				foreach ($pages->find('template=blog-post, include=all') as $p) {if ($p->id) $pages->delete($p);}			
+				foreach ($pages->find('template=blog-post, include=all') as $p) {if ($p->id) $pages->delete($p);}
 		}
 
 		return $this->cleanUpRepeater();
@@ -124,7 +124,7 @@ class BlogCleanup extends ProcessBlog {
 	*/
 	private function cleanUpRepeater() {
 		$pages = $this->wire('pages');
-		// we delete our repeater page: admin/repeaters/for-field-xxx		
+		// we delete our repeater page: admin/repeaters/for-field-xxx
 		$repeaterID = $this->wire('fields')->get('blog_links')->id;
 		$repeaterPage = $pages->get("parent.name=repeaters, name=for-field-$repeaterID");// making sure we are getting the right page
 		if($repeaterPage->id) $pages->delete($repeaterPage, true);
@@ -163,7 +163,7 @@ class BlogCleanup extends ProcessBlog {
 							'repeater_blog-links',
 
 		);
-		
+
 		// unset irrelevant templates depending on blogStyle (important since user could have a template with similar name that is not part of Blog!) AND commentsUse
 		if ($this->blogStyle == 3 || $this->blogStyle == 4)	unset($templatesArray[0]);// blog template
 		if ($this->blogStyle == 2 || $this->blogStyle == 4)	unset($templatesArray[8]);// blog-posts template
@@ -171,12 +171,12 @@ class BlogCleanup extends ProcessBlog {
 					unset($templatesArray[5]);// blog-comments
 					unset($templatesArray[9]);// blog-recent-comments
 					unset($templatesArray[17]);// blog-basic
-		}	
+		}
 
 		// delete each found template one by one
 		foreach ($templatesArray as $tpl) {
 					$t = $templates->get($tpl);
-					if ($t->id) {						
+					if ($t->id) {
 							// two step process to delete system template (repeater_blog-links)
 							if ($t->flags == 8) {
 									$t->flags = Template::flagSystemOverride;
@@ -186,7 +186,7 @@ class BlogCleanup extends ProcessBlog {
 
 							$templates->delete($t);
 							$this->wire('fieldgroups')->delete($t->fieldgroup);// delete the associated fieldgroups
-					}					
+					}
 		}
 
 		return $this->cleanUpFields();
@@ -211,7 +211,7 @@ class BlogCleanup extends ProcessBlog {
 		$fg->remove($fields->get('blog_images'));
 
 		// we also remove title since we added it BUT WE WONT BE DELETING IT
-		$fg->remove($fields->get('title'));		
+		$fg->remove($fields->get('title'));
 		$fg->save();
 
 		// array of blog fields. We'll use this to delete each, one by one as applicable
@@ -241,11 +241,11 @@ class BlogCleanup extends ProcessBlog {
 					unset($fieldsArray[3]);// blog_comments_view
 					unset($fieldsArray[4]);// blog_comments_max
 		}
-		
+
 		// delete each found field
 		foreach ($fieldsArray as $fld) {
 					$f = $fields->get($fld);
-					if($f->id) $fields->delete($f);		
+					if($f->id) $fields->delete($f);
 		}
 
 		return $this->cleanUpRoles();
@@ -278,7 +278,7 @@ class BlogCleanup extends ProcessBlog {
 
 		// if user has chosen to also delete template files AND these were installed (blank or demo) as well as the demo JS and CSS files + images
 		if (($this->removeBlogFiles && $this->templateFilesInstall == 1) || ($this->removeBlogFiles && $this->templateFilesInstall == 2)) {
-		
+
 				$this->deleteFiles = true;
 
 				$templateFiles = array(
@@ -301,11 +301,11 @@ class BlogCleanup extends ProcessBlog {
 										'blog-main.inc',// will only be present if templateFilesInstall == 2 {demo template files}
 
 				);
-				
+
 				// remove non-existent template files based on the blogStyle, commentsUse and templateFilesInstall
 				// also safeguards againts removing user created template files with similar names!
 				if ($this->blogStyle == 2 || $this->blogStyle == 4) unset($templateFiles[8]);// blog-posts.php
-				if ($this->blogStyle == 3 || $this->blogStyle == 4) unset($templateFiles[0]);// blog.php					
+				if ($this->blogStyle == 3 || $this->blogStyle == 4) unset($templateFiles[0]);// blog.php
 				if ($this->templateFilesInstall !=2) {
 						unset($templateFiles[12]);// blog-side-bar.inc
 						unset($templateFiles[15]);// blog-main.inc
@@ -314,11 +314,11 @@ class BlogCleanup extends ProcessBlog {
 				if ($this->commentsUse !=1) {
 							unset($templateFiles[5]);// blog-comments.php
 							unset($templateFiles[9]);// blog-recent-comments.php
-				}				
+				}
 
 				// 1. delete template files
 				$sourcepath = $config->paths->templates;// source: '/site/templates/'
-				foreach ($templateFiles as $templateFile) {						
+				foreach ($templateFiles as $templateFile) {
 						if(is_file($sourcepath . $templateFile)) unlink($sourcepath . $templateFile);// delete the file if found
 				}
 
@@ -328,18 +328,18 @@ class BlogCleanup extends ProcessBlog {
 
 				// 3. delete demo CSS files
 				$sourcepath = $config->paths->templates . 'css/';// source: '/site/templates/scripts/'
-				$cssFiles = array('blog.css', 'pocketgrid.css');				
+				$cssFiles = array('blog.css', 'pocketgrid.css');
 				foreach ($cssFiles as $cssFile) {
-					if(is_file($sourcepath . $cssFile)) unlink($sourcepath . $cssFile);// delete the file if found					
+					if(is_file($sourcepath . $cssFile)) unlink($sourcepath . $cssFile);// delete the file if found
 				}
 
 				// 4. delete demo CSS icon files
 				$sourcepath = $config->paths->templates . 'css/images/';// source: '/site/templates/scripts/'
-				$iconFiles = array('rss-black.png', 'rss-blue.png');				
+				$iconFiles = array('rss-black.png', 'rss-blue.png');
 				foreach ($iconFiles as $iconFile) {
-					if(is_file($sourcepath . $iconFile)) unlink($sourcepath . $iconFile);// delete the file if found					
+					if(is_file($sourcepath . $iconFile)) unlink($sourcepath . $iconFile);// delete the file if found
 				}
-				
+
 
 		}
 

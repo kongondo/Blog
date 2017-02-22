@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 /**
  * Blog Home template
@@ -7,8 +7,8 @@
  */
 
     //CALL THE MODULE - MarkupBlog
-    $blog = $modules->get("MarkupBlog"); 
-    
+    $blog = $modules->get("MarkupBlog");
+
     //subnav
     //we expect only one such page. we do it this way in this demo to accomodate different blog styles
     $categories = $pages->get('template=blog-categories');

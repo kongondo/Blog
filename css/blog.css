@@ -55,7 +55,7 @@ em {color: #D05;}
 ul#navbar {
 	font-size: 2.85em;
 	list-style: none;
-	padding: 0 0 15px 0; 
+	padding: 0 0 15px 0;
 	font-family: 'Shadows Into Light', cursive;
 }
 
@@ -65,7 +65,7 @@ ul#navbar li {
 	padding-right: 21px;
 }
 
-/*=== Navigation bar and pagination ON/Active state ===*/ 
+/*=== Navigation bar and pagination ON/Active state ===*/
 #nav li.on, #nav li.on a, .MarkupPagerNav li.MarkupPagerNavOn a,.MarkupPagerNav li a:hover {color: #E59342;}
 
 ul#navbar a:hover {background-color: #FFF1F0;}/* pale pink */
@@ -92,7 +92,7 @@ ul.MarkupPagerNav {
 .MarkupPagerNav li a, .MarkupPagerNav li.MarkupPagerNavSeparator, a.button-prev, a.button-next {
 	display: block;
 	float: left;
-	padding: 5px 11px;                
+	padding: 5px 11px;
 	margin-right: 3px;
 	font-weight: bold;
 	color: #1D8ACB;
@@ -231,7 +231,7 @@ div#comments {
 h4#comments-disallowed, h4#comments-closed, h4#comments-login, h4#comments-empty, h4#no-posts {color: #D05; text-align: center; margin: 45px 0;}
 
 #comments .num-comments-icon {
-	float: left; 
+	float: left;
 	position: relative;
 	top: 0;
 }
@@ -309,10 +309,10 @@ form#CommentForm_form input:focus, form#CommentForm_form textarea:focus {
 }
 
 .clearfix:after {/* clear author photo's float */
-	content: '\0020'; 
-	visibility: hidden; 
-	display: block; 
-	height: 0; 
+	content: '\0020';
+	visibility: hidden;
+	display: block;
+	height: 0;
 	clear: both;
 }
 

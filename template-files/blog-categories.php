@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 /**
  * Categories template
@@ -8,12 +8,12 @@
 
 	//CALL THE MODULE - MarkupBlog
 	$blog = $modules->get("MarkupBlog");
-        
+
     //subnav
-    $subNav = $blog->renderNav($page->title, $page->children, $page); 
+    $subNav = $blog->renderNav($page->title, $page->children, $page);
 
     //main content
-    $limit = 3;//number of posts to list per category 
+    $limit = 3;//number of posts to list per category
     $content = '';
     $content .= "<h2>$page->title</h2>";
     //Render list of categories showing a maximum of 3 posts titles per category

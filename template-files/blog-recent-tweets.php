@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 /**
  * Recent Tweets template
@@ -13,13 +13,13 @@
 	$t->limit = $page->blog_quantity;
 	$t->cacheSeconds = 3600;
 	$t->dateFormat = wire('fields')->get('blog_date')->dateOutputFormat;
-	$t->showHashTags = true; 
+	$t->showHashTags = true;
 	$t->showDate = 'before';
 	$t->listOpen = "<ul class='MarkupTwitterFeed links'>";
 	$t->listItemDateOpen = "<span class='date'>";
 	$t->listItemDateClose = "</span><br />";
 
-	echo "<h4 class='twitter-headline'>" . __('Recent Tweets') . "</h4>"; 
+	echo "<h4 class='twitter-headline'>" . __('Recent Tweets') . "</h4>";
 	echo $t->render("https://api.twitter.com/1/statuses/user_timeline.rss?screen_name=$twitterName");
 	echo "<p><a class='more more-twitter' href='http://twitter.com/$twitterName/'>" . __('More') . "</a></p>";
 

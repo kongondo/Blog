@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 /**
  * Blogroll template
@@ -14,7 +14,7 @@
 			echo "<ul class='links'>";
 			foreach($page->blog_links as $link) {echo "<li><a target='_blank' href='{$link->blog_href}'>{$link->blog_headline}</a></li>";}
 			echo "</ul>";
-	} 
+	}
 
 	else {echo "<p>" . __('No links yet.') . "</p>";}
 

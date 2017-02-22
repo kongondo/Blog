@@ -1,9 +1,9 @@
 # Blog
 
-This Blog module enables you to easily create and manage a Blog in ProcessWire. It is based on the [Blog Profile module](http://mods.pw/2M) by Ryan Cramer. The module consists of three separate modules:  
+This Blog module enables you to easily create and manage a Blog in ProcessWire. It is based on the [Blog Profile module](http://mods.pw/2M) by Ryan Cramer. The module consists of three separate modules:
 
-**ProcessBlog**: Manage Blog in the backend/Admin.  
-**MarkupBlog**: Display Blog in the frontend.  
+**ProcessBlog**: Manage Blog in the backend/Admin.
+**MarkupBlog**: Display Blog in the frontend.
 **BlogPublishDate**: Automatically sets a publish date when you publish a Blog Post.
 
 ## Features
@@ -30,7 +30,7 @@ This Blog module enables you to easily create and manage a Blog in ProcessWire. 
 
 Install via ProcessWire modules' screen. Once installed, there's two steps involved to finalise the install:
 
-##### A. Configure Blog settings in its module's configuration screen. 
+##### A. Configure Blog settings in its module's configuration screen.
 
 Here you will have to choose from 4 Blog styles to match the Blog URL structure you want:
 
@@ -46,13 +46,13 @@ On this screen, you also select:
 * Whether to install 'no template files', 'blank template files', or 'demo template files'; and
 * Optionally specify a tag for grouping Blog Templates and Fields in their respective ProcessWire admin pages
 
-##### B. Install Blog Templates, Pages, Fields, Role and optionally Template Files. 
+##### B. Install Blog Templates, Pages, Fields, Role and optionally Template Files.
 
-* In this second step, via the Blog dashboard (**admin/blog/**), you will see an overview of the settings you selected in the first step above. Here you install Blog's components. Before you click the button to run the install wizard, nothing will happen yet. You can still go back and change the module configuration settings. Until you run the install wizard in this second step, you will have no Blog Pages, Fields, Templates, etc. 
+* In this second step, via the Blog dashboard (**admin/blog/**), you will see an overview of the settings you selected in the first step above. Here you install Blog's components. Before you click the button to run the install wizard, nothing will happen yet. You can still go back and change the module configuration settings. Until you run the install wizard in this second step, you will have no Blog Pages, Fields, Templates, etc.
 
-* On this page, you will also be able to rename your Blog’s main pages before they are created. If you don’t do it at this stage, you can also rename them post-install in the ProcessWire pages' tree. If you are happy with your settings, click the install wizard to proceed. Blog will be fully installed with your settings within a few seconds and you will then be presented with the Blog dashboard. 
+* On this page, you will also be able to rename your Blog’s main pages before they are created. If you don’t do it at this stage, you can also rename them post-install in the ProcessWire pages' tree. If you are happy with your settings, click the install wizard to proceed. Blog will be fully installed with your settings within a few seconds and you will then be presented with the Blog dashboard.
 
-* Only Templates, Pages and Fields necessary for your selected 'Blog style' will be installed. For instance, if you did not enable the commenting feature, related Templates, Pages, etc. will not be created. 
+* Only Templates, Pages and Fields necessary for your selected 'Blog style' will be installed. For instance, if you did not enable the commenting feature, related Templates, Pages, etc. will not be created.
 
 * Note that non-enabled features **cannot** be enabled once the second part of the install is complete. However, using the **'Cleanup'** feature (see below) you can return Blog to the first-step of the installer stage and enable a feature you want or even select a different Blog style.
 
@@ -67,10 +67,10 @@ Full documentation is available [here](http://blog.kongondo.com/).
 
 ## Notes
 
-* The module Dashboard **will not work** with Blog Profile installs!  
-* MarkupBlog replicates the Blog Profile. Hence, the 'items' Fields, Templates, Template Files and a couple of Pages are installed where such, with similar names, do not already exist, i.e., installation is non-destructive. 
-* **With the exception of Template Files, note that if even one item with a similar name (and path for Page items) already exists on your site, NONE of the items will be installed**. Instead, step two of the installation will be aborted. 
-* For Template Files, if you did not select the 'no template files' option, these are only copied over to **/site/templates/** where no template with an identical name already exists. This means that no Template File gets overwritten. 
+* The module Dashboard **will not work** with Blog Profile installs!
+* MarkupBlog replicates the Blog Profile. Hence, the 'items' Fields, Templates, Template Files and a couple of Pages are installed where such, with similar names, do not already exist, i.e., installation is non-destructive.
+* **With the exception of Template Files, note that if even one item with a similar name (and path for Page items) already exists on your site, NONE of the items will be installed**. Instead, step two of the installation will be aborted.
+* For Template Files, if you did not select the 'no template files' option, these are only copied over to **/site/templates/** where no template with an identical name already exists. This means that no Template File gets overwritten.
 * Fields and Templates are prefixed with **blog_** and **blog-** respectively.
 * The module also adds 3 Fields (biography [blog_body], image [blog_images] and title) to the user template. These are needed for the Blog Author biography.
 * Role **blog-author** and permission **blog** are created on install.
@@ -81,6 +81,12 @@ Full documentation is available [here](http://blog.kongondo.com/).
 Uninstalling Blog is a two-step process. If you are logged in as a superuser, you will see a Blog menu item called **Cleanup**. It will lead to a screen with info about all the Fields, Templates, Pages and Role you are about to delete. It will also list the Blog Template Files that, if you wish, you can also delete. This utility is also useful when you want to try out the different Blog styles without uninstalling the whole Blog module. It returns Blog to the state similar to when you first installed the module. Of course, in case you want to remove Blog as well, just go ahead and uninstall in the normal way but **AFTER** you have cleaned-up.
 
 ## Changelog
+
+#### Version 2.4.1
+1. New, cleaner UI.
+2. Better sorting of Posts, Categories and Tags in their dashboards.
+3. New option for posts: post_edit. Allows top or bottom placement of link to edit post for logged in users or non-display of link for all users.
+4. Code refactoring.
 
 #### Version 2.4.0
 1. Fixed sql [error](https://github.com/kongondo/Blog/pull/23) thrown when comments disabled and accessed blog dashboard.

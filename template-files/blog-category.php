@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 /**
  * Category template
@@ -8,7 +8,7 @@
 
     //CALL THE MODULE - MarkupBlog
     $blog = $modules->get("MarkupBlog");
-       
+
     //subnav
     $subNav = $blog->renderNav($page->parent->title, $page->siblings, $page);
 
@@ -20,16 +20,16 @@
     $content .= $page->blog_body . $blog->renderPosts($posts, true);
 
     //rss
-    /** Note, for the RSS to work, you should not output anything further after calling this, as it outputs the RSS directly. 
+    /** Note, for the RSS to work, you should not output anything further after calling this, as it outputs the RSS directly.
         If not, you will get an error **/
 
     //if we want to view the rss of posts in this category
     if($input->urlSegment1) {
         // rss feed
         if($input->urlSegment1 != 'rss') throw new Wire404Exception();
-        
-        $blog->renderRSS($posts); 
-        
+
+        $blog->renderRSS($posts);
+
         return;//this is important: stops output of any other markup except the RSS xml
     }
 

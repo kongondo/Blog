@@ -1,53 +1,53 @@
 <?php
 
-    //side-bar.inc - <!-- RIGHT COLUMN - SIDEBAR -->      
+    //side-bar.inc - <!-- RIGHT COLUMN - SIDEBAR -->
 
     /* #################### - recent posts widget - #################### */
 
     //adapted selector to blog style
-    
+
     $out = '';
     if ($page->template->name !=='blog') {
-        
+
         //$out = '<div id="recent-posts"><!-- #recent-posts -->';
         $p = $pages->get("template=blog-recent-posts");//adapt to blog styles for this demo
 
         //if widget is enabled output it
         if($p->id) {
-            
+
             $limit = $p->blog_quantity;
-            $posts = $pages->find("template=blog-post, sort=-blog_date, start=0, limit=$limit");    
+            $posts = $pages->find("template=blog-post, sort=-blog_date, start=0, limit=$limit");
             $parent = null;
             $t = '';
 
             foreach($posts as $item) {
                         $date = $blog->formatDate($item->blog_date);
                         $t .= "<li><span class='date'>" . $date. "</span><br> <a href='{$item->url}'>{$item->title}</a></li>";
-                        $parent = $item->parent; 
+                        $parent = $item->parent;
             }
 
             if($t) {
-                        //if blog style is 2 or 4, rss on recent posts will not work since the template blog-posts allows url segments but it is not present on such blog style installs. 
+                        //if blog style is 2 or 4, rss on recent posts will not work since the template blog-posts allows url segments but it is not present on such blog style installs.
                         $tpl = wire('templates')->get('blog-posts');
                         $rss = $tpl ? "<a class='rss' href='{$parent->url}rss/'>" . __('RSS') . "</a>" : '';
 
-                        $out =  "<div id='recent-posts'><!-- #recent-posts --><h4>{$p->title}</h4>" . 
-                        "<ul class='recent-posts links'>$t</ul>" . 
-                        "<p>" . 
-                            "<a class='more' href='{$parent->url}'>" . __('More') . "</a> " . 
-                           $rss . 
+                        $out =  "<div id='recent-posts'><!-- #recent-posts --><h4>{$p->title}</h4>" .
+                        "<ul class='recent-posts links'>$t</ul>" .
+                        "<p>" .
+                            "<a class='more' href='{$parent->url}'>" . __('More') . "</a> " .
+                           $rss .
                         "</p></div><!-- end #recent-posts -->";
-                        
-            } 
+
+            }
 
             else {
                         $out = "<div id='recent-posts'><!-- #recent-posts --><h4>{$p->title}</h4><p>No recent posts</p></div><!-- end #recent-posts -->";
-            }        
-        
+            }
+
         }
     }
 
-    echo $out;              
+    echo $out;
 
     /* #################### - recent comments widget - #################### */
 
@@ -56,11 +56,11 @@
 
         for this demo, findRecentComments() has to adapt to whether blog commenting feature was installed or not whilst remaining blog structure/style-agnostic
         in your own blog install, you would know if you enabled the feature so there would be no need for such a check
-        in addition, our 'check' code is not code you would normally use in a template file. 
-        we use such code here to be both foolproof that the commenting feature is installed and blog structure-agnostic 
-   
-    */            
-    
+        in addition, our 'check' code is not code you would normally use in a template file.
+        we use such code here to be both foolproof that the commenting feature is installed and blog structure-agnostic
+
+    */
+
     $blogConfigs = $modules->getModuleConfigData('ProcessBlog');
 
     //if commenting feature is installed
@@ -81,16 +81,16 @@
                             $out .= "<ul class='links'>";
                             foreach($comments as $comment) {
                                         $cite = htmlentities($comment->cite, ENT_QUOTES, "UTF-8");
-                                        $date = $blog->formatDate($comment->created, 2); 
-                                        $out .= "<li><span class='date'>$date</span><br />" . 
-                                                    "<a href='{$comment->page->url}#comment{$comment->id}'>$cite &raquo; {$comment->page->title}</a>" . 
+                                        $date = $blog->formatDate($comment->created, 2);
+                                        $out .= "<li><span class='date'>$date</span><br />" .
+                                                    "<a href='{$comment->page->url}#comment{$comment->id}'>$cite &raquo; {$comment->page->title}</a>" .
                                                 "</li>";
                             }
 
                             $out .= "</ul>";
-                            $out .= "<p>" . 
-                                        "<a class='more' href='$url'>" . __('More') . "</a>  " . 
-                                        "<a class='rss' href='{$url}rss/'>" . __('RSS') . "</a>" . 
+                            $out .= "<p>" .
+                                        "<a class='more' href='$url'>" . __('More') . "</a>  " .
+                                        "<a class='rss' href='{$url}rss/'>" . __('RSS') . "</a>" .
                                     "</p>";
                     }//if count comments
 
@@ -111,7 +111,7 @@
     $br = $pages->get("template=blog-links");//adapt selector to blog styles for this demo
 
     //if widget is enabled output it
-    if ($br->id) { 
+    if ($br->id) {
             $out = '<div id="blogroll"><!-- #blogroll -->';
             $out .= "<h4>{$br->title}</h4>";
 
@@ -123,7 +123,7 @@
                     }
 
                     $out .= "</ul>";
-            } 
+            }
 
             else {
                     $out .= "<p>" . __('No links yet.') . "</p>";
