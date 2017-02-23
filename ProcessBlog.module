@@ -1918,7 +1918,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	/* ######################### - EXECUTE PAGES - ######################### */
 
 	/**
-	 *	Display Blog Dashboard (summary of Posts informaton) and Blod Archives.
+	 *	Display Blog Dashboard (summary of Posts informaton) and Blog Archives.
 	 *
 	 *  This function is executed when a page with this Process (Blog) assigned is accessed.
  	 *	Renders different manager views depending on whether Blog is fully installed or not.
