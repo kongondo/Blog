@@ -22,7 +22,6 @@ div.post, div.item{float: left;}
 div.comments {width: 30%;}
 div.posts_sum_wrapper {width: 70%;}
 div.full_sum_wrapper {width: 100%;}
-div#top_action_selects, div#top_pagination {}
 div#top_strip_actions {margin-bottom: 1em; height: 50px; border-bottom: 1px dotted rgba(0,0,0,0.20)}
 div.item_title {margin-bottom: 0.5em;}
 div.block {width: 20%; float: left;}
