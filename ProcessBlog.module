@@ -3292,8 +3292,8 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$post = $this->wire('input')->post;
 		$cookie = $this->wire('input')->cookie;
 		// if user selects a limit ($input->post->show_limit) we set that as the limit and set a cookie {see $this->cookieLimitName} with that value to save state for session.
-		if($post->show_limit) {
-			$this->showLimit = $post->show_limit;
+		if((int)$post->show_limit) {
+			$this->showLimit = (int) $post->show_limit;
 			setcookie($this->cookieLimitName, $this->showLimit , 0, '/');
 		}
 		// if no custom limit selected but there is a cookie set, we use the cookie value
@@ -3313,7 +3313,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$post = $this->wire('input')->post;
 		$cookie = $this->wire('input')->cookie;
 		// if user selects a sort ($input->post->items_sort_select) we set that as the sort and set a cookie {see $this->cookieSortName} with that value to save state for session.
-		if($post->items_sort_select) {
+		if((int)$post->items_sort_select) {
 			$this->sort = (int) $post->items_sort_select;
 			setcookie($this->cookieSortName, $this->sort , 0, '/');
 		}
