@@ -1,4 +1,4 @@
-<?php
+<?php namespace ProcessWire;
 
 /**
  * Authors template
@@ -6,101 +6,92 @@
  *
  */
 
-    //CALL THE MODULE - MarkupBlog
+    // CALL THE MODULE - MarkupBlog
     $blog = $modules->get("MarkupBlog");
 
-   //subnav
+   // subnav
    $subNav = '';
 
-    //main content
+    // main content
     $content = '';
 
-    //author stuff
+    // author stuff
     $authorRole = $roles->get('blog-author');
     $superuserRole = $roles->get('superuser');
     $authors = $users->find("roles=$authorRole|$superuserRole, sort=title");
     $authorLinks = array();
 
     foreach($authors as $a) {
-                //we set a separate URL (url2) to reflect the public url of the author, since
-                //the author's $author->url is actually a page in the admin
-                if($sanitizer->pageName($a->title)) {
+        // we set a separate URL (url2) to reflect the public url of the author, since
+        // the author's $author->url is actually a page in the admin
+        if($sanitizer->pageName($a->title)) {
+			$a->authorPageName = $sanitizer->pageName($a->title);//overload each $a with a new property 'authorPageName' for use below
+			$a->url2 = $page->url . $a->authorPageName . '/';
+        }
 
-                            $a->authorPageName = $sanitizer->pageName($a->title);//overload each $a with a new property 'authorPageName' for use below
-                            $a->url2 = $page->url . $a->authorPageName . '/';
+        else {
+			$a->authorPageName = '';
+			$a->url2 = $page->url;
+        }
 
-                }
+        $authorLinks[$a->url2] = $a->get('title') ? $a->get('title') : 'Author Name';//use generic 'Author Name' if author title not yet set
 
-                else {
-
-                        $a->authorPageName = '';
-                        $a->url2 = $page->url;
-
-                }
-
-                $authorLinks[$a->url2] = $a->get('title') ? $a->get('title') : 'Author Name';//use generic 'Author Name' if author title not yet set
-
-    }//end foreach $authors as $a
+    }// end foreach $authors as $a
 
     if($input->urlSegment1) {
-        //author specified: display biography and posts by this author, limiting the number of posts to show
+        // author specified: display biography and posts by this author, limiting the number of posts to show
 
-                $name = $sanitizer->pageName($input->urlSegment1);
+		$name = $sanitizer->pageName($input->urlSegment1);
 
-                $authorID = '';
+		$authorID = '';
 
-                foreach ($authors as $a) {
+		foreach ($authors as $a) {
+			if($a->authorPageName == $name) {
+				$authorID = $a->id;
+				break;//break out of loop if we've found our author
+			}
+		}
 
-                    if($a->authorPageName == $name) {
+		$author = $users->get($authorID);
 
-                        $authorID = $a->id;
-                        break;//break out of loop if we've found our author
-                    }
+		if(!$author->id || (!$author->hasRole($authorRole) && !$author->isSuperuser())) throw new Wire404Exception();
 
-                }
+		$posts = $pages->find("template=blog-post, created_users_id=$author, sort=-blog_date, limit=10");
 
-                $author = $users->get($authorID);
+		$authorName = $author->get('title');
 
-                if(!$author->id || (!$author->hasRole($authorRole) && !$author->isSuperuser())) throw new Wire404Exception();
+		$authorURL = '';
 
-                $posts = $pages->find("template=blog-post, created_users_id=$author, sort=-blog_date, limit=10");
+		$image = $author->blog_images->first();
 
-                $authorName = $author->get('title');
+		if($image) {
+			$thumb = $image->width(100);
+			$photo = "<a class='lightbox' title='$authorName'><img class='author-photo' src='{$thumb->url}' alt='{$thumb->description}' width='100' height='{$thumb->height}' /></a>";
+		}
 
-                $authorURL = '';
+		else $photo = '';
 
-                $image = $author->blog_images->first();
+		if($authorURL) $authorName = "<a href='$authorURL'>$authorName</a>";
 
-                if($image) {
-                        $thumb = $image->width(100);
-                        $photo = "<a class='lightbox' title='$authorName'><img class='author-photo' src='{$thumb->url}' alt='{$thumb->description}' width='100' height='{$thumb->height}' /></a>";
-                }
-
-                else {
-                        $photo = '';
-                }
-
-                if($authorURL) $authorName = "<a href='$authorURL'>$authorName</a>";
-
-                $content .= "<h2>$page->title</h2>";
-                $content .= "<div class='author-bio clearfix'>
-                              <h3 class='author-name'>$authorName</h3>" . $photo . $author->blog_body . "</div>";
+		$content .= "<h2>$page->title</h2>";
+		$content .= "<div class='author-bio clearfix'>
+						<h3 class='author-name'>$authorName</h3>" . $photo . $author->blog_body . "</div>";
 
 
-                $content .= $blog->renderPosts($posts, true);
+		$content .= $blog->renderPosts($posts, true);
 
-                //output subnav if viewing a single author's page
-                $subNav .= $blog->renderNav($page->title, $authorLinks, $page->url . $name . '/');//note url contains pageName sanitized author title $name
+		// output subnav if viewing a single author's page
+		$subNav .= $blog->renderNav($page->title, $authorLinks, $page->url . $name . '/');//note url contains pageName sanitized author title $name
 
 
     }//end if $input->urlSegment1
 
     else {
-                //no author specified: display list of authors
-                $content .= "<h2>$page->title</h2>";
-                $content .=  $blog->renderAuthors($authors);
+		// no author specified: display list of authors
+		$content .= "<h2>$page->title</h2>";
+		$content .=  $blog->renderAuthors($authors);
     }
 
-    //include the main/common markup
+    // include the main/common markup
     require_once("blog-main.inc");
 

@@ -1,4 +1,4 @@
-<?php
+<?php namespace ProcessWire;
 
 /**
  * Recent Posts template
@@ -6,10 +6,10 @@
  *
  */
 
-	//note: in these examples, the code below has now been moved to /site/templates/blog-side-bar.inc
-	//we leave this here as an example...
+	// note: in these examples, the code below has now been moved to /site/templates/blog-side-bar.inc
+	// we leave this here as an example...
 
-	//CALL THE MODULE - MarkupBlog
+	// CALL THE MODULE - MarkupBlog
 	$blog = $modules->get("MarkupBlog");
 
 	$limit = $page->blog_quantity;
@@ -20,25 +20,22 @@
 	$out = '';
 
 	foreach($posts as $item) {
-
-				$date = $blog->formatDate($item->blog_date);
-				$out .= "<li><span class='date'>$date</span> <a href='{$item->url}'>{$item->title}</a></li>";
-				$parent = $item->parent;
+		$date = $blog->formatDate($item->blog_date);
+		$out .= "<li><span class='date'>$date</span> <a href='{$item->url}'>{$item->title}</a></li>";
+		$parent = $item->parent;
 	}
 
 	if($out) {
 
-				$out = 	"<h4>{$page->title}</h4>" .
-						"<ul class='recent-posts links'>$out</ul>" .
-						"<p>" .
-						"<a class='more' href='{$parent->url}'>" . __('More') . "</a> " .
-						"<a class='rss' href='{$parent->url}rss/'>" . __('RSS') . "</a>" .
-						"</p>";
+		$out = 	"<h4>{$page->title}</h4>" .
+				"<ul class='recent-posts links'>$out</ul>" .
+				"<p>" .
+				"<a class='more' href='{$parent->url}'>" . __('More') . "</a> " .
+				"<a class='rss' href='{$parent->url}rss/'>" . __('RSS') . "</a>" .
+				"</p>";
 
-				echo $out;
+		echo $out;
 	}
 
-	else {
-				echo "<p>No recent posts</p>";
-	}
+	else echo "<p>" . __('No recent posts') . "</p>";
 

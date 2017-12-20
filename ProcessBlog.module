@@ -1,4 +1,4 @@
-<?php
+<?php namespace ProcessWire;
 
 /**
 * Process Blog Module for ProcessWire.
@@ -40,8 +40,8 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 			'title' => 'Blog',
 			'summary' => 'Blog Manager module inspired by the Blog Profile by Ryan Cramer',
 			'author' => 'Francis Otieno (Kongondo)',
-			'version' => 241,
-			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
+			'version' => 242,
+			'href' => 'https://processwire.com/talk/topic/17105-module-blog/',
 			'singular' => true,
 			'autoload' => false,
 			'permission' => 'blog',
@@ -130,7 +130,8 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *	@access public
 	 *
 	 */
-	public function init() {
+	
+	 public function init() {
 
 		if ($this->permissions->get('blog')->id && !$this->wire('user')->hasPermission('blog')) throw new WirePermissionException("You have no permission to use this module");
 
@@ -210,36 +211,36 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	public static function configDefaults () {
 
 		return array(
-						'blogFullyInstalled' => 0, // boolean 0=false {new install}; 1=true {blog fully installed - i.e. including template files and pages}
-						'blogStyle' => '', // 1='see example 1'
-						'schedulePages' => 0,// boolean 0=false; 1=true: Whether to use auto-publish/unpublish feature {needs SchedulePages module}
-						'commentsUse' => 1, // boolean 0=false; 1=true
-						'templateFilesInstall' => 1,// int 1=blank template files; 2=demo template files; 3=no template files
-						'demoJS' => 0,// for demo blog: int 0=don't install js; 1=install js
-						'demoCSS' => 0,// for demo blog: int 0=don't install css; 1=install css
-						/*'prefixTemplatesFields' => 'blog',*///string default='blog'. Will be used to prefix templates, fields and template files. E.g. blog-post, blog_date, blog-post.php. Blank = no prefix
-						'tagTemplatesFields' => '-blog',// string default='-blog'. Will be used to tag templates and fields in the admin. Blank = no tag
-						'quickPostEditor' => 0,// boolean 0=false; 1=true: Whether to use a Rich Text Editor (CKEditor) in Quick Post
+			'blogFullyInstalled' => 0, // boolean 0=false {new install}; 1=true {blog fully installed - i.e. including template files and pages}
+			'blogStyle' => '', // 1='see example 1'
+			'schedulePages' => 0,// boolean 0=false; 1=true: Whether to use auto-publish/unpublish feature {needs SchedulePages module}
+			'commentsUse' => 1, // boolean 0=false; 1=true
+			'templateFilesInstall' => 1,// int 1=blank template files; 2=demo template files; 3=no template files
+			'demoJS' => 0,// for demo blog: int 0=don't install js; 1=install js
+			'demoCSS' => 0,// for demo blog: int 0=don't install css; 1=install css
+			/*'prefixTemplatesFields' => 'blog',*///string default='blog'. Will be used to prefix templates, fields and template files. E.g. blog-post, blog_date, blog-post.php. Blank = no prefix
+			'tagTemplatesFields' => '-blog',// string default='-blog'. Will be used to tag templates and fields in the admin. Blank = no tag
+			'quickPostEditor' => 0,// boolean 0=false; 1=true: Whether to use a Rich Text Editor (CKEditor) in Quick Post
 
-						/* BLOG PARENT PAGES IDs */
-						// changed to below for convenience in coding - to use array index as both an identifier and identifier storage (id) AS well as related template name
-						'blog' => '',// ID of the page 'Blog' - if used
-						'blog-posts' => '',// ID of the page 'Posts' - if used
-						'blog-categories' => '',// ID of the page 'Categories'
-						'blog-tags' => '',// ID of the page 'Tags'
-						'blog-comments' => '',// ID of the page 'Comments' - if used
-						'blog-widgets' => '',// ID of the page 'Widgets'
-						'blog-authors' => '',// ID of the page 'Authors'
-						'blog-archives' => '',// ID of the page 'Archives'
-						'blog-settings' => '',	// ID of the page 'Settings'
-						'blog-asc' => '',// ID of the page 'Always Show Comments'
-						'blog-dnc' => '',// ID of the page 'Disable New Comments'
-						'blog-dc' => '',// ID of the page 'Disable Comments'
-						'blog-rposts' => '',// ID of the page 'Recent Posts' - widget
-						'blog-rcomments' => '',// ID of the page 'Recent Comments' - widget
-						'blog-broll' => '',// ID of the page 'Blogroll' - widget
-						'blog-tweets' => '',// ID of the page 'Recent Tweets' - widget
-						'blog-pauthor' => '',// ID of the page 'Post Author' - widget
+			/* BLOG PARENT PAGES IDs */
+			// changed to below for convenience in coding - to use array index as both an identifier and identifier storage (id) AS well as related template name
+			'blog' => '',// ID of the page 'Blog' - if used
+			'blog-posts' => '',// ID of the page 'Posts' - if used
+			'blog-categories' => '',// ID of the page 'Categories'
+			'blog-tags' => '',// ID of the page 'Tags'
+			'blog-comments' => '',// ID of the page 'Comments' - if used
+			'blog-widgets' => '',// ID of the page 'Widgets'
+			'blog-authors' => '',// ID of the page 'Authors'
+			'blog-archives' => '',// ID of the page 'Archives'
+			'blog-settings' => '',	// ID of the page 'Settings'
+			'blog-asc' => '',// ID of the page 'Always Show Comments'
+			'blog-dnc' => '',// ID of the page 'Disable New Comments'
+			'blog-dc' => '',// ID of the page 'Disable Comments'
+			'blog-rposts' => '',// ID of the page 'Recent Posts' - widget
+			'blog-rcomments' => '',// ID of the page 'Recent Comments' - widget
+			'blog-broll' => '',// ID of the page 'Blogroll' - widget
+			'blog-tweets' => '',// ID of the page 'Recent Tweets' - widget
+			'blog-pauthor' => '',// ID of the page 'Post Author' - widget
 		);
 
 	}
@@ -495,23 +496,23 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$quickPostEditor = $data['quickPostEditor'] ? 'RTE in Quick Post enabled' : 'RTE in Quick Post not enabled';
 
 		$settings = array(
-							'Blog Style' => $blogStyle,
-							'Auto-publish/unpublish' => $schedulePages,
-							'Commenting feature' => $commentsUse,
-							'Install template files' => $templateFilesInstall,
-							'Install demo blog Javascript file' => $demoJSInstall,
-							'Install demo blog CSS files' => $demoCSSInstall,
-							/*'Templates and fields prefix' => $data['prefixTemplatesFields'], not using this currently*/
-							'Tag for blog templates and fields' => $tagTemplatesFields,
-							'Use RTE in Quick Post' => $quickPostEditor,
+			'Blog Style' => $blogStyle,
+			'Auto-publish/unpublish' => $schedulePages,
+			'Commenting feature' => $commentsUse,
+			'Install template files' => $templateFilesInstall,
+			'Install demo blog Javascript file' => $demoJSInstall,
+			'Install demo blog CSS files' => $demoCSSInstall,
+			/*'Templates and fields prefix' => $data['prefixTemplatesFields'], not using this currently*/
+			'Tag for blog templates and fields' => $tagTemplatesFields,
+			'Use RTE in Quick Post' => $quickPostEditor,
 
 		);
 
 		foreach ($settings  as $key => $value) {
-					$t->row(array(
-							$key,
-							$value,
-					));
+			$t->row(array(
+					$key,
+					$value,
+			));
 		}
 
 		return $t;
@@ -535,26 +536,26 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$out .= '<div id="blog-styles">';
 
 			$blogPages = array(
-					'blog'=>'Blog',
-					'posts'=>'Posts',
-					'post'=>'Example Post',
-					'categories'=>'Categories',
-					'category'=>'Example category',
-					'tags'=>'Tags',
-					'tag'=>'Example Tag',
-					'comments'=>'Comments',
-					'asc'=>'Always Show Comments',
-					'dnc'=>'Disable New Comments',
-					'dc'=>'Disable Comments',
-					'widgets'=>'Widgets',
-					'rposts'=>'Recent Posts',
-					'rcomments'=>'Recent Comments',
-					'broll'=>'Blogroll',
-					'tweets'=>'Recent Tweets',
-					'pauthor'=>'Post Author',
-					'authors'=>'Authors',
-					'archives'=>'Archives',
-					'settings'=>'Settings',
+				'blog'=>'Blog',
+				'posts'=>'Posts',
+				'post'=>'Example Post',
+				'categories'=>'Categories',
+				'category'=>'Example category',
+				'tags'=>'Tags',
+				'tag'=>'Example Tag',
+				'comments'=>'Comments',
+				'asc'=>'Always Show Comments',
+				'dnc'=>'Disable New Comments',
+				'dc'=>'Disable Comments',
+				'widgets'=>'Widgets',
+				'rposts'=>'Recent Posts',
+				'rcomments'=>'Recent Comments',
+				'broll'=>'Blogroll',
+				'tweets'=>'Recent Tweets',
+				'pauthor'=>'Post Author',
+				'authors'=>'Authors',
+				'archives'=>'Archives',
+				'settings'=>'Settings',
 			);
 
 		    $blogParents = array('Blog', 'Posts', 'Categories', 'Tags', 'Comments', 'Widgets', 'Authors', 'Archives', 'Settings');
@@ -725,38 +726,38 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		$textFields = array(
 
-							// 0=value; 1=name; 2=new InputfieldText
-							array('Blog', 'blog', $blog),
-							array('Posts', 'posts', $posts),
-							array('Categories', 'categories', $categories),
-							array('Tags', 'tags', $tags),
-							array('Comments', 'comments', $comments),
-							array('Widgets', 'widgets', $widgets),
-							array('Authors', 'authors', $authors),
-							array('Archives', 'archives', $archives),
-							array('Settings', 'settings', $settings),
+			// 0=value; 1=name; 2=new InputfieldText
+			array('Blog', 'blog', $blog),
+			array('Posts', 'posts', $posts),
+			array('Categories', 'categories', $categories),
+			array('Tags', 'tags', $tags),
+			array('Comments', 'comments', $comments),
+			array('Widgets', 'widgets', $widgets),
+			array('Authors', 'authors', $authors),
+			array('Archives', 'archives', $archives),
+			array('Settings', 'settings', $settings),
 		);
 
 		// remove non-relevant pages according to selected blog style
 		foreach ($textFields as $v) {
 
-						if ($data['blogStyle'] == 2 && $v[0] == 'Posts') continue;
-						if ($data['blogStyle'] == 3 && $v[0] == 'Blog') continue;
-						if (($data['blogStyle'] == 4 && $v[0] == 'Blog') ||  ($data['blogStyle'] == 4 && $v[0] == 'Posts')) continue;
-						if (!$data['commentsUse'] && $v[0] == 'Comments') continue;
+			if ($data['blogStyle'] == 2 && $v[0] == 'Posts') continue;
+			if ($data['blogStyle'] == 3 && $v[0] == 'Blog') continue;
+			if (($data['blogStyle'] == 4 && $v[0] == 'Blog') ||  ($data['blogStyle'] == 4 && $v[0] == 'Posts')) continue;
+			if (!$data['commentsUse'] && $v[0] == 'Comments') continue;
 
-						$v[2] = new InputfieldText;
-						$v[2]->attr('name', $v[1]);
-						$v[2]->attr('value', $v[0]);
-						$parentCustomTitles[$v[0]] = $v[2];
+			$v[2] = new InputfieldText;
+			$v[2]->attr('name', $v[1]);
+			$v[2]->attr('value', $v[0]);
+			$parentCustomTitles[$v[0]] = $v[2];
 		}
 
 		// table rows
 		foreach ($parentCustomTitles as $key => $value) {
-					$t->row(array(
-							$key,
-							$value->render(),
-					));
+			$t->row(array(
+					$key,
+					$value->render(),
+			));
 		}
 
 		$s = $modules->get('InputfieldSubmit');
@@ -851,16 +852,16 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		foreach ($menuItemsOther as $key => $value) {
 
-					$on = $this->wire('input')->urlSegment1 == $key ? 'blog_menu_item onblog' : 'blog_menu_item';
+			$on = $this->wire('input')->urlSegment1 == $key ? 'blog_menu_item onblog' : 'blog_menu_item';
 
-					// $menu .= "<li><a class='$on' href='./$key'>$value</a></li>";
-					/*
-						had to change to this because of issue with trailling slash and
-						_POST getting converted to _GET
-						http:// processwire.com/talk/topic/3777-post-empty-on-post-from-different-page/ AND
-						http:// processwire.com/talk/topic/3727-does-input-urlsegments-mess-with-post/
-					*/
-					$menu .= "<li><a class='$on' href='" . $this->wire('page')->url . $key . "/'>$value</a></li>";
+			// $menu .= "<li><a class='$on' href='./$key'>$value</a></li>";
+			/*
+				had to change to this because of issue with trailling slash and
+				_POST getting converted to _GET
+				http:// processwire.com/talk/topic/3777-post-empty-on-post-from-different-page/ AND
+				http:// processwire.com/talk/topic/3727-does-input-urlsegments-mess-with-post/
+			*/
+			$menu .= "<li><a class='$on' href='" . $this->wire('page')->url . $key . "/'>$value</a></li>";
 		}
 
 		$menu .= "</ul>";
@@ -876,7 +877,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *	Used by renderBlogDashboard().
 	 *
 	 *	@access private
-	 *	@return String $out Overview of posts markup.
+	 *	@return string $out Overview of posts markup.
 	 *
 	 */
 	private function renderOverview() {
@@ -1001,7 +1002,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 				$query = $database->prepare($sql);
 				$query->bindValue(":first_day", $firstDay);// bind our named parameters
 				$query->bindValue(":last_day", $lastDay);
-				$query->bindValue(':templates_id', $templateID, PDO::PARAM_INT);
+				$query->bindValue(':templates_id', $templateID, \PDO::PARAM_INT);
 
 				$query->execute();
 
@@ -1106,7 +1107,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 * For adding new posts.
 	 *
 	 *	@access protected
-	 *	@return Mixed $form rendered form.
+	 *	@return mixed $form rendered form.
 	 *
 	 */
 	protected function renderQuickPost() {
@@ -1139,7 +1140,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *	Used by executeCategories() and executeTags().
 	 *
 	 *	@access private
-	 *	@return Object $w InputfieldWrapper.
+	 *	@return object $w InputfieldWrapper.
 	 *
 	 */
 	private function renderAddCatsTags($mode) {
@@ -1184,24 +1185,24 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$modules = $this->wire('modules');
 
 		$actions = array(
-							'select' => $this->_('Actions (checked items)'),// @note: this is set as the initial value
-							'publish' => $this->_('Publish'),
-							'unpublish' => $this->_('Unpublish'),
-							'defaultCommentsView' => $this->_('Default Comments View'),
-							'alwaysShowComments' => $this->_('Always Show Comments'),
-							'disableNewComments' => $this->_('Disable New Comments'),
-							'disableComments' => $this->_('Disable Comments'),
-							'trash' => $this->_('Trash'),
-							'delete' => $this->_('Delete'),
+			'select' => $this->_('Actions (checked items)'),// @note: this is set as the initial value
+			'publish' => $this->_('Publish'),
+			'unpublish' => $this->_('Unpublish'),
+			'defaultCommentsView' => $this->_('Default Comments View'),
+			'alwaysShowComments' => $this->_('Always Show Comments'),
+			'disableNewComments' => $this->_('Disable New Comments'),
+			'disableComments' => $this->_('Disable Comments'),
+			'trash' => $this->_('Trash'),
+			'delete' => $this->_('Delete'),
 
 		);
 
 		// if commentsUse !=1 unset comments actions
 		if ($this->commentsUse !=1 || $this->context !='posts') {
-				unset($actions['defaultCommentsView']);
-				unset($actions['alwaysShowComments']);
-				unset($actions['disableNewComments']);
-				unset($actions['disableComments']);
+			unset($actions['defaultCommentsView']);
+			unset($actions['alwaysShowComments']);
+			unset($actions['disableNewComments']);
+			unset($actions['disableComments']);
 		}
 
 		$m = $modules->get('InputfieldSelect');
@@ -1221,7 +1222,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *
 	 *	@access private
 	 *	@param PageArray $posts Posts to whose info to summarise.
-	 *	@return String $out Markup of rendered post summaries.
+	 *	@return string $out Markup of rendered post summaries.
 	 *
 	 */
 	private function renderItemsSummaries($items) {
@@ -1389,7 +1390,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *
 	 *	@access private
 	 *	@param PageArray $posts List of posts to list.
-	 *	@return Object $m Various Inputfields for building the form.
+	 *	@return object $m Various Inputfields for building the form.
 	 *
 	 */
 	private function renderItemsList($items) {
@@ -1437,7 +1438,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *
 	 *	@access private
 	 *	@param PageArray $posts List of posts to list.
-	 *	@return Object $m Various Inputfields for building the form.
+	 *	@return object $m Various Inputfields for building the form.
 	 *
 	 */
 	private function renderCatsTagsList($posts) {
@@ -1492,7 +1493,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *	Used by executeSettings().
 	 *
 	 *	@access private
-	 *	@return Object $m Various Inputfields for building the forms.
+	 *	@return object $m Various Inputfields for building the forms.
 	 *
 	 */
 	private function renderSettingsWidgets() {
@@ -1558,7 +1559,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *	Used by renderSettingsWidgets().
 	 *
 	 *	@access private
-	 *	@return String $out Markup of widgets form.
+	 *	@return string $out Markup of widgets form.
 	 *
 	 */
 	private function renderWidgets() {
@@ -1615,7 +1616,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *
 	 *	@access private
 	 *	@param Array $options For building form input.
-	 *	@return String $out Markup for building the form.
+	 *	@return string $out Markup for building the form.
 	 *
 	 */
 	private function renderSettingsInputs($options) {
@@ -1664,7 +1665,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *	Used by executeAuthors().
 	 *
 	 *	@access private
-	 *	@return Object $m Markup for building the form.
+	 *	@return object $m Markup for building the form.
 	 *
 	 */
 	private function renderAuthors() {
@@ -1729,22 +1730,22 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		// array of blog fields. We'll use this to delete each, one by one as applicable
 		$fields = array(
 
-						'blog_body',
-						'blog_categories',
-						'blog_comments',
-						'blog_comments_view',
-						'blog_comments_max',
-						'blog_quantity',
-						'blog_date',
-						'blog_files',
-						'blog_headline',
-						'blog_href',
-						'blog_images',
-						'blog_links',
-						'blog_note',
-						'blog_summary',
-						'blog_tags',
-						'blog_small',
+			'blog_body',
+			'blog_categories',
+			'blog_comments',
+			'blog_comments_view',
+			'blog_comments_max',
+			'blog_quantity',
+			'blog_date',
+			'blog_files',
+			'blog_headline',
+			'blog_href',
+			'blog_images',
+			'blog_links',
+			'blog_note',
+			'blog_summary',
+			'blog_tags',
+			'blog_small',
 		);
 
 		// unset irrelevant fields depending on commentsUse (important since user could have a field with similar name that is not part of Blog!)
@@ -1777,25 +1778,25 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$info .='</ol></div>';
 
 		$templates = array(
-							'blog',
-							'blog-archives',
-							'blog-authors',
-							'blog-categories',
-							'blog-category',
-							'blog-comments',
-							'blog-links',
-							'blog-post',
-							'blog-posts',
-							'blog-recent-comments',
-							'blog-recent-posts',
-							'blog-recent-tweets',
-							'blog-tag',
-							'blog-tags',
-							'blog-widgets',
-							'blog-widget-basic',
-							'blog-settings',
-							'blog-basic',
-							'repeater_blog-links',
+			'blog',
+			'blog-archives',
+			'blog-authors',
+			'blog-categories',
+			'blog-category',
+			'blog-comments',
+			'blog-links',
+			'blog-post',
+			'blog-posts',
+			'blog-recent-comments',
+			'blog-recent-posts',
+			'blog-recent-tweets',
+			'blog-tag',
+			'blog-tags',
+			'blog-widgets',
+			'blog-widget-basic',
+			'blog-settings',
+			'blog-basic',
+			'repeater_blog-links',
 
 		);
 
@@ -1803,9 +1804,9 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		if ($this->blogStyle == 3 || $this->blogStyle == 4)	unset($templates[0]);// blog template
 		if ($this->blogStyle == 2 || $this->blogStyle == 4)	unset($templates[8]);// blog-posts template
 		if ($this->commentsUse !=1) {
-				unset($templates[5]);// blog-comments
-				unset($templates[9]);// blog-recent-comments
-				unset($templates[17]);// blog-basic
+			unset($templates[5]);// blog-comments
+			unset($templates[9]);// blog-recent-comments
+			unset($templates[17]);// blog-basic
 		}
 
 		$info .= '<div class="block"><h4>' . $this->_('Templates') . '</h4><ol>';
@@ -1842,13 +1843,13 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		if ($this->blogStyle == 2 || $this->blogStyle == 4) unset($templateFiles[8]);// blog-posts.php
 		if ($this->blogStyle == 3 || $this->blogStyle == 4) unset($templateFiles[0]);// blog.php
 		if ($this->templateFilesInstall !=2) {
-				unset($templateFiles[12]);// blog-side-bar.inc
-				unset($templateFiles[15]);// blog-main.inc
+			unset($templateFiles[12]);// blog-side-bar.inc
+			unset($templateFiles[15]);// blog-main.inc
 		}
 
 		if ($this->commentsUse !=1) {
-				unset($templateFiles[5]);// blog-comments.php
-				unset($templateFiles[9]);// blog-recent-comments.php
+			unset($templateFiles[5]);// blog-comments.php
+			unset($templateFiles[9]);// blog-recent-comments.php
 		}
 
 		$chx = '';
@@ -1895,18 +1896,18 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		$icons = array(
 
-						'published' => '<i class="fa fa-fw fa-eye" title="' . $this->_('Published') . '"></i>',
-						'unpublished' => '<i class="fa fa-fw fa-eye-slash" title="' . $unpublished . '"></i>',
-						'posts' => '<i class="fa fa-fw fa-file-text-o" title="' . $this->_('Posts Count') . '"></i>',
-						'categories' => '<i class="fa fa-fw fa-folder-open" title="' . $this->_('Categories Count') . '"></i>',
-						'tags' => '<i class="fa fa-fw fa-tags" title="' . $this->_('Tags Count') . '"></i>',
-						'comments' => '<i class="fa fa-fw fa-comments " title="' . $this->_('Comments') . '"></i>',
-						'approved' => '<i class="fa fa-fw fa-check-circle" title="' . $this->_('Approved') . '"></i>',
-						'pending' => '<i class="fa fa-fw fa-clock-o" title="' . $this->_('Pending') . '"></i>',
-						'spam' => '<i class="fa fa-fw fa-exclamation-circle" title="' . $this->_('Spam') . '"></i>',
-						'files' => '<i class="fa fa-fw fa-file" title="' . $this->_('Files Count') . '"></i>',
-						'images' => '<i class="fa fa-fw fa-picture-o" title="' . $this->_('Images Count') . '"></i>',
-						'add' => '<i class="fa fa-fw fa-plus-circle"></i>',
+			'published' => '<i class="fa fa-fw fa-eye" title="' . $this->_('Published') . '"></i>',
+			'unpublished' => '<i class="fa fa-fw fa-eye-slash" title="' . $unpublished . '"></i>',
+			'posts' => '<i class="fa fa-fw fa-file-text-o" title="' . $this->_('Posts Count') . '"></i>',
+			'categories' => '<i class="fa fa-fw fa-folder-open" title="' . $this->_('Categories Count') . '"></i>',
+			'tags' => '<i class="fa fa-fw fa-tags" title="' . $this->_('Tags Count') . '"></i>',
+			'comments' => '<i class="fa fa-fw fa-comments " title="' . $this->_('Comments') . '"></i>',
+			'approved' => '<i class="fa fa-fw fa-check-circle" title="' . $this->_('Approved') . '"></i>',
+			'pending' => '<i class="fa fa-fw fa-clock-o" title="' . $this->_('Pending') . '"></i>',
+			'spam' => '<i class="fa fa-fw fa-exclamation-circle" title="' . $this->_('Spam') . '"></i>',
+			'files' => '<i class="fa fa-fw fa-file" title="' . $this->_('Files Count') . '"></i>',
+			'images' => '<i class="fa fa-fw fa-picture-o" title="' . $this->_('Images Count') . '"></i>',
+			'add' => '<i class="fa fa-fw fa-plus-circle"></i>',
 			);
 
 		$icon = $icons[$icon];
@@ -2212,9 +2213,9 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		// send input->post values to execute cleanup of blog components: fields, templates, template files, pages and role;
 		if($post->cleanup_btn)  {
-				require_once(dirname(__FILE__) . '/BlogCleanup.php');
-				$this->cleanup = new BlogCleanup();
-				$this->cleanup->cleanUp($form);
+			require_once(dirname(__FILE__) . '/BlogCleanup.php');
+			$this->cleanup = new BlogCleanup();
+			$this->cleanup->cleanUp($form);
 		}
 
 		// render the final form
@@ -2335,11 +2336,11 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		// if there are tags, let's add them to the page field tags
 		if(count($tags)) {
-				foreach ($tags as $t) {
-						$tagId = (int) $t;// sanitize:we need this to be integers
-						$tag = ($pages->get($tagId));
-						if ($tag) $p->blog_tags->add($tag);// if page found, add it to the tags page field
-				}
+			foreach ($tags as $t) {
+					$tagId = (int) $t;// sanitize:we need this to be integers
+					$tag = ($pages->get($tagId));
+					if ($tag) $p->blog_tags->add($tag);// if page found, add it to the tags page field
+			}
 		}
 
 		// if user selected to quick post as unpublished
@@ -2348,8 +2349,8 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		// add schedulePages settings then save again
 		// @note: getting PW error about saving page first ('Can't save field from a new page - please save the entire page first')
 		if ($this->schedulePages == 1 && $modules->isInstalled('SchedulePages') && $p->template->hasField('publish_from') && $p->template->hasField('publish_until')) {
-				$p->publish_from = $sanitizer->text($input->posts_publish_from);
-				$p->publish_until = $sanitizer->text($input->posts_publish_until);
+			$p->publish_from = $sanitizer->text($input->posts_publish_from);
+			$p->publish_until = $sanitizer->text($input->posts_publish_until);
 		}
 		$p->save();
 		// $p->of(true);// not needed since new page
@@ -2386,88 +2387,88 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 				$i = 0;
 
 				if($action == 'publish') {
-						foreach ($items as $p) {
-									$p->removeStatus(Page::statusUnpublished);
-									$p->save();
-									$i++;
-						}
+					foreach ($items as $p) {
+								$p->removeStatus(Page::statusUnpublished);
+								$p->save();
+								$i++;
+					}
 
-						$msg = sprintf(_n("Published %d Item.", "Published %d Items.", $i), $i);
+					$msg = sprintf(_n("Published %d Item.", "Published %d Items.", $i), $i);
 
 				}// end publish items
 
 				elseif($action == 'unpublish') {
-						foreach ($items as $p) {
-									$p->addStatus(Page::statusUnpublished);
-									$p->save();
-									$i++;
-						}
+					foreach ($items as $p) {
+								$p->addStatus(Page::statusUnpublished);
+								$p->save();
+								$i++;
+					}
 
-						$msg = sprintf(_n("Unpublished %d Item.", "Unpublished %d Items.", $i), $i);
+					$msg = sprintf(_n("Unpublished %d Item.", "Unpublished %d Items.", $i), $i);
 
 				}// end unpublish items
 
 				elseif($action == 'defaultCommentsView') {
-						foreach ($items as $p) {
-									$p->blog_comments_view = '';// we remove page selection
-									$p->save();
-									$i++;
-						}
+					foreach ($items as $p) {
+								$p->blog_comments_view = '';// we remove page selection
+								$p->save();
+								$i++;
+					}
 
-						$msg = sprintf(_n("Default comments view applied to %d Item.", "Default comments view applied to %d Items.", $i), $i);
+					$msg = sprintf(_n("Default comments view applied to %d Item.", "Default comments view applied to %d Items.", $i), $i);
 
 				}// end default comments view for items (i.e. enabled by default)
 
 				elseif($action == 'alwaysShowComments') {
-						foreach ($items as $p) {
-									if ($this->asc) $p->blog_comments_view = $this->asc;// if page found, add it to the blog_comments_view page field
-									$p->save();
-									$i++;
-						}
+					foreach ($items as $p) {
+								if ($this->asc) $p->blog_comments_view = $this->asc;// if page found, add it to the blog_comments_view page field
+								$p->save();
+								$i++;
+					}
 
-						$msg = sprintf(_n("Always show comments applied to %d Item.", "Always show comments applied to %d Items.", $i), $i);
+					$msg = sprintf(_n("Always show comments applied to %d Item.", "Always show comments applied to %d Items.", $i), $i);
 
 				}// end always show items comments (i.e. enforce show to override any global setting)
 
 				elseif($action == 'disableNewComments') {
-						foreach ($items as $p) {
-									if ($this->dnc) $p->blog_comments_view = $this->dnc;// if page found, add it to the blog_comments_view page field
-									$p->save();
-									$i++;
-						}
+					foreach ($items as $p) {
+								if ($this->dnc) $p->blog_comments_view = $this->dnc;// if page found, add it to the blog_comments_view page field
+								$p->save();
+								$i++;
+					}
 
-						$msg = sprintf(_n("New comments disabled for %d Item.", "New comments disabled for %d Items.", $i), $i);
+					$msg = sprintf(_n("New comments disabled for %d Item.", "New comments disabled for %d Items.", $i), $i);
 
 				}// end disable new comments for items
 
 				elseif($action == 'disableComments') {
-						foreach ($items as $p) {
-									if ($this->dc) $p->blog_comments_view = $this->dc;// if page found, add it to the blog_comments_view page field
-									$p->save();
-									$i++;
-						}
+					foreach ($items as $p) {
+								if ($this->dc) $p->blog_comments_view = $this->dc;// if page found, add it to the blog_comments_view page field
+								$p->save();
+								$i++;
+					}
 
-						$msg = sprintf(_n("Comments disabled for %d Item.", "Comments disabled for %d Items.", $i), $i);
+					$msg = sprintf(_n("Comments disabled for %d Item.", "Comments disabled for %d Items.", $i), $i);
 
 				}// end disable comments for items
 
 				elseif($action == 'trash') {
-						foreach ($items as $p) {
-							$p->trash();
-							$i++;
-						}
+					foreach ($items as $p) {
+						$p->trash();
+						$i++;
+					}
 
-						$msg = sprintf(_n("Trashed %d Item.", "Trashed %d Items.", $i), $i);
+					$msg = sprintf(_n("Trashed %d Item.", "Trashed %d Items.", $i), $i);
 
 				}// end trash items
 
 				elseif($action == 'delete') {
-						foreach ($items as $p) {
-							$p->delete();
-							$i++;
-						}
+					foreach ($items as $p) {
+						$p->delete();
+						$i++;
+					}
 
-						$msg = sprintf(_n("Deleted %d Item.", "Deleted %d Items.", $i), $i);
+					$msg = sprintf(_n("Deleted %d Item.", "Deleted %d Items.", $i), $i);
 
 				}// end delete items
 
@@ -2484,7 +2485,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	/**
 	 *	Processes Blog Manager save blog settings.
 	 *
-	 *  @param Object $input
+	 *  @param object $input
 	 *	@access private
 	 *
 	 */
@@ -2510,49 +2511,48 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		// $v[0]=page object; $v[1]=field; $v[2]=new valued of field (sanitized above)
 		$settings = array(
+			// fields in 'settings' page
+			array($this->settings, 'blog_headline', $blogTitle),// site title
+			array($this->settings, 'blog_summary', $blogTagline),// tagline
+			array($this->settings, 'blog_quantity', $postsBlogPage),// number of posts to show on Blog Homepage
+			array($this->settings, 'blog_small', $postsLength),// posts truncate length
 
-						// fields in 'settings' page
-						array($this->settings, 'blog_headline', $blogTitle),// site title
-						array($this->settings, 'blog_summary', $blogTagline),// tagline
-						array($this->settings, 'blog_quantity', $postsBlogPage),// number of posts to show on Blog Homepage
-						array($this->settings, 'blog_small', $postsLength),// posts truncate length
-
-						// posts, comments page + widget pages
-						array($this->comments, 'blog_quantity', $commentsPerPage),// comments per page when viewing comments page
-						array($this->comments, 'blog_comments_max', $commentsMaxPerPost),// maximum comments per post
-						array($this->rcomments, 'blog_quantity', $recentCommentsNumber),// number of recent comments to show
-						array($this->rposts, 'blog_quantity', $recentPostsNumber),// number of recent posts to show
-						array($this->tweets, 'blog_quantity', $recentTweetsNumber),// number of recent tweets to show
-						array($this->tweets, 'blog_note', $twitterScreenName),// twitter screen name
+			// posts, comments page + widget pages
+			array($this->comments, 'blog_quantity', $commentsPerPage),// comments per page when viewing comments page
+			array($this->comments, 'blog_comments_max', $commentsMaxPerPost),// maximum comments per post
+			array($this->rcomments, 'blog_quantity', $recentCommentsNumber),// number of recent comments to show
+			array($this->rposts, 'blog_quantity', $recentPostsNumber),// number of recent posts to show
+			array($this->tweets, 'blog_quantity', $recentTweetsNumber),// number of recent tweets to show
+			array($this->tweets, 'blog_note', $twitterScreenName),// twitter screen name
 		);
 
 
 		if ($this->commentsUse !=1) {
-				unset($settings[4]);
-				unset($settings[5]);
-				unset($settings[6]);
-		}
+			unset($settings[4]);
+			unset($settings[5]);
+			unset($settings[6]);
+	}
 
 		foreach ($settings as $k => $v) {
-				$p = $v[0];
-				$p->of(false);
-				$p->$v[1] = $v[2];
-				$p->save();
+			$p = $v[0];
+			$p->of(false);
+			$p->$v[1] = $v[2];
+			$p->save();
 		}
 
 		// additional save comments visibility - if commentsUse == 1
 		if ($this->commentsUse == 1) {
 				if ($commentsVisibility) {// if there is a visibility selection, let's add it to the comments page blog_comments_view (single page) field
-						$p = $this->comments;
-						$cv = $this->wire('pages')->get($commentsVisibility);
-						if ($cv) $p->blog_comments_view = $cv;// if page found, add it to the blog_comments_view page field
-						$p->save();
+					$p = $this->comments;
+					$cv = $this->wire('pages')->get($commentsVisibility);
+					if ($cv) $p->blog_comments_view = $cv;// if page found, add it to the blog_comments_view page field
+					$p->save();
 				}
 
 				elseif (!$commentsVisibility) {// if no value was sent, it means it was emptied; so we remove old value
-						$p = $this->comments;
-						$p->blog_comments_view = '';
-						$p->save();
+					$p = $this->comments;
+					$p->blog_comments_view = '';
+					$p->save();
 				}
 		}
 
@@ -2568,7 +2568,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	/**
 	 *	Processes Blog Manager save blog widgets.
 	 *
-	 *  @param Object $input
+	 *  @param object $input
 	 *	@access private
 	 *
 	 */
@@ -2619,7 +2619,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	/**
 	 *	Processes Blog Manager save blog categories.
 	 *
-	 *  @param Object $input
+	 *  @param object $input
 	 *	@access private
 	 *
 	 */
@@ -2732,7 +2732,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	/**
 	 *	Processes Blog Manager delete blog categories.
 	 *
-	 *  @param Object $input
+	 *  @param object $input
 	 *	@access private
 	 *
 	 */
@@ -2763,7 +2763,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	/**
 	 *	Processes Blog Manager delete blog tags.
 	 *
-	 *  @param Object $input
+	 *  @param object $input
 	 *	@access private
 	 *
 	 */
@@ -2799,7 +2799,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *	Used by renderQuickPost().
 	 *
 	 *	@access private
-	 *	@return Object $w InputfieldWrapper.
+	 *	@return object $w InputfieldWrapper.
 	 *
 	 */
 	private function buildQuickPost() {
@@ -2814,41 +2814,41 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		// add auto-publish only if conditions correct
 		if ($this->schedulePages == 1 && $modules->isInstalled('SchedulePages') && $blogPostTemplate->hasField('publish_from') && $blogPostTemplate->hasField('publish_until')) {
 
-				// for date fields - 'publish from' and 'publish to'
-				// 1st date/time inputfield - 'publish from'
-				$d1 = $modules->get("InputfieldDatetime");
-				$d1->attr("name+id", "posts_publish_from");
-				$d1->dateOutputFormat = 'j F Y g:i a';// 8 April 2012 - in the details tab, combines date and time code in this field
-				$d1->dateInputFormat = 'j F Y';
-				// $dfd->timeOutputFormat = 'g:i a';// 5:10 pm - for output, the code fields are combined - no need for this
-				$d1->timeInputFormat = 'g:i a';
-				#$d1->datepicker = 3;// Date/Time picker on field focus
-				$d1->datepicker = 1;// Date/Time picker on arrow click
-				$d1->size = 30;
-				$d1->defaultToday = 0;
-				$d1->label = $this->_('Publish from');
-				$d1->description = $this->_('Optionally auto-publish this post from this date.');
-				$d1->collapsed = Inputfield::collapsedYes;
-				$d1->columnWidth = 50;
+			// for date fields - 'publish from' and 'publish to'
+			// 1st date/time inputfield - 'publish from'
+			$d1 = $modules->get("InputfieldDatetime");
+			$d1->attr("name+id", "posts_publish_from");
+			$d1->dateOutputFormat = 'j F Y g:i a';// 8 April 2012 - in the details tab, combines date and time code in this field
+			$d1->dateInputFormat = 'j F Y';
+			// $dfd->timeOutputFormat = 'g:i a';// 5:10 pm - for output, the code fields are combined - no need for this
+			$d1->timeInputFormat = 'g:i a';
+			#$d1->datepicker = 3;// Date/Time picker on field focus
+			$d1->datepicker = 1;// Date/Time picker on arrow click
+			$d1->size = 30;
+			$d1->defaultToday = 0;
+			$d1->label = $this->_('Publish from');
+			$d1->description = $this->_('Optionally auto-publish this post from this date.');
+			$d1->collapsed = Inputfield::collapsedYes;
+			$d1->columnWidth = 50;
 
-				// 2nd date/time inputfield - 'publish until'
-				$d2 = $modules->get("InputfieldDatetime");
-				$d2->attr("name+id", "posts_publish_until");
-				$d2->dateOutputFormat = 'j F Y g:i a';// 8 April 2012 - in the details tab, combines date and time code in this field
-				$d2->dateInputFormat = 'j F Y';
-				// $d2->timeOutputFormat = 'g:i a';// 5:10 pm - for output, the code fields are combined - no need for this
-				$d2->timeInputFormat = 'g:i a';
-				#$d2->datepicker = 3;// Date/Time picker on field focus
-				$d2->datepicker = 1;// Date/Time picker on arrow click
-				$d2->size = 30;
-				$d2->defaultToday = 0;
-				$d2->label = $this->_('Publish until');
-				$d2->description = $this->_('Optionally auto-unpublish this post on this date.');
-				$d2->collapsed = Inputfield::collapsedYes;
-				$d2->columnWidth = 50;
+			// 2nd date/time inputfield - 'publish until'
+			$d2 = $modules->get("InputfieldDatetime");
+			$d2->attr("name+id", "posts_publish_until");
+			$d2->dateOutputFormat = 'j F Y g:i a';// 8 April 2012 - in the details tab, combines date and time code in this field
+			$d2->dateInputFormat = 'j F Y';
+			// $d2->timeOutputFormat = 'g:i a';// 5:10 pm - for output, the code fields are combined - no need for this
+			$d2->timeInputFormat = 'g:i a';
+			#$d2->datepicker = 3;// Date/Time picker on field focus
+			$d2->datepicker = 1;// Date/Time picker on arrow click
+			$d2->size = 30;
+			$d2->defaultToday = 0;
+			$d2->label = $this->_('Publish until');
+			$d2->description = $this->_('Optionally auto-unpublish this post on this date.');
+			$d2->collapsed = Inputfield::collapsedYes;
+			$d2->columnWidth = 50;
 
-				$w->add($d1);
-				$w->add($d2);
+			$w->add($d1);
+			$w->add($d2);
 		}
 
 		$m = $modules->get('InputfieldText');
@@ -2927,7 +2927,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *	Used by renderAddCatsTags().
 	 *
 	 *	@access private
-	 *	@return Object $w InputfieldWrapper.
+	 *	@return object $w InputfieldWrapper.
 	 *
 	 */
 	private function buildAddCatsTags() {
@@ -2984,8 +2984,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 * Could be Posts, Categories or Tags.
 	 *
 	 *	@access private
-	 *	@param String $template The template of the items to return.
-	 *	@param String $sort How the items should be sorted.
+	 *	@param string $template The template of the items to return.
 	 *	@return PageArray $items PageArray if items found.
 	 *
 	 */
@@ -3002,8 +3001,8 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *
 	 *	@access private
 	 *	@param Page $item The category or tag whose usage statistics we want.
-	 *	@param String $context Whether handling categories or tags.
-	 *	@return Int $numPosts Number of posts the category or tag has been used in Blog posts.
+	 *	@param string $context Whether handling categories or tags.
+	 *	@return int $numPosts Number of posts the category or tag has been used in Blog posts.
 	 *
 	 */
 	private function getUsageCount($item, $context) {
@@ -3038,17 +3037,17 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$query = $database->prepare($sql);// prepare statement
 
 		// approved comments count
-		$query->bindValue(":status", $approvedComment, PDO::PARAM_INT);
+		$query->bindValue(":status", $approvedComment, \PDO::PARAM_INT);
 		$query->execute();// execute our count
 		$commentsStatus['approved'] = (int) $query->fetchColumn();// fetch the count
 
 		// pending comments count
-		$query->bindValue(":status", $pendingComment, PDO::PARAM_INT);
+		$query->bindValue(":status", $pendingComment, \PDO::PARAM_INT);
 		$query->execute();// execute our count
 		$commentsStatus['pending'] = (int) $query->fetchColumn();// fetch the count
 
 		// spam comments count
-		$query->bindValue(":status", $spamComment, PDO::PARAM_INT);
+		$query->bindValue(":status", $spamComment, \PDO::PARAM_INT);
 		$query->execute();// execute our count
 		$commentsStatus['spam'] = (int) $query->fetchColumn();// fetch the count
 
@@ -3068,40 +3067,40 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	private function getSortItems() {
 
 		$sortItems = array(
-								// created date
-								1 => $this->_('Sort: Created Date (new-old)'),// @note: this is set as the initial value
-								2 => $this->_('Sort: Created Date (old-new)'),// @note: this is set as the initial value
+			// created date
+			1 => $this->_('Sort: Created Date (new-old)'),// @note: this is set as the initial value
+			2 => $this->_('Sort: Created Date (old-new)'),// @note: this is set as the initial value
 
-								// published date
-								3 => $this->_('Sort: Published Date (new-old-pending)'),// @note: this is set as the initial value
-								4 => $this->_('Sort: Published Date (pending-old-new)'),// @note: this is set as the initial value
+			// published date
+			3 => $this->_('Sort: Published Date (new-old-pending)'),// @note: this is set as the initial value
+			4 => $this->_('Sort: Published Date (pending-old-new)'),// @note: this is set as the initial value
 
-								// title
-								5 => $this->_('Sort: Title (asc)'),
-								6 => $this->_('Sort: Title (desc)'),
+			// title
+			5 => $this->_('Sort: Title (asc)'),
+			6 => $this->_('Sort: Title (desc)'),
 
-								// comments count
-								7 => $this->_('Sort: Comments Count (high-low)'),
-								8 => $this->_('Sort: Comments Count (low-high)'),
+			// comments count
+			7 => $this->_('Sort: Comments Count (high-low)'),
+			8 => $this->_('Sort: Comments Count (low-high)'),
 
-								// categories count
-								9 => $this->_('Sort: Categories Count (high-low)'),
-								10 => $this->_('Sort: Categories Count (low-high)'),
+			// categories count
+			9 => $this->_('Sort: Categories Count (high-low)'),
+			10 => $this->_('Sort: Categories Count (low-high)'),
 
-								// tags count
-								11 => $this->_('Sort: Tags Count (high-low)'),
-								12 => $this->_('Sort: Tags Count (low-high)'),
+			// tags count
+			11 => $this->_('Sort: Tags Count (high-low)'),
+			12 => $this->_('Sort: Tags Count (low-high)'),
 
-								// posts count @todo? a bit tricky
-								//13 => $this->_('Sort: Posts Count (high-low)'),
-								//14 => $this->_('Sort: Posts Count (low-high)'),
+			// posts count @todo? a bit tricky
+			//13 => $this->_('Sort: Posts Count (high-low)'),
+			//14 => $this->_('Sort: Posts Count (low-high)'),
 
 		);
 
 		// if commentsUse !=1 unset comments actions
 		if ($this->commentsUse !=1) {
-				unset($sortItems[7]);// comments count desc
-				unset($sortItems[8]);// comments count asc
+			unset($sortItems[7]);// comments count desc
+			unset($sortItems[8]);// comments count asc
 		}
 
 		// if posts, posts count action
@@ -3113,25 +3112,25 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		// if categories or tags, unset some actions
 		if ($this->context !='posts') {
 
-				// created date
-				unset($sortItems[1]);// desc
-				unset($sortItems[2]);// asc
+			// created date
+			unset($sortItems[1]);// desc
+			unset($sortItems[2]);// asc
 
-				// published date
-				unset($sortItems[3]);// desc
-				unset($sortItems[4]);// asc
+			// published date
+			unset($sortItems[3]);// desc
+			unset($sortItems[4]);// asc
 
-				// comments count
-				unset($sortItems[7]);// desc
-				unset($sortItems[8]);// asc
+			// comments count
+			unset($sortItems[7]);// desc
+			unset($sortItems[8]);// asc
 
-				// categories count
-				unset($sortItems[9]);// desc
-				unset($sortItems[10]);// asc
+			// categories count
+			unset($sortItems[9]);// desc
+			unset($sortItems[10]);// asc
 
-				// tags count
-				unset($sortItems[11]);// desc
-				unset($sortItems[12]);// asc
+			// tags count
+			unset($sortItems[11]);// desc
+			unset($sortItems[12]);// asc
 		}
 
 		return $sortItems;
@@ -3150,33 +3149,33 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	private function getSortSelector($sort) {
 
 		$sortItems = array(
-								// created date
-								1 => '-created',// desc @note: this is set as the default value for 'posts'
-								2 => 'created',// asc
+			// created date
+			1 => '-created',// desc @note: this is set as the default value for 'posts'
+			2 => 'created',// asc
 
-								// published date
-								3 => '-blog_date',// desc
-								4 => 'blog_date',// asc
+			// published date
+			3 => '-blog_date',// desc
+			4 => 'blog_date',// asc
 
-								// title
-								5 => 'title',// asc @note: set as the default value for 'categories' and 'tags'
-								6 => '-title',// desc
+			// title
+			5 => 'title',// asc @note: set as the default value for 'categories' and 'tags'
+			6 => '-title',// desc
 
-								// comments count
-								7 => '-blog_comments.count',// desc
-								8 => 'blog_comments.count',// asc
+			// comments count
+			7 => '-blog_comments.count',// desc
+			8 => 'blog_comments.count',// asc
 
-								// categories count
-								9 => '-blog_categories.count',// desc
-								10 => 'blog_categories.count',// asc
+			// categories count
+			9 => '-blog_categories.count',// desc
+			10 => 'blog_categories.count',// asc
 
-								// tags count
-								11 =>'-blog_tags.count',// desc
-								12 =>'blog_tags.count',// asc
+			// tags count
+			11 =>'-blog_tags.count',// desc
+			12 =>'blog_tags.count',// asc
 
-								// posts count
-								//13 => 'Posts Count (high-low)',// @todo? tricky; needs different implementation
-								//14 => 'Posts Count (low-high)',// @todo? -ditto-
+			// posts count
+			//13 => 'Posts Count (high-low)',// @todo? tricky; needs different implementation
+			//14 => 'Posts Count (low-high)',// @todo? -ditto-
 		);
 
 		$selector = isset($sortItems[$sort]) ? $sortItems[$sort] : $sortItems[5];
@@ -3259,9 +3258,9 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		// if post published it also means blog_date IS NOT EMPTY {autoload module will ensure this} display date published (i.e. blog_date)
 		if (!$status) {
-				$dateFormat = $this->wire('fields')->get('blog_date')->dateOutputFormat;
-				$date = FieldtypeDatetime::formatDate($p->blog_date, $dateFormat);// Return a date formatted as specified in the Blog post's 'blog_date' field.
-				$unpublished = 0;
+			$dateFormat = $this->wire('fields')->get('blog_date')->dateOutputFormat;
+			$date = FieldtypeDatetime::formatDate($p->blog_date, $dateFormat);// Return a date formatted as specified in the Blog post's 'blog_date' field.
+			$unpublished = 0;
 		}
 		// if post unpublished AND blog_date IS EMPTY [meaning never been published as opposed to published then post expired/unpublished] display text 'Pending'
 		elseif ($status && !$p->blog_date) {
@@ -3354,29 +3353,29 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		// create Blog Admin page
 		$page = $pages->get('template=admin, name='.self::PAGE_NAME);
 		if (!$page->id) {
-				$page = new Page();
-				$page->template = 'admin';
-				// $page->parent = $pages->get($this->wire('config')->adminRootPageID)->child('name=setup');// we add as direct child of admin instead
-				$page->parent = $pages->get($this->wire('config')->adminRootPageID);
-				$page->title = 'Blog';
-				$page->name = self::PAGE_NAME;
-				$page->process = $this;
-				$page->save();
+			$page = new Page();
+			$page->template = 'admin';
+			// $page->parent = $pages->get($this->wire('config')->adminRootPageID)->child('name=setup');// we add as direct child of admin instead
+			$page->parent = $pages->get($this->wire('config')->adminRootPageID);
+			$page->title = 'Blog';
+			$page->name = self::PAGE_NAME;
+			$page->process = $this;
+			$page->save();
 
-				// tell the user we created this page
-				$this->message("Created Page: {$page->path}");
+			// tell the user we created this page
+			$this->message("Created Page: {$page->path}");
 		}
 
 		// we create the permission blog to limit access to the module
 		$permission = $this->permissions->get('blog');
 		if (!$permission->id) {
-				$p = new Permission();
-				$p->name = 'blog';
-				$p->title = $this->_('View Blog Page');
-				$p->save();
+			$p = new Permission();
+			$p->name = 'blog';
+			$p->title = $this->_('View Blog Page');
+			$p->save();
 
-				// tell the user we created this module's permission
-				$this->message("Created New Permission: blog");
+			// tell the user we created this module's permission
+			$this->message("Created New Permission: blog");
 
 		}
 
@@ -3403,15 +3402,15 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 		if($page->id) {
 			// if we found the page, let the user know and delete it
-				$this->message("Deleted Page: {$page->path}");
-				$page->delete();
+			$this->message("Deleted Page: {$page->path}");
+			$page->delete();
 		}
 
 		// find and delete the blog permission and let the user know
 		$permission = $this->permissions->get('blog');
 		if ($permission->id){
-				$permission->delete();
-				$this->message("Deleted Permission: blog");
+			$permission->delete();
+			$this->message("Deleted Permission: blog");
 		}
 
 	}

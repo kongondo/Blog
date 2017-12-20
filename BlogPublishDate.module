@@ -1,4 +1,4 @@
-<?php
+<?php namespace ProcessWire;
 
 /**
 * Blog Post Publish Date Module for ProcessWire.
@@ -35,8 +35,8 @@ class BlogPublishDate extends WireData implements Module {
 			'title' => 'Blog Post Publish Date',
 			'summary' => 'Automatically set a Blog Post publish date on publish',
 			'author' => 'Francis Otieno (Kongondo)',
-			'version' => 241,
-			'href' => 'https://processwire.com/talk/topic/7403-module-blog/',
+			'version' => 242,
+			'href' => 'https://processwire.com/talk/topic/17105-module-blog/',
 			'singular' => true,
 			'autoload' => true,
 			'requires' => 'ProcessBlog'

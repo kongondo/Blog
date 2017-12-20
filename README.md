@@ -82,6 +82,10 @@ Uninstalling Blog is a two-step process. If you are logged in as a superuser, yo
 
 ## Changelog
 
+#### Version 2.4.2
+1. Support for namespaced ProcessWire only (ProcessWire 3.x).
+2. All ProcessWire Comments Form Options can now be passed as as options to renderComments(). See the options [here](https://github.com/processwire/processwire/blob/362c0a0af5f0f52d67bb570b92b5f787122de517/wire/modules/Fieldtype/FieldtypeComments/CommentForm.php#L71-L128)
+
 #### Version 2.4.1
 1. New, cleaner UI.
 2. Better sorting of Posts, Categories and Tags in their dashboards.
@@ -94,10 +98,10 @@ Uninstalling Blog is a two-step process. If you are logged in as a superuser, yo
 3. Full compatibility with ProcessWire 2.8.x and ProcessWire 3.x. See [PR](https://github.com/kongondo/Blog/pull/30).
 
 #### Version 2.3.9
-1. Fixed [bug](https://processwire.com/talk/topic/7403-module-blog/?p=119070) where comments' date was being output as a raw timestamp (owing to a miss during the last commit).
+1. Fixed [bug](https://processwire.com/talk/topic/17105-module-blog/?p=119070) where comments' date was being output as a raw timestamp (owing to a miss during the last commit).
 
 #### Version 2.3.8
-1. Fixed [bug](https://processwire.com/talk/topic/7403-module-blog/page-30#entry112992) where comments' date were not being correctly output.
+1. Fixed [bug](https://processwire.com/talk/topic/17105-module-blog/page-30#entry112992) where comments' date were not being correctly output.
 
 #### Version 2.3.7
 1. All MarkupPageNav (used in renderPosts()) [options](https://processwire.com/api/modules/markup-pager-nav/) can now be passed to renderPosts() to customise pagination of posts.
@@ -173,13 +177,13 @@ Added a renderRelatedPosts() method.
 1. Several strings made translatable
 
 ## Resources
-* [Support Forum](https://processwire.com/talk/topic/7403-module-blog/)
-* Full [announcement](https://processwire.com/talk/topic/7403-module-blog/page-7#entry74237) about Blog version 2
+* [Support Forum](https://processwire.com/talk/topic/17105-module-blog/)
+* Full [announcement](https://processwire.com/talk/topic/17105-module-blog/page-7#entry74237) about Blog version 2
 * Video [ProcessBlog demo](http://youtu.be/64XMGLuniqU) (Blog version 1)
 * Video [MarkupBlog demo](http://youtu.be/k7aSeL29JPE) (Blog version 1)
 
 ## Upgrading from Blog version 1 to version 2
-Please refer to this [post](https://processwire.com/talk/topic/7403-module-blog/?p=74245) for full instructions and an upgrade script.
+Please refer to this [post](https://processwire.com/talk/topic/17105-module-blog/?p=74245) for full instructions and an upgrade script.
 
 ## License
 GPL2
