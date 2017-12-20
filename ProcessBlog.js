@@ -20,7 +20,7 @@ $(document).ready(function(){
 
 	// if we are NOT on the widgets or authors tables, then disable sorting on first column
 	if (!$('table').hasClass('noDisable')) {
-			if ($.tablesorter != undefined) $.tablesorter.defaults.headers = {0:{sorter:false}};// works but requires two clicks to kick-in!
+		if ($.tablesorter != undefined) $.tablesorter.defaults.headers = {0:{sorter:false}};// works but requires two clicks to kick-in!
 	}
 
 	// submit form on select of limit of items to show  - posts, categories, tags
@@ -48,9 +48,9 @@ $(document).on('click', 'button#quickpost_save_and_exit_btn, button#categories_a
 
 // close jquery UI dialog
 closeDialog = function(s=1000) {
-		setTimeout(function() {
-			//parent.jQuery('div.ui-dialog-titlebar button.ui-dialog-titlebar-close').click();
-			parent.jQuery('iframe.ui-dialog-content').dialog('close');
-			//parent.document.location.reload(true);
-		}, s);
-	}
+	setTimeout(function() {
+		//parent.jQuery('div.ui-dialog-titlebar button.ui-dialog-titlebar-close').click();
+		parent.jQuery('iframe.ui-dialog-content').dialog('close');
+		//parent.document.location.reload(true);
+	}, s);
+}

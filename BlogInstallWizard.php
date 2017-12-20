@@ -131,18 +131,18 @@ class BlogInstallWizard extends ProcessBlog {
 			$pagesCheck = array();
 
 			// if $blogStyle == 1 || $blogStyle == 2 it means our strucute is /blog/ - so 'blog' is main parent of all blog pages
-			if ($this->blogStyle == 1 || $this->blogStyle == 2) {//
+			if ($this->blogStyle == 1 || $this->blogStyle == 2) {
 
 				# check only for 'blog' as child of root
 				# BUT REMEMBER - we may be checking against the title set by the user! so, we grab value from $parents array
 
 				foreach ($parents as $key => $value) {
-							$pTitle = $value;
-							// if no title provided throw an error
-							if (!$pTitle ) {
-								$this->error($this->_("Parent pages titles are required."));
-								return false;
-							}
+					$pTitle = $value;
+					// if no title provided throw an error
+					if (!$pTitle ) {
+						$this->error($this->_("Parent pages titles are required."));
+						return false;
+					}
 				}
 
 				// here we only need to check for existence of a similarly named 'blog' page
@@ -358,7 +358,6 @@ class BlogInstallWizard extends ProcessBlog {
 		*/
 
 		$fieldsArray = array(
-
 			'body' => array('name'=>'blog_body', 'type'=>'FieldtypeTextarea', 'label'=>'Body'),
 			'categories' => array('name'=>'blog_categories', 'type'=>'FieldtypePage', 'label'=>'Categories', 'description'=>'Select one or more categories below and drag to sort them in order of relevance. If you want a category that doesn\'t already exist, create a new one.'),
 			'comments' => array('name'=>'blog_comments', 'type'=>'FieldtypeComments', 'label'=>'Comments', 'collapsed'=>2),
@@ -943,7 +942,6 @@ class BlogInstallWizard extends ProcessBlog {
 			if (!in_array($k, array('Example Post', 'Example Category', 'Example Tag'))) $blogPagesIDs[$k] = $p->id;
 
 		}
-
 
 		// we save this to a class property. We'll use this later to save to module config
 		$this->blogPagesIDs = $blogPagesIDs;

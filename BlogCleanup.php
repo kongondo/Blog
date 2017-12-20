@@ -285,66 +285,66 @@ class BlogCleanup extends ProcessBlog {
 		// if user has chosen to also delete template files AND these were installed (blank or demo) as well as the demo JS and CSS files + images
 		if (($this->removeBlogFiles && $this->templateFilesInstall == 1) || ($this->removeBlogFiles && $this->templateFilesInstall == 2)) {
 
-				$this->deleteFiles = true;
+			$this->deleteFiles = true;
 
-				$templateFiles = array(
-					// template files
-					'blog.php',
-					'blog-archives.php',
-					'blog-authors.php',
-					'blog-categories.php',
-					'blog-category.php',
-					'blog-comments.php',
-					'blog-links.php',
-					'blog-post.php',
-					'blog-posts.php',
-					'blog-recent-comments.php',
-					'blog-recent-posts.php',
-					'blog-recent-tweets.php',
-					'blog-side-bar.inc',// will only be present if templateFilesInstall == 2 {demo template files}
-					'blog-tag.php',
-					'blog-tags.php',
-					'blog-main.inc',// will only be present if templateFilesInstall == 2 {demo template files}
+			$templateFiles = array(
+				// template files
+				'blog.php',
+				'blog-archives.php',
+				'blog-authors.php',
+				'blog-categories.php',
+				'blog-category.php',
+				'blog-comments.php',
+				'blog-links.php',
+				'blog-post.php',
+				'blog-posts.php',
+				'blog-recent-comments.php',
+				'blog-recent-posts.php',
+				'blog-recent-tweets.php',
+				'blog-side-bar.inc',// will only be present if templateFilesInstall == 2 {demo template files}
+				'blog-tag.php',
+				'blog-tags.php',
+				'blog-main.inc',// will only be present if templateFilesInstall == 2 {demo template files}
 
-				);
+			);
 
-				// remove non-existent template files based on the blogStyle, commentsUse and templateFilesInstall
-				// also safeguards againts removing user created template files with similar names!
-				if ($this->blogStyle == 2 || $this->blogStyle == 4) unset($templateFiles[8]);// blog-posts.php
-				if ($this->blogStyle == 3 || $this->blogStyle == 4) unset($templateFiles[0]);// blog.php
-				if ($this->templateFilesInstall !=2) {
-					unset($templateFiles[12]);// blog-side-bar.inc
-					unset($templateFiles[15]);// blog-main.inc
-				}
+			// remove non-existent template files based on the blogStyle, commentsUse and templateFilesInstall
+			// also safeguards againts removing user created template files with similar names!
+			if ($this->blogStyle == 2 || $this->blogStyle == 4) unset($templateFiles[8]);// blog-posts.php
+			if ($this->blogStyle == 3 || $this->blogStyle == 4) unset($templateFiles[0]);// blog.php
+			if ($this->templateFilesInstall !=2) {
+				unset($templateFiles[12]);// blog-side-bar.inc
+				unset($templateFiles[15]);// blog-main.inc
+			}
 
-				if ($this->commentsUse !=1) {
-					unset($templateFiles[5]);// blog-comments.php
-					unset($templateFiles[9]);// blog-recent-comments.php
-				}
+			if ($this->commentsUse !=1) {
+				unset($templateFiles[5]);// blog-comments.php
+				unset($templateFiles[9]);// blog-recent-comments.php
+			}
 
-				// 1. delete template files
-				$sourcepath = $config->paths->templates;// source: '/site/templates/'
-				foreach ($templateFiles as $templateFile) {
-					if(is_file($sourcepath . $templateFile)) unlink($sourcepath . $templateFile);// delete the file if found
-				}
+			// 1. delete template files
+			$sourcepath = $config->paths->templates;// source: '/site/templates/'
+			foreach ($templateFiles as $templateFile) {
+				if(is_file($sourcepath . $templateFile)) unlink($sourcepath . $templateFile);// delete the file if found
+			}
 
-				// 2. delete demo JS file
-				$sourcepath = $config->paths->templates . 'scripts/';// source: '/site/templates/scripts/'
-				if(is_file($sourcepath . 'blog.js')) unlink($sourcepath . 'blog.js');// delete the file if found
+			// 2. delete demo JS file
+			$sourcepath = $config->paths->templates . 'scripts/';// source: '/site/templates/scripts/'
+			if(is_file($sourcepath . 'blog.js')) unlink($sourcepath . 'blog.js');// delete the file if found
 
-				// 3. delete demo CSS files
-				$sourcepath = $config->paths->templates . 'css/';// source: '/site/templates/scripts/'
-				$cssFiles = array('blog.css', 'pocketgrid.css');
-				foreach ($cssFiles as $cssFile) {
-					if(is_file($sourcepath . $cssFile)) unlink($sourcepath . $cssFile);// delete the file if found
-				}
+			// 3. delete demo CSS files
+			$sourcepath = $config->paths->templates . 'css/';// source: '/site/templates/scripts/'
+			$cssFiles = array('blog.css', 'pocketgrid.css');
+			foreach ($cssFiles as $cssFile) {
+				if(is_file($sourcepath . $cssFile)) unlink($sourcepath . $cssFile);// delete the file if found
+			}
 
-				// 4. delete demo CSS icon files
-				$sourcepath = $config->paths->templates . 'css/images/';// source: '/site/templates/scripts/'
-				$iconFiles = array('rss-black.png', 'rss-blue.png');
-				foreach ($iconFiles as $iconFile) {
-					if(is_file($sourcepath . $iconFile)) unlink($sourcepath . $iconFile);// delete the file if found
-				}
+			// 4. delete demo CSS icon files
+			$sourcepath = $config->paths->templates . 'css/images/';// source: '/site/templates/scripts/'
+			$iconFiles = array('rss-black.png', 'rss-blue.png');
+			foreach ($iconFiles as $iconFile) {
+				if(is_file($sourcepath . $iconFile)) unlink($sourcepath . $iconFile);// delete the file if found
+			}
 
 
 		}

@@ -16,8 +16,8 @@
 * https://github.com/kongondo/Blog
 * Created April 2014
 *
-* ProcessWire 2.x
-* Copyright (C) 2011 by Ryan Cramer
+* ProcessWire 3.x
+* Copyright (C) 2016 by Ryan Cramer
 * Licensed under GNU/GPL v2, see LICENSE.TXT
 *
 * http://www.processwire.com
@@ -134,18 +134,18 @@ class MarkupBlog  extends WireData implements Module {
 
 		foreach($tags as $tag) {
 
-				$letter = strtoupper(substr($tag->title, 0, 1));// Grab the first letter of the tag title, make it uppercase
-				if($letter != $lastLetter) {// if this letter is not equal to the last letter
-					if($lastLetter) $out .= "</ul>";
-					$out .= "<h3 id='letter_$letter'>$letter</h3>";
-					$out .= "<ul class='tags posts-group'>";
-					$letters[] = $letter;// add to the letters array
-				}
-				$lastLetter = $letter;
+			$letter = strtoupper(substr($tag->title, 0, 1));// Grab the first letter of the tag title, make it uppercase
+			if($letter != $lastLetter) {// if this letter is not equal to the last letter
+				if($lastLetter) $out .= "</ul>";
+				$out .= "<h3 id='letter_$letter'>$letter</h3>";
+				$out .= "<ul class='tags posts-group'>";
+				$letters[] = $letter;// add to the letters array
+			}
+			$lastLetter = $letter;
 
-				$numPosts = sprintf(_n($post, $posts, $tag->numPosts), $tag->numPosts);
+			$numPosts = sprintf(_n($post, $posts, $tag->numPosts), $tag->numPosts);
 
-				$out .= "<li><a href='{$tag->url}'>{$tag->title}</a> <span class='num-posts'>$numPosts</span></li>";
+			$out .= "<li><a href='{$tag->url}'>{$tag->title}</a> <span class='num-posts'>$numPosts</span></li>";
 		}
 
 		$out .= "</ul>";
@@ -186,7 +186,6 @@ class MarkupBlog  extends WireData implements Module {
 
 		// default options for next/prev posts
 		$defaultOptions = array(
-
 			'prev_post' => '&lt;',// tag/text for previous post, e.g. &laquo;, &#171;, etc, i.e. << >>, etc
 			'next_post' => '&gt;',// tag/text for next post, e.g. &rsaquo;, etc
 			'prev_post_text' => 'title',// if title or not empty: will show title of the prev post. Otherwise show specificed text, e.g. 'Older entries'
@@ -233,7 +232,7 @@ class MarkupBlog  extends WireData implements Module {
 	 * As seen on the frontend page: /blog/comments/rss/.
 	 *
 	 * @access public
-	 * @param Int $limit Number of comments to render.
+	 * @param int $limit Number of comments to render.
 	 *
 	 */
 	public function renderCommentsRSS($limit) {
@@ -314,19 +313,11 @@ class MarkupBlog  extends WireData implements Module {
 				$out .= "<a class='rss' href='$category->url" . "rss'>" . $this->_('RSS') . "</a></span>";
 
 				if($n){
-						$out .= "<ul class='category-posts posts-group'>";
-
-							foreach($category->posts as $post){
-									$out .= "<li><a href='$post->url'>$post->title</a></li>";
-						}
-
-						// if more posts available than the limit we have set, show "view more" link
-						if($n > count($category->posts)){
-									$out .= "<li><a class='more' href='$category->url'>" . $options['categories_more_text'] . "</a></li>";
-						}
-
-						$out .= "</ul>";
-
+					$out .= "<ul class='category-posts posts-group'>";
+					foreach($category->posts as $post) $out .= "<li><a href='$post->url'>$post->title</a></li>";
+					// if more posts available than the limit we have set, show "view more" link
+					if($n > count($category->posts)) $out .= "<li><a class='more' href='$category->url'>" . $options['categories_more_text'] . "</a></li>";
+					$out .= "</ul>";
 				}// end if($n);
 
 				$out .= "</div>";
@@ -361,9 +352,8 @@ class MarkupBlog  extends WireData implements Module {
 
 		// default options for archives
 		$defaultOptions = array(
-
-							'archives_posts_text' =>$this->_('post,posts'),// come in the format 'singular,plural' for e.g. October 5 'posts'
-							'archives_month_view_all_text' => $this->_('View All'),// 'view all' that month's archives if limit set on amount to list
+			'archives_posts_text' =>$this->_('post,posts'),// come in the format 'singular,plural' for e.g. October 5 'posts'
+			'archives_month_view_all_text' => $this->_('View All'),// 'view all' that month's archives if limit set on amount to list
 		);
 
 		// merge user options with default archives options
@@ -386,7 +376,6 @@ class MarkupBlog  extends WireData implements Module {
 					<h3><a href='$url'>$year</a></h3>
 					<span class='num-posts'>" . sprintf(_n($post, $posts, $total), $total) . "</span>";
 
-
 			$out .= "<ul class='posts-group'>";
 
 			foreach($months as $monthNum => $month){
@@ -395,16 +384,16 @@ class MarkupBlog  extends WireData implements Module {
 				$out .=  "<span class='num-posts'>" . sprintf(_n($post, $posts, $month['total']), $month['total']) . "</span>";
 
 				if(count($month['posts'])) {// posts will be empty if $blog->archives() call specified 0 for limit;
-						$out .= "<ul>";
-						foreach($month['posts'] as $item){
-							$out .= "<li><a href='$item->url'>$item->title</a></li>";
-						}
+					$out .= "<ul>";
+					foreach($month['posts'] as $item){
+						$out .= "<li><a href='$item->url'>$item->title</a></li>";
+					}
 
-						if($month['total'] > count($month['posts'])){
-							$out .= "<li><a class='more' href='" . $month['url'] . "'>" . $options['archives_month_view_all_text'] . "</a></li>";
-						}
+					if($month['total'] > count($month['posts'])){
+						$out .= "<li><a class='more' href='" . $month['url'] . "'>" . $options['archives_month_view_all_text'] . "</a></li>";
+					}
 
-						$out .=  "</ul>";
+					$out .=  "</ul>";
 				}
 
 				$out .=  "</li>";
@@ -453,9 +442,9 @@ class MarkupBlog  extends WireData implements Module {
 	 *
 	 * @access public
 	 * @param Page $post limit of maximum related posts to find.
-	 * @param Int $relatedBy criteria for finding  related posts.
-	 * @param Int $limit Find this limited number of related posts.
-	 * @param String $sort prioritise related posts to find, especially when limit set.
+	 * @param int $relatedBy criteria for finding  related posts.
+	 * @param int $limit Find this limited number of related posts.
+	 * @param string $sort prioritise related posts to find, especially when limit set.
 	 * @return PageArray|null $related Related posts or null if none found.
 	 *
 	 */
@@ -496,9 +485,9 @@ class MarkupBlog  extends WireData implements Module {
 	 *
 	 * @access public
 	 * @param CommentArray $comments.
-	 * @param Int $limit Optional limit of maximum comments to show.
-	 * @param Array $options Optional text describing a post's commenting status (e.g. 'comments not allowed').
-	 * @return String $out Comments markup.
+	 * @param int $limit Optional limit of maximum comments to show.
+	 * @param array $options Optional text describing a post's commenting status (e.g. 'comments not allowed').
+	 * @return string $out Comments markup.
 	 *
 	 */
 	public function renderComments(CommentArray $comments, $limit = 0, Array $options = null) {
@@ -557,7 +546,6 @@ class MarkupBlog  extends WireData implements Module {
 			if($pageNum > 2) $prevURL = $page->url . 'page' . ($pageNum-1);
 			elseif($pageNum > 1) $prevURL = $page->url;
 			else $prevURL = '';
-
 			if(count($comments) > $limit) $nextURL = $page->url . 'page' . ($pageNum+1);
 			else $nextURL = '';
 		}
@@ -774,8 +762,8 @@ class MarkupBlog  extends WireData implements Module {
 		if(!count($items)) return '';
 
 		if($currentURL instanceof Page) {
-				$currentPage = $currentURL;
-				$currentURL = $currentPage->url;
+			$currentPage = $currentURL;
+			$currentURL = $currentPage->url;
 		}
 		else $currentPage = null;
 
@@ -788,18 +776,18 @@ class MarkupBlog  extends WireData implements Module {
 
 			if($title instanceof Page) {
 
-					$page = $title;
-					$title = $page->title;
-					$url = $page->url;
+				$page = $title;
+				$title = $page->title;
+				$url = $page->url;
 
-					// if nav item is root-level and $currentPage shares this root parent, then
-					// make it the currentURL so that it is still highlighted in the nav
+				// if nav item is root-level and $currentPage shares this root parent, then
+				// make it the currentURL so that it is still highlighted in the nav
 
-					/* ORIGINAL CODE in Blog Profile. My Page Tree is different, hence amended below */
-					// if($page->parent_id == 1 && $currentPage && $currentPage->rootParent === $page) $currentURL = $currentPage->rootParent->url;
+				/* ORIGINAL CODE in Blog Profile. My Page Tree is different, hence amended below */
+				// if($page->parent_id == 1 && $currentPage && $currentPage->rootParent === $page) $currentURL = $currentPage->rootParent->url;
 
-					/* @kongondo above amendment */
-					if($page->parent_id == $blogParentId && $currentPage && $currentPage->parent === $page) $currentURL = $currentPage->parent->url;
+				/* @kongondo above amendment */
+				if($page->parent_id == $blogParentId && $currentPage && $currentPage->parent === $page) $currentURL = $currentPage->parent->url;
 			}
 
 			$nav[$url] = $title;
@@ -1146,8 +1134,8 @@ class MarkupBlog  extends WireData implements Module {
 	 * Used by renderPosts().
 	 *
 	 * @access private
-	 * @param Array $options Array of custom options to merge wth default ones.
-	 * @return Array $options Options to apply to rendered posts.
+	 * @param array $options Array of custom options to merge wth default ones.
+	 * @return array $options Options to apply to rendered posts.
 	 *
 	 */
 	private function getPostsOptions($options) {
@@ -1510,10 +1498,10 @@ class MarkupBlog  extends WireData implements Module {
 	 * Return a date formatted as specified in the Blog post's 'blog_date' field.
 	 *
 	 * @access public
-	 * @param Int|String $date If given a timestamp, it will be automatically formatted according to the 'blog_date' field in PW
+	 * @param int|String $date If given a timestamp, it will be automatically formatted according to the 'blog_date' field in PW
 	 *	If given a string, then whatever format it is in will be kept.
-	 * @param Int $mode Date format to use. If for posts and similar, use blog_date (default). If for comments, use blog_comments dateFormat.
-	 * @return String $date Date markup.
+	 * @param int $mode Date format to use. If for posts and similar, use blog_date (default). If for comments, use blog_comments dateFormat.
+	 * @return string $date Date markup.
 	 *
 	 */
 	public function formatDate($date, $mode = 1) {
@@ -1538,7 +1526,7 @@ class MarkupBlog  extends WireData implements Module {
 	 * Used internally in this class.
 	 *
 	 * @access public
-	 * @param String $selector
+	 * @param string $selector
 	 * @return CommentArray $comments.
 	 *
 	 */
