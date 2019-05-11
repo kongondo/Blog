@@ -1373,16 +1373,19 @@ class MarkupBlog  extends WireData implements Module {
 	 * Get images embedded in specified markup.
 	 *
 	 *
+	 * @access public
 	 * @param string $markup Markup with embedded images.
 	 * @param integer $limit Number of images to return. Default is one (first image);
 	 * @return array $images Array of embedded images sources/urls or empty if none found.
 	 *
 	 */
-	private function findEmbeddedImages($markup, $limit=1) {
+	public function findEmbeddedImages($markup, $limit=1) {
 
 			$images = array();
 			// parse the html string into a DOMDocument
 			$dom = new \DOMDocument();
+			// @note: we use to suppress errors since it seems DOMDocument() doesn't 'know' some HTML5 tags
+			libxml_use_internal_errors(true);
 			$dom->loadHTML($markup);
 
 			for ($i=0; $i < $limit; $i++) {
