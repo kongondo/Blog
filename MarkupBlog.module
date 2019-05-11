@@ -39,7 +39,7 @@ class MarkupBlog  extends WireData implements Module {
 			'title' => 'Markup Blog',
 			'summary' => 'Markup module to output a Blog based on the Blog Profile by Ryan Cramer',
 			'author' => 'Francis Otieno (Kongondo)',
-			'version' => 242,
+			'version' => '2.4.3',
 			'href' => 'https://processwire.com/talk/topic/17105-module-blog/',
 			'singular' => true,
 			'autoload' => false,
@@ -92,7 +92,7 @@ class MarkupBlog  extends WireData implements Module {
 		$this->blogStyle = $blogConfigs['blogStyle'];
 		$this->commentsUse = $blogConfigs['commentsUse'];
 
-		// @todo/@note: getting intermittent errors in ProcessWire 3.x, hence this. However, unsure if this is the best way to do it
+		// @todo/@note: getting intermittent errors in ProcessWire 3.x, hence this. However, unsure if this is the best way to do it?
 		$modules->get('FieldtypeComments');// Load FieldtypeComments in MarkupBlog to ensure that Coment:: constants are available.
 	}
 
@@ -125,9 +125,6 @@ class MarkupBlog  extends WireData implements Module {
 		$post = '%d ' . $singular;
 		$posts = '%d ' . $plural;
 
-		// count the number of posts using each tag
-		foreach($tags as $tag) $tag->numPosts = $this->wire('pages')->count("template=blog-post, blog_tags=$tag");
-
 		$lastLetter = '';
 		$out = '';
 		$letters = array();
@@ -143,7 +140,9 @@ class MarkupBlog  extends WireData implements Module {
 			}
 			$lastLetter = $letter;
 
-			$numPosts = sprintf(_n($post, $posts, $tag->numPosts), $tag->numPosts);
+			// count the number of of posts referencing this $tag
+			$numPosts = $tag->references("template=blog-post")->count;
+			$numPosts = sprintf(_n($post, $posts, $numPosts), $numPosts);
 
 			$out .= "<li><a href='{$tag->url}'>{$tag->title}</a> <span class='num-posts'>$numPosts</span></li>";
 		}
@@ -232,7 +231,7 @@ class MarkupBlog  extends WireData implements Module {
 	 * As seen on the frontend page: /blog/comments/rss/.
 	 *
 	 * @access public
-	 * @param int $limit Number of comments to render.
+	 * @param integer $limit Number of comments to render.
 	 *
 	 */
 	public function renderCommentsRSS($limit) {
@@ -274,7 +273,7 @@ class MarkupBlog  extends WireData implements Module {
 	 *
 	 * @access public
 	 * @param PageArray $categories Category pages to return.
-	 * @param int $showNumPosts Number of posts to show from each category (default=0).
+	 * @param integer $showNumPosts Number of posts to show from each category (default=0).
 	 * @param array $options Options to configure rendered categories output.
 	 * @return string $out Generated markup of Blog categories.
 	 *
@@ -292,8 +291,6 @@ class MarkupBlog  extends WireData implements Module {
 		if($options != null && is_array($options)) $options = array_merge($defaultOptions, $options);
 		else $options = $defaultOptions;
 
-		foreach($categories as $category) $category->posts = $this->wire('pages')->find("template=blog-post, blog_categories=$category, limit=$showNumPosts, sort=-blog_date");
-
 		$out = '';
 
 		if(count($categories)){
@@ -304,8 +301,12 @@ class MarkupBlog  extends WireData implements Module {
 
 			foreach($categories as $category) {
 
-				$out .= "<div class='category'>
-							<h3><a href='$category->url'>$category->title</a></h3>";
+				$out .=
+					 "<div class='category'>
+						<h3><a href='$category->url'>$category->title</a></h3>";
+
+				// find a limited number of posts that reference this category
+				$category->posts = $category->references("template=blog-post,limit={$showNumPosts},, sort=-blog_date");
 
 				$n = $category->posts->getTotal();
 
@@ -422,7 +423,7 @@ class MarkupBlog  extends WireData implements Module {
 		$out = "<ul class='authors posts-group'>";
 
 		foreach($authors as $author) {
-			$numPosts = $this->wire('pages')->count("template=blog-post, created_users_id=$author, limit=2");
+			$numPosts = $this->wire('pages')->count("template=blog-post, created_users_id=$author");
 			// $numPostsStr = sprintf(_n('%d post', '%d posts', $author->numPosts), $author->numPosts);// not in use
 			// Note: $author->url2 is the blog-generated version, since $author->url is in the admin.
 			$authorName = $author->get('title') ? $author->get('title') : 'Author Name';// use generic 'Author Name' if author title not set
@@ -442,8 +443,8 @@ class MarkupBlog  extends WireData implements Module {
 	 *
 	 * @access public
 	 * @param Page $post limit of maximum related posts to find.
-	 * @param int $relatedBy criteria for finding  related posts.
-	 * @param int $limit Find this limited number of related posts.
+	 * @param integer $relatedBy criteria for finding  related posts.
+	 * @param integer $limit Find this limited number of related posts.
 	 * @param string $sort prioritise related posts to find, especially when limit set.
 	 * @return PageArray|null $related Related posts or null if none found.
 	 *
@@ -485,7 +486,7 @@ class MarkupBlog  extends WireData implements Module {
 	 *
 	 * @access public
 	 * @param CommentArray $comments.
-	 * @param int $limit Optional limit of maximum comments to show.
+	 * @param integer $limit Optional limit of maximum comments to show.
 	 * @param array $options Optional text describing a post's commenting status (e.g. 'comments not allowed').
 	 * @return string $out Comments markup.
 	 *
@@ -623,9 +624,6 @@ class MarkupBlog  extends WireData implements Module {
 				$out .= '<h4 id="comments-empty">' . $options['comments_empty'] . '</h4>';
 			}
 			elseif ($page->template=='blog-comments') $out .= '<h4 id="comments-empty">' .  $options['comments_list_empty'] . '</h4>';
-
-			#$prevURL  = '';@todo - necessary?
-			#$nextURL = '';
 		}
 
 		if($page->template == 'blog-post' && $noCommentsForm == false) {
@@ -848,8 +846,8 @@ class MarkupBlog  extends WireData implements Module {
 	 */
 	public function renderPosts($posts, $small = false, Array $options = null) {
 
-		$posts = $this->getPosts($posts);
-		$this->options = $this->getPostsOptions($options);
+		$posts = $this->processPosts($posts);
+		$this->options = $this->processPostsOptions($options);
 		$options = $this->options;
 		$this->small = $small;
 
@@ -989,7 +987,7 @@ class MarkupBlog  extends WireData implements Module {
 	 *
 	 * @access private
 	 * @param Page $page The post to generate a headline for.
-	 * @return $out string The generated markup.
+	 * @return string $out The generated markup.
 	 *
 	 */
 	private function renderPostHead($page) {
@@ -1043,7 +1041,7 @@ class MarkupBlog  extends WireData implements Module {
 	 *
 	 * @access private
 	 * @param Page $page A single post page to set categories property to.
-	 * @return $out String Markup of posts' footer.
+	 * @return string $out Markup of posts' footer.
 	 *
 	 */
 	private function renderFooter($page) {
@@ -1106,7 +1104,7 @@ class MarkupBlog  extends WireData implements Module {
 	 * @return PageArray $posts Posts to render.
 	 *
 	 */
-	private function getPosts($posts) {
+	private function processPosts($posts) {
 
 		if(!$posts instanceof PageArray) {
 			// single page
@@ -1138,7 +1136,7 @@ class MarkupBlog  extends WireData implements Module {
 	 * @return array $options Options to apply to rendered posts.
 	 *
 	 */
-	private function getPostsOptions($options) {
+	private function processPostsOptions($options) {
 
 		// default options for various aspects of posts
 		$defaultOptions = array(
@@ -1173,7 +1171,7 @@ class MarkupBlog  extends WireData implements Module {
 				- They will need to designate a featured image.
 				- For small posts, both embedded and images tagged 'featured' will be picked up as featured images.
 			*/
-			
+
 			'post_image_alt' => 'description',// defaults to $image->description. Otherwise other stated field on the page, e.g. = 'title'
 			'post_image_tag' => 'featured',// string: image tag to look for in blog_images
 
@@ -1187,7 +1185,7 @@ class MarkupBlog  extends WireData implements Module {
 				-	where $x = 'width' and $y = 'height'*/
 			'post_small_image_size' => false,// if 'size' = true AND both width and height > 0, this kicks in
 
-			// ** large/full post featured image **			
+			// ** large/full post featured image **
 			'post_large_image' => 0,// display post's featured image: 0=off,1=top(above post-headline),2=bottom(first item in post-body)
 			'post_large_image_width' => '',// no width manipulation of featured image if this is blank or 0
 			'post_large_image_height' => '',// no height manipulation if this is blank or 0. Note, if size is true and both width and height > 0, use size() instead
@@ -1207,11 +1205,24 @@ class MarkupBlog  extends WireData implements Module {
 	}
 
 	/**
+	 * Autogenerate a summary for a blog post from the blog body field.
+	 *
+	 * @param Page $page The blog post $page.
+	 * @param string $allowableTags Allowable tags strip_tags().
+	 * @return string Ssummary Summary of blog post.
+	 */
+	private function processPostSummary(Page $page, $allowableTags = '') {
+		$summary = strip_tags(substr($page->blog_body, 0, $this->summaryLimit), $allowableTags);
+		$summary = substr($summary, 0, strrpos($summary, ' '));
+		return $summary;
+	}
+
+	/**
 	 * Get an array of archives, optionally by year and optionally including a few posts.
 	 *
 	 * @access public
-	 * @param int $year Retrieve archives for a specific year (default=retrieve all years)
-	 * @param int $limit Max number of posts titles to show for each month, default=0 which means don't show any
+	 * @param integer $year Retrieve archives for a specific year (default=retrieve all years)
+	 * @param integer $limit Max number of posts titles to show for each month, default=0 which means don't show any
 	 * @return array $years in this format:
 	 *
 	 * array(
@@ -1338,19 +1349,14 @@ class MarkupBlog  extends WireData implements Module {
 		// only for small posts! no need to get embedded image if large/full post! otherwise it will be displayed twice!
 		elseif($this->small && $page->blog_body !='') {
 
-			/*for each summarised post, we use PHP's DOMDocument class to find the first image and use that as the featured image*/
-
-			// parse the html string into a DOMDocument
-			$dom = new \DOMDocument();
-			$dom->loadHTML($page->blog_body);
-
-			// this grabs just the nth img found. we want the first one so item(0)
+			/*for each summarised post, we use PHP's DOMDocument class to find the first embedded image and use that as the featured image*/
 			// we grab the first img found in blog_body
-			$image = $dom->getElementsByTagName('img')->item(0);// returns an object
+			$image = $this->findEmbeddedImages($page->blog_body);// default limit=1
 
 			// if an image found, we grab its 'src' attribute
-			if ($image !=null) {
-				$imageURL = $image->getAttribute('src');// string;
+			if (count($image)) {// array
+				// @note: we only requested 1 image so only 1 item in the array
+				$imageURL = $image[0];// string;
 				$alt = $page->{$options['post_image_alt']};
 				$width = $width > 0 ? "width={$width}" : '';
 				$height = $height > 0 ? "height={$height}" : '';
@@ -1360,6 +1366,32 @@ class MarkupBlog  extends WireData implements Module {
 		}// end else grab image from first image embedded in post
 
 		return $featuredImage;
+
+	}
+
+	/**
+	 * Get images embedded in specified markup.
+	 *
+	 *
+	 * @param string $markup Markup with embedded images.
+	 * @param integer $limit Number of images to return. Default is one (first image);
+	 * @return array $images Array of embedded images sources/urls or empty if none found.
+	 *
+	 */
+	private function findEmbeddedImages($markup, $limit=1) {
+
+			$images = array();
+			// parse the html string into a DOMDocument
+			$dom = new \DOMDocument();
+			$dom->loadHTML($markup);
+
+			for ($i=0; $i < $limit; $i++) {
+
+				$image = $dom->getElementsByTagName('img')->item($i);// returns an object or null
+				// image found? save its src/url
+				if ($image !=null) $images[] = $image->getAttribute('src');// string;
+			}
+			return $images;
 
 	}
 
@@ -1375,10 +1407,10 @@ class MarkupBlog  extends WireData implements Module {
 	 *
 	 */
 	private function getCommentsFormOptions($options) {
-		
+
 		################### // @note: for backward compatibility (blog < 2.4.1) ###################
 		if(isset($options['comments_post_text'])) $commentsPostText = $options['comments_post_text'];
-		else $commentsPostText = $this->_('Post a comment');		
+		else $commentsPostText = $this->_('Post a comment');
 
 		if(isset($options['comments_success'])) $commentsSuccess = $options['comments_success'];
 		else $commentsSuccess = $this->_('Thank you, your submission has been saved.');
@@ -1412,6 +1444,8 @@ class MarkupBlog  extends WireData implements Module {
 		return $options;
 
 	}
+
+	######################################
 
 	/**
 	 * Return merged user and default options.
@@ -1468,16 +1502,13 @@ class MarkupBlog  extends WireData implements Module {
 	 *
 	 */
 	private function setExraProperties($page) {
-
 		$options = $this->options;
 
 		// Note:we don't have a summary field for 'post' pages but left code here just in case we need it in future
 		// only run this if post small == true
 		if(empty($page->summary) && $this->small) {
 			// summary is blank so we auto-generate a summary from the body [note: blog body field is 'blog_body']
-			// note: second paramenter of strip_tags $allowable_tags is configurable!
-			$summary = strip_tags(substr($page->blog_body, 0, $this->summaryLimit), $options['post_small_allowable_tags']);
-			$page->summary = substr($summary, 0, strrpos($summary, ' '));
+			$page->summary = $this->processPostSummary($page, $options['post_small_allowable_tags']);
 		}
 
 		// set a couple new properties that our output will use
@@ -1498,9 +1529,9 @@ class MarkupBlog  extends WireData implements Module {
 	 * Return a date formatted as specified in the Blog post's 'blog_date' field.
 	 *
 	 * @access public
-	 * @param int|String $date If given a timestamp, it will be automatically formatted according to the 'blog_date' field in PW
+	 * @param integer|string $date If given a timestamp, it will be automatically formatted according to the 'blog_date' field in PW
 	 *	If given a string, then whatever format it is in will be kept.
-	 * @param int $mode Date format to use. If for posts and similar, use blog_date (default). If for comments, use blog_comments dateFormat.
+	 * @param integer $mode Date format to use. If for posts and similar, use blog_date (default). If for comments, use blog_comments dateFormat.
 	 * @return string $date Date markup.
 	 *
 	 */
@@ -1555,8 +1586,8 @@ class MarkupBlog  extends WireData implements Module {
 	 * Find a limited number of recent comments.
 	 *
 	 * @access public
-	 * @param int $limit Number of recent comments to find
-	 * @param int $start Where to start, like 0 (default: null = automatic, based on page number)
+	 * @param integer $limit Number of recent comments to find
+	 * @param integer $start Where to start, like 0 (default: null = automatic, based on page number)
 	 * @param bool $admin Include non-approved and spam comments? (default: null = determine automatically)
 	 * @return CommentArray $comments.
 	 *
