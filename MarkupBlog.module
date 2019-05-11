@@ -1382,18 +1382,23 @@ class MarkupBlog  extends WireData implements Module {
 	public function findEmbeddedImages($markup, $limit=1) {
 
 			$images = array();
-			// parse the html string into a DOMDocument
-			$dom = new \DOMDocument();
-			// @note: we use to suppress errors since it seems DOMDocument() doesn't 'know' some HTML5 tags
-			libxml_use_internal_errors(true);
-			$dom->loadHTML($markup);
+			
+			// if markup supplied
+			if($markup) {
+				// parse the html string into a DOMDocument
+				$dom = new \DOMDocument();
+				// @note: we use to suppress errors since it seems DOMDocument() doesn't 'know' some HTML5 tags
+				libxml_use_internal_errors(true);
+				$dom->loadHTML($markup);
 
-			for ($i=0; $i < $limit; $i++) {
+				for ($i=0; $i < $limit; $i++) {
 
-				$image = $dom->getElementsByTagName('img')->item($i);// returns an object or null
-				// image found? save its src/url
-				if ($image !=null) $images[] = $image->getAttribute('src');// string;
+					$image = $dom->getElementsByTagName('img')->item($i);// returns an object or null
+					// image found? save its src/url
+					if ($image !=null) $images[] = $image->getAttribute('src');// string;
+				}
 			}
+
 			return $images;
 
 	}
