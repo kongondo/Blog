@@ -87,11 +87,10 @@
     }//end if $input->urlSegment1
 
     else {
-		// no author specified: display list of authors
-		$content .= "<h2>$page->title</h2>";
-		$content .=  $blog->renderAuthors($authors);
+			// no author specified: display list of authors
+			$content .= "<h2>$page->title</h2>";
+			$content .=  $blog->renderAuthors($authors);
     }
 
     // include the main/common markup
     require_once("blog-main.inc");
-
