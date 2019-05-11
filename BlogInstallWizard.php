@@ -12,7 +12,7 @@
 * We don't want to overwrite users files!
 *
 * @author Francis Otieno (Kongondo)
-* @version 2.4.2
+* @version 2.4.3
 *
 * https://github.com/kongondo/Blog
 * Created February 2014
@@ -88,7 +88,7 @@ class BlogInstallWizard extends ProcessBlog {
 		if($installWizardBtn && $installWizardBtn == 'Run install wizard') {// was the right button pressed
 
 			// Get the module config data
-			#$data = $this->wire('modules')->getModuleConfigData(get_parent_class($this));						
+			#$data = $this->wire('modules')->getModuleConfigData(get_parent_class($this));
 			// @note: using strrchr to account for namespaced classes
 			$baseClass = substr(strrchr('\\'.get_parent_class($this), '\\'), 1);
 			$data = $this->wire('modules')->getModuleConfigData($baseClass);
@@ -848,7 +848,7 @@ class BlogInstallWizard extends ProcessBlog {
 		if ($this->blogStyle == 1 || $this->blogStyle == 2) {
 
 			$p = new Page();
-			
+
 			$p->template = $templates->get('blog');
 			$p->parent = $parent;
 			$p->title = $parents['blog'];// set by user or defaults to 'Blog' - see verifyInstall();
@@ -1018,8 +1018,7 @@ class BlogInstallWizard extends ProcessBlog {
 		// $v[0]=page ID; $v[1]=field/property; $v[2]=field/property value
 		foreach ($pagesExtras as $v) {
 			$p = $pages->get($v[0]);
-			$p->$v[1] = $v[2];// set the field name $v[1] to have the value $v[2]
-			// $p->set($v[1], $v[2]);// alternative syntax to above
+			$p->set($v[1], $v[2]);// set the field name $v[1] to have the value $v[2]
 			$p->save();
 		}
 

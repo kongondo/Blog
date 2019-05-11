@@ -35,7 +35,7 @@ class BlogPublishDate extends WireData implements Module {
 			'title' => 'Blog Post Publish Date',
 			'summary' => 'Automatically set a Blog Post publish date on publish',
 			'author' => 'Francis Otieno (Kongondo)',
-			'version' => 242,
+			'version' => '2.4.3',
 			'href' => 'https://processwire.com/talk/topic/17105-module-blog/',
 			'singular' => true,
 			'autoload' => true,
