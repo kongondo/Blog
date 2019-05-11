@@ -82,6 +82,10 @@ Uninstalling Blog is a two-step process. If you are logged in as a superuser, yo
 
 ## Changelog
 
+#### Version 2.4.3
+1. Code refactoring.
+2. Added method to find embedded images for use as featured image(s), for example.
+
 #### Version 2.4.2
 1. Support for namespaced ProcessWire only (ProcessWire 3.x).
 2. All ProcessWire Comments Form Options can now be passed as as options to renderComments(). See the options [here](https://github.com/processwire/processwire/blob/362c0a0af5f0f52d67bb570b92b5f787122de517/wire/modules/Fieldtype/FieldtypeComments/CommentForm.php#L71-L128)
