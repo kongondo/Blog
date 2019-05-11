@@ -40,7 +40,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 			'title' => 'Blog',
 			'summary' => 'Blog Manager module inspired by the Blog Profile by Ryan Cramer',
 			'author' => 'Francis Otieno (Kongondo)',
-			'version' => 242,
+			'version' => '2.4.3',
 			'href' => 'https://processwire.com/talk/topic/17105-module-blog/',
 			'singular' => true,
 			'autoload' => false,
@@ -130,7 +130,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 *	@access public
 	 *
 	 */
-	
+
 	 public function init() {
 
 		if ($this->permissions->get('blog')->id && !$this->wire('user')->hasPermission('blog')) throw new WirePermissionException("You have no permission to use this module");
@@ -1667,6 +1667,8 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 	 */
 	private function renderAuthors() {
 
+		// @todo: paginate page?
+
 		$modules = $this->wire('modules');
 		$pages = $this->wire('pages');
 
@@ -1682,7 +1684,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 			$authorPhoto = count($author->blog_images) ?
 							'<img src ="' . $author->blog_images->first->size(75, 75)->url .'" class="blog_author_image">'  :
-							'<span>' . $this->_('No author photo.') . '</span>';
+							'<span> ' . $this->_('No author photo.') . '</span>';
 
 			$authorBio = $author->blog_body ? $author->blog_body : '<p>' . $this->_('No Biography available.') . '</p>';
 
@@ -1945,7 +1947,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		// if blog is already fully installed, let's proceed as normal and show the blog dashboard
 		else return $this->renderBlogDashboard();
 
- 	}
+	 }
 
 	/**
 	 *	Display, Add and Edit Blog Posts.
@@ -2879,6 +2881,9 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$m = $modules->get('InputfieldPageAutocomplete');
 		$m->label = sprintf(__('%s'), $this->tags->title);
 		$m->set('findPagesSelector', 'template=blog-tag');// limit tag selection to only the tag pages
+		$m->set('parent_id', $this->tags->id);
+		$tagTemplate = $this->wire('templates')->get('blog-tag');
+		$m->set('template_id', $tagTemplate->id);
 		$m->attr('id+name', 'quickpost_tags_add');// set an id and name
 
 		$w->add($m);// add page autocomplete to markup
