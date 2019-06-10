@@ -39,7 +39,7 @@ class MarkupBlog  extends WireData implements Module {
 			'title' => 'Markup Blog',
 			'summary' => 'Markup module to output a Blog based on the Blog Profile by Ryan Cramer',
 			'author' => 'Francis Otieno (Kongondo)',
-			'version' => '2.4.3',
+			'version' => '2.4.4',
 			'href' => 'https://processwire.com/talk/topic/17105-module-blog/',
 			'singular' => true,
 			'autoload' => false,
@@ -1382,7 +1382,7 @@ class MarkupBlog  extends WireData implements Module {
 	public function findEmbeddedImages($markup, $limit=1) {
 
 			$images = array();
-			
+
 			// if markup supplied
 			if($markup) {
 				// parse the html string into a DOMDocument

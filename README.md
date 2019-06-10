@@ -82,6 +82,9 @@ Uninstalling Blog is a two-step process. If you are logged in as a superuser, yo
 
 ## Changelog
 
+#### Version 2.4.4
+1. Fixed bug that caused blog settings not to save.
+
 #### Version 2.4.3
 1. Code refactoring.
 2. Added method to find embedded images for use as featured image(s), for example.

@@ -40,7 +40,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 			'title' => 'Blog',
 			'summary' => 'Blog Manager module inspired by the Blog Profile by Ryan Cramer',
 			'author' => 'Francis Otieno (Kongondo)',
-			'version' => '2.4.3',
+			'version' => '2.4.4',
 			'href' => 'https://processwire.com/talk/topic/17105-module-blog/',
 			'singular' => true,
 			'autoload' => false,
@@ -2521,7 +2521,6 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 			array($this->tweets, 'blog_note', $twitterScreenName),// twitter screen name
 		);
 
-
 		if ($this->commentsUse !=1) {
 			unset($settings[4]);
 			unset($settings[5]);
@@ -2531,7 +2530,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		foreach ($settings as $k => $v) {
 			$p = $v[0];
 			$p->of(false);
-			$p->$v[1] = $v[2];
+			$p->{$v[1]} = $v[2];
 			$p->save();
 		}
 
