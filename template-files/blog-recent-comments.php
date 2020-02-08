@@ -20,7 +20,7 @@
 
 	$comments = $blog->findRecentComments($limit, 0, false);//false = in the sidebar, do not show pending or spam comments whether admin is logged in or not
 
-	if(count($comments)) {
+	if(!empty($comments)) {
 
 		$out .= "<ul class='links'>";
 
@@ -44,4 +44,3 @@
 	else $out .= "<p>" . __('No comments yet') . "</p>";
 
 	echo $out;
-

@@ -58,7 +58,7 @@
         $year = (int) $input->urlSegment1;
 
         $archives = $blog->getArchives();
-        $yearsNav = '';
+        $yearsNav = array();
 
         foreach($archives as $key => $y) {
             $yearsNav[$y['url']] = $y['name'];
@@ -83,4 +83,3 @@
 
     // include the main/common markup
     require_once("blog-main.inc");
-

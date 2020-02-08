@@ -12,7 +12,7 @@
 *	Role
 *
 * @author Francis Otieno (Kongondo)
-* @version 2.4.4
+* @version 2.4.5
 *
 * https://github.com/kongondo/Blog
 * Created February 2014

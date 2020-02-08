@@ -12,7 +12,7 @@
 * We don't want to overwrite users files!
 *
 * @author Francis Otieno (Kongondo)
-* @version 2.4.4
+* @version 2.4.5
 *
 * https://github.com/kongondo/Blog
 * Created February 2014
@@ -155,7 +155,7 @@ class BlogInstallWizard extends ProcessBlog {
 
 				if($pageID) $pagesCheck [] = $pages->get($pageID)->title;// show them the title since this is what they would have entered in form
 
-				$pagesExist = count($pagesCheck) ? true : false;// we'll use this later + $pagesCheck to show errors
+				$pagesExist = !empty($pagesCheck) ? true : false;// we'll use this later + $pagesCheck to show errors
 
 
 			}// end if $blogStyle == 1 or $blogStyle == 2
@@ -180,7 +180,7 @@ class BlogInstallWizard extends ProcessBlog {
 					if($pageID) $pagesCheck [] = $pages->get($pageID)->title;// show them the title since this is what they would have entered in form
 				}// end foreach checks of all parent pages (i.e. posts, categories, tags,comments [if applicable], widgets, authors, archives and settings)
 
-				$pagesExist = count($pagesCheck) ? true : false;// we'll use this later + $pagesCheck to show errors
+				$pagesExist = !empty($pagesCheck) ? true : false;// we'll use this later + $pagesCheck to show errors
 
 
 			}// end if $blogStyle = 3 || $blogStyle = 4
@@ -219,7 +219,7 @@ class BlogInstallWizard extends ProcessBlog {
 
 			$fieldsCheck = array();
 			foreach ($fieldsArray as $key => $value) {if($fields->get($value)) $fieldsCheck [] = $fields->get($value)->name;}
-			$fieldsExist = count($fieldsCheck) ? true : false;
+			$fieldsExist = !empty($fieldsCheck) ? true : false;
 
 			$templatesArray = array(
 				'blog' => 'blog',
@@ -258,7 +258,7 @@ class BlogInstallWizard extends ProcessBlog {
 
 			$templatesCheck = array();
 			foreach ($templatesArray as $tpl) {if($templates->get($tpl)) $templatesCheck [] = $templates->get($tpl)->name;}
-			$templatesExist = count($templatesCheck) ? true : false;
+			$templatesExist = !empty($templatesCheck) ? true : false;
 
 			// check if role 'blog-author' already exists
 			$r = $this->wire('roles')->get('blog-author');

@@ -18,8 +18,8 @@
     $month = date('n', $date);
 
     // subnav: if there are categories and/or tags, then make a separate nav for them
-    if(count($page->blog_categories)) $subNav .= $blog->renderNav(__('Related Categories'), $page->blog_categories);
-    if(count($page->blog_tags)) $subNav .= $blog->renderNav(__('Related Tags'), $page->blog_tags);
+    if(!empty($page->blog_categories)) $subNav .= $blog->renderNav(__('Related Categories'), $page->blog_categories);
+    if(!empty($page->blog_tags)) $subNav .= $blog->renderNav(__('Related Tags'), $page->blog_tags);
 
     // subnav: contains authors, archives and categories links
     $authorsURL = $pages->get('template=blog-authors')->url;
@@ -58,4 +58,3 @@
 
     // include the main/common markup
     require_once("blog-main.inc");
-

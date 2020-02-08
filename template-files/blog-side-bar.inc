@@ -77,7 +77,7 @@
 			$out .=  "<h4>" . $c->title . "</h4>";
 			$limit = $c->blog_quantity;
 			$comments = $blog->findRecentComments($limit, 0, false);//false = in the sidebar, do not show pending or spam comments whether admin is logged in or not
-			if(count($comments)) {
+			if(!empty($comments)) {
 				$out .= "<ul class='links'>";
 				foreach($comments as $comment) {
 					$cite = htmlentities($comment->cite, ENT_QUOTES, "UTF-8");
@@ -113,7 +113,7 @@
             $out = '<div id="blogroll"><!-- #blogroll -->';
             $out .= "<h4>{$br->title}</h4>";
 
-            if(count($br->blog_links)) {
+            if(!empty($br->blog_links)) {
 				$out .= "<ul class='links'>";
 
 				foreach($br->blog_links as $link) {
