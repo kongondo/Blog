@@ -39,7 +39,7 @@ class MarkupBlog  extends WireData implements Module {
 			'title' => 'Markup Blog',
 			'summary' => 'Markup module to output a Blog based on the Blog Profile by Ryan Cramer',
 			'author' => 'Francis Otieno (Kongondo)',
-			'version' => '2.4.4',
+			'version' => '2.4.5',
 			'href' => 'https://processwire.com/talk/topic/17105-module-blog/',
 			'singular' => true,
 			'autoload' => false,
@@ -93,7 +93,7 @@ class MarkupBlog  extends WireData implements Module {
 		$this->commentsUse = $blogConfigs['commentsUse'];
 
 		// @todo/@note: getting intermittent errors in ProcessWire 3.x, hence this. However, unsure if this is the best way to do it?
-		$modules->get('FieldtypeComments');// Load FieldtypeComments in MarkupBlog to ensure that Coment:: constants are available.
+		$modules->get('FieldtypeComments');// Load FieldtypeComments in MarkupBlog to ensure that Comment:: constants are available.
 	}
 
 	/* ######################### - RENDER MARKUP - ######################### */
@@ -293,7 +293,7 @@ class MarkupBlog  extends WireData implements Module {
 
 		$out = '';
 
-		if(count($categories)){
+		if(!empty($categories)){
 
 			list($singular, $plural) = explode(',', $options['categories_posts_text']);// come in the format 'singular,plural'
 			$cpost = '%d ' . $singular;
@@ -384,7 +384,7 @@ class MarkupBlog  extends WireData implements Module {
 				$out .= "<li><a href='" . $month['url'] . "'>" . $month['name'] . "</a>";
 				$out .=  "<span class='num-posts'>" . sprintf(_n($post, $posts, $month['total']), $month['total']) . "</span>";
 
-				if(count($month['posts'])) {// posts will be empty if $blog->archives() call specified 0 for limit;
+				if(!empty($month['posts'])) {// posts will be empty if $blog->archives() call specified 0 for limit;
 					$out .= "<ul>";
 					foreach($month['posts'] as $item){
 						$out .= "<li><a href='$item->url'>$item->title</a></li>";
@@ -468,9 +468,9 @@ class MarkupBlog  extends WireData implements Module {
 		$sort = $this->wire('sanitizer')->selectorValue($sort);
 
 		// find related posts by given criteria. Default is to relate by both tags AND categories
-		if($relatedBy == 1 && count($page->blog_tags) && count($page->blog_categories)) $selector = "blog_tags=$page->blog_tags, blog_categories=$page->blog_categories";
-		elseif($relatedBy == 2 && count($page->blog_tags)) $selector = "blog_tags=$page->blog_tags";// relate by tags only
-		elseif($relatedBy == 3 && count($page->blog_categories)) $selector = "blog_categories=$page->blog_categories";// relate by categories only
+		if($relatedBy == 1 && !empty($page->blog_tags) && !empty($page->blog_categories)) $selector = "blog_tags=$page->blog_tags, blog_categories=$page->blog_categories";
+		elseif($relatedBy == 2 && !empty($page->blog_tags)) $selector = "blog_tags=$page->blog_tags";// relate by tags only
+		elseif($relatedBy == 3 && !empty($page->blog_categories)) $selector = "blog_categories=$page->blog_categories";// relate by categories only
 
 		// find related posts
 		if($selector) $related = $pages->find("template=blog-post, id!=$page->id, limit=$limit, sort=$sort, $selector");
@@ -573,7 +573,7 @@ class MarkupBlog  extends WireData implements Module {
 			}
 		}
 
-		if(count($commentArray)) {
+		if(!empty($commentArray)) {
 
 			// output the individual comments if comments found
 			$out .= "<ul class='comments CommentList'>";
@@ -618,7 +618,7 @@ class MarkupBlog  extends WireData implements Module {
 		}// end if(count($commentArray))
 
 		// if comments count == 0
-		elseif(!count($commentArray)) {
+		elseif(empty($commentArray)) {
 			// prevents output of 'be the first to comment' when comments closed but there are no comments yet
 			if(($page->template=='blog-post' && $pComments && $pComments->id !=$this->dnc->id) || ($page->template=='blog-post' && !$pComments && !$gComments)) {
 				$out .= '<h4 id="comments-empty">' . $options['comments_empty'] . '</h4>';
@@ -757,7 +757,7 @@ class MarkupBlog  extends WireData implements Module {
 	 */
 	public function renderNav($headline, $items, $currentURL = '', $mobile = true) {
 
-		if(!count($items)) return '';
+		if(empty($items)) return '';
 
 		if($currentURL instanceof Page) {
 			$currentPage = $currentURL;
@@ -966,7 +966,7 @@ class MarkupBlog  extends WireData implements Module {
 
 		}// end 	foreach($posts as $page)
 
-		if(!count($posts)) $out .= '<h4 id="no-posts">' . $options['post_not_found'] . '</h4>'; // <!--/.posts-->
+		if(empty($posts)) $out .= '<h4 id="no-posts">' . $options['post_not_found'] . '</h4>'; // <!--/.posts-->
 
 		$out .= "</div>";/*end div.posts => posts wrapper*/
 
@@ -1086,7 +1086,7 @@ class MarkupBlog  extends WireData implements Module {
 		$options = $this->options;
 		$out = '';
 		if($posts->getLimit() < $posts->getTotal()) {
-			$markupPagerNavOptions = is_array($options['post_pagination']) && count($options['post_pagination']) ? $options['post_pagination'] : '';
+			$markupPagerNavOptions = is_array($options['post_pagination']) && !empty($options['post_pagination']) ? $options['post_pagination'] : '';
 			$out .= $posts->renderPager($markupPagerNavOptions);
 		}
 		return $out;
@@ -1245,7 +1245,16 @@ class MarkupBlog  extends WireData implements Module {
 	 * );
 	 *
 	 */
-	public function getArchives($year = 0, $limit = 1) {
+	public function getArchives($year = 0, $limit = 1,$options=null) {
+
+		// default options for archives
+		$defaultOptions = array(
+			'archives_month_sort_order' => 'acending',// archive months within years sorted ascending
+		);
+
+		// merge user options with default archives options
+		if($options != null && is_array($options)) $options = array_merge($defaultOptions, $options);
+		else $options = $defaultOptions;
 
 		$pages = $this->wire('pages');
 
@@ -1282,15 +1291,24 @@ class MarkupBlog  extends WireData implements Module {
 
 				$archivesPath = $this->archives->url;
 
-				$months[$month] = array(
+				$m = array(
 					'url' => $archivesPath . "$y/$month/",// note where our blog pages live vary depending on blogStyle
 					'name' => strftime('%B', $firstDay),
 					'posts' => $limit > 0 ? $posts : array(),
 					'total' => $numPosts
-					);
+				);
+
+				// sort months descending (Dec - Jan)
+				if($options['archives_month_sort_order'] =='descending') {
+					$months = array($month => $m) + $months;
+				}
+				// months ascending (Jan - Dec)
+				else $months[$month] =$m;
+
 			}
 
 			if(!$numPostsYear) continue;
+
 
 			$years[$y] = array(
 				'url' => $archivesPath . "$y/",// note where our blog pages live vary depending on blogStyle
@@ -1354,7 +1372,7 @@ class MarkupBlog  extends WireData implements Module {
 			$image = $this->findEmbeddedImages($page->blog_body);// default limit=1
 
 			// if an image found, we grab its 'src' attribute
-			if (count($image)) {// array
+			if (!empty($image)) {// array
 				// @note: we only requested 1 image so only 1 item in the array
 				$imageURL = $image[0];// string;
 				$alt = $page->{$options['post_image_alt']};
@@ -1469,7 +1487,7 @@ class MarkupBlog  extends WireData implements Module {
 		// if user wants to show categories in post
 		if($options['post_categories'] != 0) {
 			$page->categories = '';
-			if(count($page->blog_categories)) {
+			if(!empty($page->blog_categories)) {
 				$page->categories = "<p class='categories'><span>" . $options['post_categories_text'] . " " . "</span>";
 				foreach($page->blog_categories as $category) $page->categories .= "<a href='{$category->url}'>{$category->title}</a>, ";
 				$page->categories = rtrim($page->categories, ", ") . "</p>";
@@ -1490,7 +1508,7 @@ class MarkupBlog  extends WireData implements Module {
 		$options = $this->options;
 		if($options['post_tags'] != 0) {
 			$page->tag = '';
-			if(count($page->blog_tags)) {
+			if(!empty($page->blog_tags)) {
 				$page->tags = "<p class='tags'><span>" . $options['post_tags_text'] . " " . "</span>";
 				foreach($page->blog_tags as $tag) $page->tags .= "<a href='{$tag->url}'>{$tag->title}</a>, ";
 				$page->tags = rtrim($page->tags, ", ") . "</p>";
