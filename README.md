@@ -82,6 +82,10 @@ Uninstalling Blog is a two-step process. If you are logged in as a superuser, yo
 
 ## Changelog
 
+#### Version 2.4.5
+1. Add option to getArchives() that allows ordering of post months in descending order.
+2. Refactored array empty/not empty checks.
+
 #### Version 2.4.4
 1. Fixed bug that caused blog settings not to save.
 
