@@ -40,7 +40,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 			'title' => 'Blog',
 			'summary' => 'Blog Manager module inspired by the Blog Profile by Ryan Cramer',
 			'author' => 'Francis Otieno (Kongondo)',
-			'version' => '2.4.4',
+			'version' => '2.4.5',
 			'href' => 'https://processwire.com/talk/topic/17105-module-blog/',
 			'singular' => true,
 			'autoload' => false,
@@ -1418,7 +1418,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$pagination = $this->renderPagination($items);
 
 		$itemsSummaries = sprintf(__('No %s found.'), $title);
-		if(count($items)) $itemsSummaries = $this->renderItemsSummaries($items);
+		if(!empty($items)) $itemsSummaries = $this->renderItemsSummaries($items);
 
 		$m->description = $total == 0 ? $quickPostLink : $quickPostLink . $itemsCount;
 		$m->attr('value', $topStrip . $itemsSummaries . $pagination);// wrap our table with pagination
@@ -1459,7 +1459,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 
 
 		$postsSummaries = '';
-		if (count($posts)) $postsSummaries .= $this->renderItemsSummaries($posts);
+		if (!empty($posts)) $postsSummaries .= $this->renderItemsSummaries($posts);
 
 
 		#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
@@ -1682,7 +1682,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 			if($author->title) $authorTitle = '<span class="blog_author_title">' . $author->title . '</span>';
 			else $authorTitle =  '<span class="blog_author_title red">' . $author->name . ' <em>(' . $this->_('Please enter your first and last names in your profile.') . ')</em></span><br>';
 
-			$authorPhoto = count($author->blog_images) ?
+			$authorPhoto = !empty($author->blog_images) ?
 							'<img src ="' . $author->blog_images->first->size(75, 75)->url .'" class="blog_author_image">'  :
 							'<span> ' . $this->_('No author photo.') . '</span>';
 
@@ -2307,7 +2307,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$categories = $input->quickpost_categories_add;// array of page IDs to add to page field categories. We sanitize each below (as int)
 
 		// if there are categories, let's add them to the page field categories
-		if(count($categories)) {
+		if(!empty($categories)) {
 			foreach ($categories as $c) {
 				$categoryId = (int) $c;// sanitize: we need this to be integers
 				$category = $pages->get($categoryId);
@@ -2330,7 +2330,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		array_splice($tags, 0, 1);
 
 		// if there are tags, let's add them to the page field tags
-		if(count($tags)) {
+		if(!empty($tags)) {
 			foreach ($tags as $t) {
 				$tagId = (int) $t;// sanitize:we need this to be integers
 				$tag = ($pages->get($tagId));
@@ -2374,7 +2374,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$actionItems = $input->items_action;// checkbox array name
 
 		// check if items were selected.
-		if (count($actionItems)) {
+		if (!empty($actionItems)) {
 
 			// prepare sent item IDs to find and TRASH the item pages
 			$itemIds = implode('|', $actionItems);// split array elements, joining them with pipe (I) to use in selector
