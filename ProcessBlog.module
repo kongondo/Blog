@@ -1682,7 +1682,7 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 			if($author->title) $authorTitle = '<span class="blog_author_title">' . $author->title . '</span>';
 			else $authorTitle =  '<span class="blog_author_title red">' . $author->name . ' <em>(' . $this->_('Please enter your first and last names in your profile.') . ')</em></span><br>';
 
-			$authorPhoto = !empty($author->blog_images) ?
+			$authorPhoto = $author->blog_images->count ?
 							'<img src ="' . $author->blog_images->first->size(75, 75)->url .'" class="blog_author_image">'  :
 							'<span> ' . $this->_('No author photo.') . '</span>';
 
