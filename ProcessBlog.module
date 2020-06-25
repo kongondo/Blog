@@ -912,10 +912,15 @@ class ProcessBlog extends Process implements Module, ConfigurableModule {
 		$categories = $this->categories;
 		$tags = $this->tags;
 
+		$postsTitle = !empty($posts->title) ? $posts->title : "Posts";
+		$commentsTitle = !empty($comments->title) ? $comments->title : "Comments";
+		$categoriesTitle = !empty($categories->title) ? $categories->title : "Categories";
+		$tagsTitle = !empty($tags->title) ? $tags->title : "Tags";
+
 		$list = array(
-			$posts->title => array('published' => $qn['blog-post'], 'unpublished' => $qn['unpublished'] ),
-			$comments->title => array('approved' =>  $numApproved, 'pending' => $numPending, 'spam' => $numSpam ),
-			$categories->title . ' & ' . $tags->title => array('categories' => $qn['blog-category'], 'tags' => $qn['blog-tag'] ),
+			$postsTitle => array('published' => $qn['blog-post'], 'unpublished' => $qn['unpublished'] ),
+			$commentsTitle => array('approved' =>  $numApproved, 'pending' => $numPending, 'spam' => $numSpam ),
+			"{$categoriesTitle} & {$tagsTitle}" => array('categories' => $qn['blog-category'], 'tags' => $qn['blog-tag'] ),
 		);
 		// remove comments-related data if commentsUse !=1
 		if ($this->commentsUse !=1) unset($list[$comments->title]);
