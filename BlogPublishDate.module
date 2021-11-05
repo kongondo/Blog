@@ -1,24 +1,26 @@
-<?php namespace ProcessWire;
+<?php
+
+namespace ProcessWire;
 
 /**
-* Blog Post Publish Date Module for ProcessWire.
-*
-* This small autoload module sets a Blog Post's published date (field = 'blog_date')
-* Based on the code here: https://processwire.com/talk/topic/2448-show-date-published-on-a-page/ by SiNNuT and Soma
-*
-* @author Francis Otieno (Kongondo) <kongondo@gmail.com>
-* @author Some code from SiNNuT, Soma
-*
-* https://github.com/kongondo/Blog
-* Created August 2014
-*
-* ProcessWire 3.x
-* Copyright (C) 2016 by Ryan Cramer
-* Licensed under GNU/GPL v2, see LICENSE.TXT
-*
-* http://www.processwire.com
-*
-*/
+ * Blog Post Publish Date Module for ProcessWire.
+ *
+ * This small autoload module sets a Blog Post's published date (field = 'blog_date')
+ * Based on the code here: https://processwire.com/talk/topic/2448-show-date-published-on-a-page/ by SiNNuT and Soma
+ *
+ * @author Francis Otieno (Kongondo) <kongondo@gmail.com>
+ * @author Some code from SiNNuT, Soma
+ *
+ * https://github.com/kongondo/Blog
+ * Created August 2014
+ *
+ * ProcessWire 3.x
+ * Copyright (C) 2016 by Ryan Cramer
+ * Licensed under GNU/GPL v2, see LICENSE.TXT
+ *
+ * http://www.processwire.com
+ *
+ */
 
 class BlogPublishDate extends WireData implements Module {
 
@@ -35,14 +37,13 @@ class BlogPublishDate extends WireData implements Module {
 			'title' => 'Blog Post Publish Date',
 			'summary' => 'Automatically set a Blog Post publish date on publish',
 			'author' => 'Francis Otieno (Kongondo)',
-			'version' => '2.4.5',
+			'version' => '2.4.6',
 			'href' => 'https://processwire.com/talk/topic/17105-module-blog/',
 			'singular' => true,
 			'autoload' => true,
 			'requires' => 'ProcessBlog'
 
 		);
-
 	}
 
 	/**
@@ -56,38 +57,36 @@ class BlogPublishDate extends WireData implements Module {
 	 */
 	public function init() {
 		// add a hook after $page->save (only on Blog Posts pages)
-        $this->wire('pages')->addHookAfter('save', $this, 'afterSave');
-
+		$this->wire('pages')->addHookAfter('save', $this, 'afterSave');
 	}
 
 	/**
 	 *	Hook to set a Blog Post's 'published date' (if not set already) when a Blog Post is published.
 	 *
 	 *  This function will not empty any values extant in 'blog_date'.
- 	 *	This is to preserve the original Blog Post publish date.
- 	 *
- 	 *	@access public
+	 *	This is to preserve the original Blog Post publish date.
+	 *
+	 *	@access public
 	 *
 	 */
 	public function afterSave($event) {
 
 		// get the page object saved
-	    $page = $event->argumentsByName('page');
+		$page = $event->argumentsByName('page');
 
-	    // only on pages that use the template 'blog-post
-	    if($page->template !='blog-post' ) return;
+		// only on pages that use the template 'blog-post
+		if ($page->template != 'blog-post') return;
 
-	    /*	- we don't want to touch unpublished pages ['pending' and 'expired']
+		/*	- we don't want to touch unpublished pages ['pending' and 'expired']
 	    	- neither published pages with blog_date already filled in
 	    	- nor if for some reason field 'blog_date' not found in the 'blog-post' template and page is published
 	   	*/
 
-	    if($page->is(Page::statusUnpublished) || $page->blog_date || !$page->template->hasField('blog_date')) return;
+		if ($page->is(Page::statusUnpublished) || $page->blog_date || !$page->template->hasField('blog_date')) return;
 
-	    // if page is published and blog_field not populated, add current timestamp
-	    $page->blog_date = time();
-	    $page->save('blog_date');
-
+		// if page is published and blog_field not populated, add current timestamp
+		$page->blog_date = time();
+		$page->save('blog_date');
 	}
 
 	/**
@@ -110,11 +109,9 @@ class BlogPublishDate extends WireData implements Module {
 	 *	@access public
 	 *
 	 */
-	 public function ___uninstall() {
+	public function ___uninstall() {
 
 		// Don't need to add anything here...
 
 	}
-
-
 }

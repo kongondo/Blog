@@ -1,23 +1,25 @@
-<?php namespace ProcessWire;
+<?php
+
+namespace ProcessWire;
 
 /**
-*
-* This is an include class for ProcessBlog cleanup($form). It can only be run by supersuser in the blog dashboard
-*
-*This utility will irreversibly delete the following Blog Components in case user wishes to afterward uninstall OR reinstall Blog:
-* 	Fields
-*	Templates
-*	Optionally Template Files (in case they installed the blank/demo Template Files) + demo CSS and JS files
-*	Pages
-*	Role
-*
-* @author Francis Otieno (Kongondo)
-* @version 2.4.5
-*
-* https://github.com/kongondo/Blog
-* Created February 2014
-*
-*/
+ *
+ * This is an include class for ProcessBlog cleanup($form). It can only be run by supersuser in the blog dashboard
+ *
+ *This utility will irreversibly delete the following Blog Components in case user wishes to afterward uninstall OR reinstall Blog:
+ * 	Fields
+ *	Templates
+ *	Optionally Template Files (in case they installed the blank/demo Template Files) + demo CSS and JS files
+ *	Pages
+ *	Role
+ *
+ * @author Francis Otieno (Kongondo)
+ * @version 2.4.6
+ *
+ * https://github.com/kongondo/Blog
+ * Created February 2014
+ *
+ */
 
 class BlogCleanup extends ProcessBlog {
 
@@ -25,11 +27,11 @@ class BlogCleanup extends ProcessBlog {
 	private $removeBlogFiles;
 
 	/**
-	* 	Prepare cleaning up.
-	*
-	*	@access public
-	*
-	*/
+	 * 	Prepare cleaning up.
+	 *
+	 *	@access public
+	 *
+	 */
 	public function cleanUp($form) {
 
 		$input = $this->wire('input')->post;
@@ -40,30 +42,28 @@ class BlogCleanup extends ProcessBlog {
 
 		// was the right button pressed
 		//if($cleanupBtn && $cleanupBtn == 'Cleanup') {
-		if($cleanupBtn) {
+		if ($cleanupBtn) {
 
 			// Get the module config data
 			#$this->data = $this->wire('modules')->getModuleConfigData(get_parent_class($this));
 			// @note: using strrchr to account for namespaced classes
-			$baseClass = substr(strrchr('\\'.get_parent_class($this), '\\'), 1);
+			$baseClass = substr(strrchr('\\' . get_parent_class($this), '\\'), 1);
 			$this->data = $this->wire('modules')->getModuleConfigData($baseClass);
 
-			$this->blogStyle = $this->data['blogStyle'];// selected blog style (1-4)
-			$this->commentsUse = $this->data['commentsUse'];// commenting feature on/off
+			$this->blogStyle = $this->data['blogStyle']; // selected blog style (1-4)
+			$this->commentsUse = $this->data['commentsUse']; // commenting feature on/off
 			$this->templateFilesInstall = $this->data['templateFilesInstall'];
 
 			return $this->cleanUpPages();
-
 		}
-
 	}
 
 	/**
-	* 	Delete blog pages.
-	*
-	*	@access private
-	*
-	*/
+	 * 	Delete blog pages.
+	 *
+	 *	@access private
+	 *
+	 */
 	private function cleanUpPages() {
 
 		$data = $this->data;
@@ -111,39 +111,40 @@ class BlogCleanup extends ProcessBlog {
 
 			// additionally in this case since parent of each blog post is root,
 			// we delete all pages using the template 'blog-post'
-			foreach ($pages->find('template=blog-post, include=all') as $p) {if ($p->id) $pages->delete($p);}
+			foreach ($pages->find('template=blog-post, include=all') as $p) {
+				if ($p->id) $pages->delete($p);
+			}
 		}
 
 		return $this->cleanUpRepeater();
-
 	}
 
 	/**
-	* 	Delete repeater page.
-	*
-	*	@access private
-	*
-	*/
+	 * 	Delete repeater page.
+	 *
+	 *	@access private
+	 *
+	 */
 	private function cleanUpRepeater() {
 
 		$pages = $this->wire('pages');
 		// we delete our repeater page: admin/repeaters/for-field-xxx
 		$repeaterID = $this->wire('fields')->get('blog_links')->id;
-		$repeaterPage = $pages->get("parent.name=repeaters, name=for-field-$repeaterID");// making sure we are getting the right page
+		$repeaterPage = $pages->get("parent.name=repeaters, name=for-field-$repeaterID"); // making sure we are getting the right page
 
-		if($repeaterPage->id) {
-			if($repeaterPage->hasStatus(Page::statusSystem)) $repeaterPage->removeStatus(Page::statusSystem);
+		if ($repeaterPage->id) {
+			if ($repeaterPage->hasStatus(Page::statusSystem)) $repeaterPage->removeStatus(Page::statusSystem);
 			#$pages->delete($repeaterPage, true);
 		}
 		return $this->cleanUpTemplates();
 	}
 
 	/**
-	* 	Delete blog templates.
-	*
-	*	@access private
-	*
-	*/
+	 * 	Delete blog templates.
+	 *
+	 *	@access private
+	 *
+	 */
 	private function cleanUpTemplates() {
 
 		$templates = $this->wire('templates');
@@ -168,17 +169,17 @@ class BlogCleanup extends ProcessBlog {
 			'blog-settings',
 			'blog-basic',
 			'repeater_blog-links',
-			'repeater_blog_links',// @note: it seems in PW3, above 'repeater_blog-links' is converted to this, 'repeater_blog_links'
+			'repeater_blog_links', // @note: it seems in PW3, above 'repeater_blog-links' is converted to this, 'repeater_blog_links'
 
 		);
 
 		// unset irrelevant templates depending on blogStyle (important since user could have a template with similar name that is not part of Blog!) AND commentsUse
-		if ($this->blogStyle == 3 || $this->blogStyle == 4)	unset($templatesArray[0]);// blog template
-		if ($this->blogStyle == 2 || $this->blogStyle == 4)	unset($templatesArray[8]);// blog-posts template
-		if ($this->commentsUse !=1) {
-			unset($templatesArray[5]);// blog-comments
-			unset($templatesArray[9]);// blog-recent-comments
-			unset($templatesArray[17]);// blog-basic
+		if ($this->blogStyle == 3 || $this->blogStyle == 4)	unset($templatesArray[0]); // blog template
+		if ($this->blogStyle == 2 || $this->blogStyle == 4)	unset($templatesArray[8]); // blog-posts template
+		if ($this->commentsUse != 1) {
+			unset($templatesArray[5]); // blog-comments
+			unset($templatesArray[9]); // blog-recent-comments
+			unset($templatesArray[17]); // blog-basic
 		}
 
 		// delete each found template one by one
@@ -192,20 +193,19 @@ class BlogCleanup extends ProcessBlog {
 					//$templates->delete($t);
 				}
 				$templates->delete($t);
-				$this->wire('fieldgroups')->delete($t->fieldgroup);// delete the associated fieldgroups
+				$this->wire('fieldgroups')->delete($t->fieldgroup); // delete the associated fieldgroups
 			}
 		}
 
 		return $this->cleanUpFields();
-
 	}
 
 	/**
-	* 	Delete blog fields.
-	*
-	*	@access private
-	*
-	*/
+	 * 	Delete blog fields.
+	 *
+	 *	@access private
+	 *
+	 */
 	private function cleanUpFields() {
 
 		$templates = $this->wire('templates');
@@ -242,28 +242,27 @@ class BlogCleanup extends ProcessBlog {
 		);
 
 		// unset irrelevant fields depending on commentsUse (important since user could have a field with similar name that is not part of Blog!)
-		if ($this->commentsUse !=1) {
-			unset($fieldsArray[2]);// blog_comments
-			unset($fieldsArray[3]);// blog_comments_view
-			unset($fieldsArray[4]);// blog_comments_max
+		if ($this->commentsUse != 1) {
+			unset($fieldsArray[2]); // blog_comments
+			unset($fieldsArray[3]); // blog_comments_view
+			unset($fieldsArray[4]); // blog_comments_max
 		}
 
 		// delete each found field
 		foreach ($fieldsArray as $fld) {
 			$f = $fields->get($fld);
-			if($f->id) $fields->delete($f);
+			if ($f->id) $fields->delete($f);
 		}
 
 		return $this->cleanUpRoles();
-
 	}
 
 	/**
-	* 	Delete blog role.
-	*
-	*	@access private
-	*
-	*/
+	 * 	Delete blog role.
+	 *
+	 *	@access private
+	 *
+	 */
 	private function cleanUpRoles() {
 		// delete 'blog-author' role
 		$r = $this->wire('roles')->get('blog-author');
@@ -272,11 +271,11 @@ class BlogCleanup extends ProcessBlog {
 	}
 
 	/**
-	* 	Delete blog template files, demo CSS and JS files (optional).
-	*
-	*	@access private
-	*
-	*/
+	 * 	Delete blog template files, demo CSS and JS files (optional).
+	 *
+	 *	@access private
+	 *
+	 */
 	private function cleanUpFiles() {
 
 		$this->deleteFiles = false;
@@ -301,64 +300,61 @@ class BlogCleanup extends ProcessBlog {
 				'blog-recent-comments.php',
 				'blog-recent-posts.php',
 				'blog-recent-tweets.php',
-				'blog-side-bar.inc',// will only be present if templateFilesInstall == 2 {demo template files}
+				'blog-side-bar.inc', // will only be present if templateFilesInstall == 2 {demo template files}
 				'blog-tag.php',
 				'blog-tags.php',
-				'blog-main.inc',// will only be present if templateFilesInstall == 2 {demo template files}
+				'blog-main.inc', // will only be present if templateFilesInstall == 2 {demo template files}
 
 			);
 
 			// remove non-existent template files based on the blogStyle, commentsUse and templateFilesInstall
 			// also safeguards againts removing user created template files with similar names!
-			if ($this->blogStyle == 2 || $this->blogStyle == 4) unset($templateFiles[8]);// blog-posts.php
-			if ($this->blogStyle == 3 || $this->blogStyle == 4) unset($templateFiles[0]);// blog.php
-			if ($this->templateFilesInstall !=2) {
-				unset($templateFiles[12]);// blog-side-bar.inc
-				unset($templateFiles[15]);// blog-main.inc
+			if ($this->blogStyle == 2 || $this->blogStyle == 4) unset($templateFiles[8]); // blog-posts.php
+			if ($this->blogStyle == 3 || $this->blogStyle == 4) unset($templateFiles[0]); // blog.php
+			if ($this->templateFilesInstall != 2) {
+				unset($templateFiles[12]); // blog-side-bar.inc
+				unset($templateFiles[15]); // blog-main.inc
 			}
 
-			if ($this->commentsUse !=1) {
-				unset($templateFiles[5]);// blog-comments.php
-				unset($templateFiles[9]);// blog-recent-comments.php
+			if ($this->commentsUse != 1) {
+				unset($templateFiles[5]); // blog-comments.php
+				unset($templateFiles[9]); // blog-recent-comments.php
 			}
 
 			// 1. delete template files
-			$sourcepath = $config->paths->templates;// source: '/site/templates/'
+			$sourcepath = $config->paths->templates; // source: '/site/templates/'
 			foreach ($templateFiles as $templateFile) {
-				if(is_file($sourcepath . $templateFile)) unlink($sourcepath . $templateFile);// delete the file if found
+				if (is_file($sourcepath . $templateFile)) unlink($sourcepath . $templateFile); // delete the file if found
 			}
 
 			// 2. delete demo JS file
-			$sourcepath = $config->paths->templates . 'scripts/';// source: '/site/templates/scripts/'
-			if(is_file($sourcepath . 'blog.js')) unlink($sourcepath . 'blog.js');// delete the file if found
+			$sourcepath = $config->paths->templates . 'scripts/'; // source: '/site/templates/scripts/'
+			if (is_file($sourcepath . 'blog.js')) unlink($sourcepath . 'blog.js'); // delete the file if found
 
 			// 3. delete demo CSS files
-			$sourcepath = $config->paths->templates . 'css/';// source: '/site/templates/scripts/'
+			$sourcepath = $config->paths->templates . 'css/'; // source: '/site/templates/scripts/'
 			$cssFiles = array('blog.css', 'pocketgrid.css');
 			foreach ($cssFiles as $cssFile) {
-				if(is_file($sourcepath . $cssFile)) unlink($sourcepath . $cssFile);// delete the file if found
+				if (is_file($sourcepath . $cssFile)) unlink($sourcepath . $cssFile); // delete the file if found
 			}
 
 			// 4. delete demo CSS icon files
-			$sourcepath = $config->paths->templates . 'css/images/';// source: '/site/templates/scripts/'
+			$sourcepath = $config->paths->templates . 'css/images/'; // source: '/site/templates/scripts/'
 			$iconFiles = array('rss-black.png', 'rss-blue.png');
 			foreach ($iconFiles as $iconFile) {
-				if(is_file($sourcepath . $iconFile)) unlink($sourcepath . $iconFile);// delete the file if found
+				if (is_file($sourcepath . $iconFile)) unlink($sourcepath . $iconFile); // delete the file if found
 			}
-
-
 		}
 
 		return $this->saveModuleConfigs();
-
 	}
 
 	/**
-	* 	Reset ProcessBlog module configurations.
-	*
-	*	@access private
-	*
-	*/
+	 * 	Reset ProcessBlog module configurations.
+	 *
+	 *	@access private
+	 *
+	 */
 	private function saveModuleConfigs() {
 
 		$modules = $this->wire('modules');
@@ -369,7 +365,7 @@ class BlogCleanup extends ProcessBlog {
 		// get ProcessBlog class
 		#$pb = $modules->get(get_parent_class($this));
 		// @note: using strrchr to account for namespaced classes
-		$baseClass = substr(strrchr('\\'.get_parent_class($this), '\\'), 1);
+		$baseClass = substr(strrchr('\\' . get_parent_class($this), '\\'), 1);
 		$pb = $modules->get($baseClass);
 
 		// save to ProcessBlog config data (reset)
@@ -383,7 +379,5 @@ class BlogCleanup extends ProcessBlog {
 		// redirect to landing page// we want the page to reload so that user can now see blog first execute screen
 		// they'll get an error that they must first configure blogStyle in module config
 		$this->wire('session')->redirect($this->wire('page')->url);
-
 	}
-
 }
